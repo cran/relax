@@ -1,0 +1,30 @@
+Package: relax
+Version: 1.00
+Date: 2005-06-24
+Title: relax -- R Editor for Literate Analysis and lateX
+Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
+Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
+Depends: R (>= 2.1.0), tcltk
+Description: package relax contains some functions for report
+    writing, presentation, and programming: relax(), tangleR(),
+    weaveR(), slider(). "relax" is written in R and Tcl/Tk.
+    relax creates a new window (top level Tcl/Tk widget) that consists
+    of two text fields and some buttons and menus.
+    Text (chunks) and code (chunks) are inserted in the upper text field (report field).
+    Code chunks are evaluated by clicking on EvalRCode.
+    Results are shown in the lower text field (output field) and
+    will be transfered to the report field by pressing on Insert.
+    In this way you get correct reports. These reports can be
+    loaded again in cause of presentation, modification and result checking.
+    tangleR() and weaveR() implement a plain kind of tangling
+    and weaving. slider() is designed to define sliders for interactive
+    experiments in a simple way.
+    The windows version uses some ingredients of the noweb system of Norman Ramsey
+    (http://www.eecs.harvard.edu/~nr/noweb/intro.html),
+    of the Img package of Jan Nijtmans (http://www.xs4all.nl/~nijtmans/img.html),
+    -- notice the copyright declarations of these products.
+License: This package was written by Hans Peter Wolf.
+   This software is licensed under the GPL (version 2 or newer) terms.
+    It is free software and comes with ABSOLUTELY NO WARRANTY.
+URL: http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html
+Packaged: Fri Jun 24 14:30:49 2005; pwolf

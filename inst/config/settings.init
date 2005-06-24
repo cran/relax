@@ -1,0 +1,44 @@
+#############################################
+# configuration file of relax
+#############################################
+#
+## general parameters of relax
+# language for messages:
+language<-"english"
+# language<-"german"
+# maximal characters of output to be shown
+maxol.sys<-2500
+# size of fonts # set of values: 1,2, ..., 7
+initial.font.size<-4
+# height of included postscript plot in LaTeX document:
+psheight.sys<-"10cm"
+# height parameter for postscript device
+psdesignheight.sys<-6
+# width parameter for postscript device
+psdesignwidth.sys<-6
+#############################################
+## special settings for windows
+# how to call LaTeX
+latex.command.windows<-"echo q | latex"
+# view command for viewing .dvi files
+view.command.windows<-"yap"
+# how to call dvipdf
+dvipdf.command.windows<-"dvipdfm"
+# text editor
+text.editor.windows<-"notepad"
+# browser
+# browser.windows<-"c:/Programme/.../mozilla"
+#############################################
+## special settings for linux
+path.tcltk.package.img<-"/usr/local/lib"
+# how to call LaTeX
+latex.command.linux<-"echo q | latex"
+# view command for viewing .dvi files
+view.command.linux<-"xdvi"
+# how to call dvipdf
+dvipdf.command.linux<-"dvipdf"
+# text editor
+text.editor.linux<-"eddi"
+# browser
+browser.linux<-"konqueror"
+

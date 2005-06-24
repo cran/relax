@@ -1,0 +1,508 @@
+
+% New Report: Sun Jun 12 10:19:46 2005
+
+% New Report: Thu Jun  9 17:12:50 2005
+
+\documentclass{article}
+\usepackage{a4,graphicx,mathpazo,courier,alltt}
+%\usepackage{C:/Programme/R/rw2010/library/relax/lib/noweb}\noweboptions{webnumbering,smallcode}
+\usepackage[scaled=.95]{helvet}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{ngerman}
+\setlength{\parindent}{0em}\parskip1ex
+\def\refname{Literatur}
+\title{Die Idee steht im Mittelpunkt\\ oder: Was ist \texttt{RELAX}?}
+\author{Torben Kuhlenkasper}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\raggedright
+
+@
+\section{Was ist \texttt{RELAX} und wozu dient es?}
+\begin{center}
+\textsl{Es ist die Aufgabe eines Statistikers einen Report zu erstellen. \\ Dieser muss nachvollziehbar und optisch ansprechend sein.}
+\end{center}
+\begin{flushright}
+Prof. Dr. em. Peter Naeve, 29.09.2004
+\end{flushright}
+
+\texttt{RELAX} (für: \textit{R Editor für Literate Analysen mit lateX}) ist ein Werkzeug für Statistiker
+und solche, die es gerne werden möchten. Mit diesem Werkzeug kann der Anwender lesbare
+Reports und Datenanalysen erstellen und außerdem Anweisungen vorliegender mit \texttt{RELAX}
+erarbeiteter Dokumente selektiv überprüfen, variieren und erweitern. Mit \textsc{S-PLUS},
+\textsc{R} und \textsc{SPSS} gibt es bereits eine große Auswahl an Umgebungen, die beim
+Umgang mit Daten dem Anwender das
+Leben erleichtern. Um die Analysen und Ergebnisse auch optisch ansprechend zu gestalten,
+kann auf das
+Textsatzsystem \LaTeX\ mit seinen (fast) unbeschränkten Möglichkeiten zurückgegriffen werden.
+Mit der beispielhaft aufgeführten Software kann ein Statistiker sowohl seine statistischen
+Operationen durchführen als auch per \glqq cut \& paste\grqq\ seine Ergebnisse und Analysen
+mit \LaTeX\ aufbereiten und als Report ausdrucken.
+Es scheint auf den ersten Blick so, als ob der Statistiker alles hat, was er braucht.
+
+Für sehr kurze Arbeiten hat er das auch! Allerdings stehen Rechnen und Texterstellung immer \textit{nebeneinander}. Es ist also nicht möglich, aus einem Programm heraus sowohl den statistischen als auch den textlichen Teil eines Reports zu erstellen. Das hat zur Folge, dass Ergebnisse des einen Programms erst in ein anderes importiert werden müssen, bevor ein Report weiter bearbeitet werden kann. Dies kann mitunter ein sehr zeitaufwändiges und nervenaufreibendes Unterfangen sein. \\
+Viele statistische Software-Produkte sind für Berechnungsprobleme schon sehr ausgereift. Deshalb erscheint es wenig sinnvoll, etwas von Grund auf Neues zu schaffen, das sowohl die statistischen Arbeiten als auch die textlichen Herausforderungen miteinander verbindet. Vielmehr ist es angebracht, Gutes und Vorhandenes zu verknüpfen: Und genau eine solche Verknüpfung oder Symbiose ist \texttt{RELAX}: \texttt{RELAX} verbindet \textsc{R} und \LaTeX\ \textit{miteinander}. Rechnen und Texterstellung werden damit in einem Arbeitsprozess möglich.
+
+Es ist mit \texttt{RELAX} zweierlei geschaffen worden: Zum einen ein mächtiges Werkzeug, um einen Report oder andere wissenschaftliche Arbeiten erstellen zu können, zum anderen können Analysen und Ergebnisse des Statistikers aktiv begleitet werden. Die Ergebnisse und durchgeführten Operationen werden \glqq wiederbelebbar\grqq\ und sind so vom interessierten Leser
+leicht nachzuvollziehen und zu überprüfen. Die Möglichkeit, dokumentierte Experimente selbst durchzuführen oder sie sogar zu verändern, kann zu einem nachhaltigen Verständnis des
+Themas erheblich beitragen. Hinzu kommt, dass ein erneutes \glqq Eintippen\grqq\ der Anweisungen nicht mehr notwendig ist. Für einen Anfänger -- und an diesen richtet sich dieses Skript --
+steht sicherlich die Möglichkeit im Vordergrund, mit wenig Aufwand eine optisch ansprechende statistische Arbeit, sei es nun einen Report, eine Hausarbeit oder eine Diplomarbeit zu erstellen.
+
+Mit \texttt{RELAX} ist ein sehr flexibel einsetzbares und einfaches Hilfsmittel entwickelt worden. \texttt{RELAX} erlaubt es, die \textit{Ideen} des Benutzers festzuhalten und umzusetzen und das möglichst ohne \glqq Reibungsverluste\grqq. Aufbauend auf der Flexibilität von \textsc{R} und \LaTeX\ steht der Benutzer mit seinen Ideen und Vorstellungen im Vordergrund und nicht das Programm mit technischen Herausforderungen.\\
+@
+\paragraph{Voraussetzungen}
+Um mit \texttt{RELAX} arbeiten zu können, sind Grundkentnissen in \textsc{R} und \LaTeX\ erforderlich. Wie man diese Software bekommt, wird in Abschnitt 2 beschrieben. 
+Eine Einführung in \textsc{R} und \LaTeX\ würde den Rahmen dieses Papers bei weitem sprengen. Diese hat sich der Leser aus anderen Quellen zu erschließen, von denen nachfolgend 
+einige wenige genannt werden.\\
+\paragraph{Einführung in \textsc{R}}
+So empfehlen sich für noch unerfahrene Statistiker folgende Skripte oder Literatur für den Umgang mit \textsc{R}, die z.T. weit über eine Einführung hinausgehen:
+\begin{itemize}
+	\item Wolf, Hans Peter: \textsc{R} -- der statistische Taschenrechner für Anfänger und Profis: eine kleine Einführung\\
+	\footnotesize{\texttt{http://www.wiwi.uni-bielefeld.de/\char'176wolf/lehre/ss04/liptex/Rkurs.pdf}}
+\end{itemize}
+\paragraph{Einführung in \LaTeX}
+Auch für \LaTeX\ ist eine Reihe von Skripten erschienen, die zum Download aus dem Internet bereitstehen und für einen Anfänger voll und ganz ausreichend sind: 
+\begin{itemize}
+	\item Wolf, Hans Peter: 7 und weitere 7 Minuten mit \LaTeX \\ \footnotesize{\texttt{http://www.wiwi.uni-bielefeld.de/\char'176wolf/software/tex/vierzehn.pdf}}
+\end{itemize}
+
+
+\section{Wie bekomme und starte ich \texttt{RELAX}?}
+
+Microsoft Windows ist bei Heimanwendern zur Zeit das am meisten genutzte Betriebssystem. Deshalb konzentriert sich dieser Abschnitt auf die Installation und das Starten unter Windows. 
+\texttt{RELAX} ist auch unter Linux verfügbar, erfordert jedoch einige besondere Installationskenntnisse. Das Arbeiten mit \texttt{RELAX} unterscheidet sich hingegen nicht.\\
+\paragraph{Installation:}
+Drei Dinge sind erforderlich:
+\begin{enumerate} 
+	\item Zunächst ist es notwendig, eine funktionsfähige \textsc{R}-Version zu besitzen. Diese kann über
+\begin{center}
+\texttt{http://www.cran.r-project.org/bin/windows/base}
+\end{center}
+heruntergeladen werden.\footnote{\textsc{R} ist eine open source software und steht unter der General Public Licence. Näheres unter \texttt{http://www.gnu.org}.} Bei Erstellung dieses Skripts 
+war R 2.0.1 die aktuelle Version, sowohl für Windows als auch für Linux.
+	\item Die zweite erforderliche Komponente ist das im wissenschaftlichen Bereich sehr verbreitete \LaTeX. Zum Download und zur Installation sei auf das Skript von Arne Sigge verwiesen, dass unter 
+\begin{center}
+\small{\texttt{http://www.sigge.de/anleitung.pdf}}
+\end{center} 
+erhältlich ist.
+	\item Zu guter Letzt ist die Installationsdatei für \texttt{RELAX} über
+\begin{center}
+\footnotesize{\texttt{http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html}}
+\end{center}
+zu bekommen. Im Abschnitt \glqq Installation\grqq\ ist die jeweils aktuelle Version zu finden. Dabei handelt es sich um eine gepackte Datei im ZIP-Format. Diese sollte in das Unterverzeichnis \texttt{.../library} der \textsc{R}-Software entpackt werden.\\ 
+\paragraph{Start:}
+\end{enumerate}
+\texttt{RELAX} wird direkt aus \textsc{R} heraus gestartet. Hierfür ist nach dem Start von \textsc{R} das \texttt{RELAX}-Paket zu laden: 
+\begin{verbatim}
+  > library(relax)
+\end{verbatim}
+und die Funktion RELAX() zu starten: 
+\begin{verbatim}
+  > relax()
+\end{verbatim}
+Es öffnet sich die Oberfläche von \texttt{RELAX}.
+\begin{center}
+	\includegraphics[height=9cm,width=9cm]{tutbild1.ps}
+
+% <p><img src="tutbild1.jpg">
+\end{center}
+\begin{figure}[h]
+	\caption{Ein Schnappschuss von \texttt{RELAX}} 
+\end{figure}
+Nun kann die Arbeit beginnen.
+
+\section{Wie benutze ich \texttt{RELAX}?}
+Grundsätzlich kann \texttt{RELAX} wie ein herkömmlicher Editor benutzt werden. Dazu kann in dem oberen Fenster beliebiger Text eingegeben werden. 
+Dabei können z.B. auch \LaTeX-Kommandos verwendet werden. 
+\subsection{Wie sieht ein fertiges Dokument aus?}
+Wir wollen zunächst zur Ausbildung einer Zielvorstellung ein sehr einfaches Beispiel betrachten, in dem wir uns Körpergrößen und Gewichte einiger amerikanischer Frauen vornehmen. Wie könnten erste Analyseschritte
+aussehen? Vielleicht so, wie im folgenden Reportausschnitt zu sehen ist:
+\begin{quote}\sf
+@
+Wir wollen mit dem Datensatz [[women]], der Körpergrößen (in in)
+und Gewichte (in lbs) zeigt, ein paar datenanalytische Schritte unternehmen.
+
+Zuerst müssen wir die Daten des im Lieferumfang von R
+vorhandenen Datensatzes beschaffen.
+<<*>>=
+data(women)
+
+@
+Da für uns die Einheit \glqq in\grqq\ ungewöhnlich ist, übersetzen wir diese in cm:
+<<*>>=
+gr.in.cm<-women$height*2.54
+
+@
+Nun berechnen wir den Mittelwert der Größen in cm:
+<<*>>=
+mean(gr.in.cm)
+@
+und erhalten:
+\begin{verbatim}
+Thu Nov 11 15:30:43 2004
+[1] 165.1
+\end{verbatim}
+
+@
+Hängen Größen und Gewichte zusammen?
+Hierfür berechnen wir schnell die Korrelation, für die ja bekanntlich
+lineare Transformationen irrelevant sind:
+<<*>>=
+cor(women)
+@
+\begin{verbatim}
+Thu Nov 11 15:32:40 2004
+         height    weight
+height 1.0000000 0.9954948
+weight 0.9954948 1.0000000
+\end{verbatim}
+Die Korrelation ist sicher höher als wir normalerweise
+bei solche Daten erwarten. Deshalb wollen wir
+zum Abschluss einen Blick auf einen Scatterplot der Daten werfen.
+<<*>>=
+plot(women)
+
+@
+\end{quote}
+@
+\begin{center}\includegraphics[height=10cm]{p171354-Jun-9.ps}\end{center}
+
+% <p><img src="p171354-Jun-9.jpg">
+@
+@
+Wir erkennen Gedanken, Anweisungen und Ergebnisse ansprechend formatiert und versprechen, dass mit \texttt{RELAX} hierfür nur wenige Handgriffe erforderlich sind. Im Anhang ist
+übrigens abgedruckt, welcher Quellfile zu diesem Beispiel gehört. Im Folgenden wird beschrieben, was wir konkret zu tun haben.
+@
+\subsection{Wie sieht der Kopf des Dokumentes aus?}
+\texttt{RELAX} basiert auf dem von Donald E. Knuth vorgeschlagenen Stil der literaten Programmierung, für dessen technische Unterstützung auf das noweb-Websystem von Norman
+Ramsey zurückgegriffen wird. Hierdurch sind ein paar Besonderheiten gegenüber \glqq normalen\grqq\ \LaTeX-Dokumenten zu beachten. Dies betrifft insbesondere den \LaTeX-Kopf.
+Ein passender Entwurf kann über den Menüpunkt \textsc{Wizardry} $\to$ \textsc{Latex.head} eingefügt werden.
+%\begin{quote}
+\begin{small}
+\begin{verbatim}
+\documentclass{article}
+\usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+% \usepackage{PFAD}\noweboptions{webnumbering,smallcode}
+\usepackage[scaled=.95]{helvet}
+\usepackage[T1]{fontenc}
+\title{Report: \rule{30mm}{.1mm}}
+\author{File: \jobname.rev\\in: PFAD}
+\begin{document}\maketitle
+\end{verbatim}
+\end{small}
+%\end{quote}
+\subsection{Wie setzen wir Anweisungen um?}
+Das Arbeiten mit \texttt{RELAX} soll im folgenden mit Hilfe eines Beispiels veranschaulicht werden. Die hier verwendeten Daten beziehen sich auf Studierendenzahlen, unterteilt in die einzelnen Bundesländer und in die jeweiligen Hochschulformen.\footnote{Quelle: Statistische Ämter des Bundes und der Länder: \\ http://www.statistik-portal.de/Statistik-Portal/de\_jb04\_jahrtab50.asp} Anhand dieser Zahlen sollen nun einfache statistische Operationen und Analysen vorgenommen werden.
+
+Prinzipiell bestehen \texttt{RELAX}-Dokumente aus Text und Anweisungen. Damit \texttt{RELAX} diese unterscheiden kann, ist eine Trennung erforderlich. Textabschnitte
+(Text - Chunks) beginnen mit einer Zeile, in der ganz links ein \textsc{@}-Zeichen steht. Da Seitennumbrüche i.d.R. nur vor Text-Chunks durchgeführt werden, empfiehlt es sich, jeden neuen Abschnitt durch eine
+Zeile mit einem \textsc{@} links zu beginnen. Das erleichtert \LaTeX\ die spätere Formatierung. Die \textsc{@}-Zeichen erscheinen im späteren Ausdruck nicht. Anweisungsabschnitte für
+\textsc{R} (Code-Chunks) werden mit einer Zeile eingeleitet, die mit [[<<]] beginnt und
+mit [[>>=]] endet. Zwischen diesen Klammern bzw. Größer /Kleiner-Zeichen kann dem folgenden
+Code-Chunk ein Name gegeben werden. Über den Namen eines Code-Chunk können an anderen Stellen im Dokument diese Anweisungen verwendet werden.\\
+\paragraph{PlanRCode}
+Durch Klicken auf das Feld \texttt{PlanRCode} oder der Tastenkombination \textsc{ALT+p} erzeugt \texttt{RELAX} dieses \glqq Gerüst\grqq\ für einen neuen Text und einen neuen
+Code-Chunk.
+@
+Studieren wir dies am Beispiel: Zunächst lesen wir die Namen der Bundesländer ein, da eine spätere Aufbereitung der Zahlen die jeweiligen Länder mit berücksichtigen soll.
+Wir tippen im oberen Textfenster ein: \\[1ex]
+[[@<<lese Laendernamen ein@>>=]]
+\begin{quote}
+\begin{verbatim}
+Land <-  c("Baden-Wttbg.",
+"Bayern","Berlin","Br.burg","Bremen","Hamburg",
+"Hessen","Meckl.-Vorp.","Nds.",
+"NRW","Rheinl.-Pf.","Saarland",
+"Sachsen","S.-Anhalt","Schl.-Holst.","Thueringen")
+\end{verbatim}
+\end{quote}
+Wichtig ist hierbei, dass die Zeile [[@<<lese Laendernamen ein@>>=]] linksbündig eingegeben wird.\\
+Im fertigen Dokument erhalten wir folgende Formatierung:
+
+@
+<<Lese Laendernamen ein>>=
+Land <-  c("Baden-Wttbg.",
+"Bayern","Berlin","Br.burg","Bremen","Hamburg",
+"Hessen","Meckl.-Vorp.","Nds.",
+"NRW","Rheinl.-Pf.","Saarland",
+"Sachsen","S.-Anhalt","Schl.-Holst.","Thueringen")
+@
+\paragraph{EvalRCode}
+Nach dem Eintippen wollen wir diese \textsc{R}-Anweisung ausführen. Dazu klicken wir auf \texttt{EvalRCode} oder drücken die Tastenkombination \textsc{ALT+e} -- vorausgesetzt, 
+dass sich der Cursor in dem entsprechenden Anweisungsteil befindet.
+@
+\enlargethispage{2mm}
+Als Ergebnis erscheint der Output im unteren Fenster:
+\begin{verbatim}
+Mon Nov 08 15:13:59 2004
+ [1] "Baden-Wttbg." "Bayern"       "Berlin"       "Br.burg"      "Bremen"
+ [6] "Hamburg"      "Hessen"       "Meckl.-Vorp." "Nds."         "NRW"
+[11] "Rheinl.-Pf."  "Saarland"     "Sachsen"      "S.-Anhalt"    "Schl.-Holst."
+[16] "Thueringen"  
+\end{verbatim}
+@
+\texttt{RELAX} besitzt jetzt folgendes Aussehen:
+\begin{center}
+	\includegraphics[height=7cm,width=7cm]{tutbild2.ps}
+
+% <p><img src="tutbild2.jpg">
+\end{center}
+\begin{figure}[h]
+	\caption{Der Output} 
+\end{figure}
+
+Anschließend werden in der entsprechenden Reihenfolge der Ländernamen die Anzahl der Studierenden eingegeben:
+@
+<<Lese Studierendenzahlen ein>>=
+unis <- c(147032,162322,108245,25086,20428,49290,
+115430,20163,107606,404218,62748,16115,68418,25368,25341,
+33553)
+@
+Somit sind die Grunddaten über zwei \textsc{R}-Anweisungen eingelesen. Wir wollen sie zu einem Datensatz zusammenführen. Hierdurch können wir gleich die Verwendung
+von Code-Chunks demonstrieren:
+@
+<<Lege Namen und Anzahlen unter dem Objekt studierende ab>>=
+studierende <- data.frame(
+     Bundesland=<<Lese Laendernamen ein>>,
+     Zahl=<<Lese Studierendenzahlen ein>>
+)
+@
+Hier zeigt sich, wie mittels der Bezeichnungen auf definierte Code-Chunks zurückgegriffen wird. Wichtig in diesem Zusammenhang ist, dass keine zwei Code-Chunks Verwendungen in 
+einer Zeile stehen. Dies führt nicht zu der gewünschten Operation.
+@
+Zur Erinnerung: Die zuvor definierten \textsc{R}-Anweisungen werden immer über\\
+[[@<<Lese Studierendenzahlen ein@>>]] usw. angesprochen, wie in Abbildung 3 zu sehen ist.
+\begin{center}
+	\includegraphics[height=9cm,width=9cm]{tutbild3.ps}
+
+% <p><img src="tutbild3.jpg">
+\end{center}
+\begin{figure}[h]
+	\caption{Modulaufrufe in \texttt{RELAX}} 
+\end{figure}
+Eine statistische Zusammenfassung der eingelesenen Zahlen erhalten wir über:
+@
+<<erstelle Zusammenfassung der Studierenden>>=
+summary(<<Lese Studierendenzahlen ein>>)
+
+@
+Als Ergebnis erscheint in diesem Fall demnach:
+
+@
+\begin{verbatim}
+Thu Oct 14 11:15:41 2004
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  16120   25280   56020   86960  110000  404200
+\end{verbatim}
+@
+Alternativ hätten wir übrigens auch schreiben können: \\
+[[@<<erstelle Zusammenfassung der Studierenden@>>=]]\\
+[[summary(unis)]]\\
+\paragraph{Insert}
+Output, der im unteren Fenster von \texttt{RELAX} erscheint, kann ohne großen Aufwand  in das obere Fenster und damit in das Dokument importiert werden. Dies erfolgt durch einen
+Klick auf \texttt{Insert} oder durch die Tastenkombination \textsc{ALT+I}. \texttt{RELAX} erkennt die miteingefügten Zeilen \texttt{output-start} und \texttt{output-end} und setzt beim späteren 
+\LaTeX-Prozess diesen eingefügten Output automatisch in eine \texttt{verbatim}-Umgebung.\\
+Hier zeigt sich, dass \texttt{RELAX} zu einer Arbeitserleichterung für den Benutzer führt: Die von \textsc{R} gelieferten Ergebnisse können problemlos weiterverwendet werden und ein
+Hin- und Herkopieren zwischen verschiedenen Programmen mittels \glqq Copy and Paste\grqq\ entfällt.
+\paragraph{TrashROutput}
+Wurde der Output versehentlich ins Dokument übertragen, so kann er mittels \texttt{TrashROutput} oder \textsc{ALT+t} wieder aus den Dokument entfernt werden. 
+@
+\subsection{Wie halten wir Grafiken fest?}
+Einer der besonderen Stärken von \textsc{R} liegt im Grafikbereich. Es ist nicht nur möglich, explorative Grafiken für die Analyse von Daten sehr schnell und einfach zu erstellen, 
+sondern auch Grafiken sehr hoher Qualität für Publikationen und Präsentationen, also ebenfalls für Reports, zu erzeugen.\\
+Auch bei der Erstellung von Grafiken kann in beschriebener Weise auf bereits definierte Funktionen zurückgegriffen werden. Das folgende Beispiel zur Erstellung eines
+Stabdiagramms zeigt, wie mit Hilfe von den zwei oben definierten Modulen eine aussagekräftige Grafik erzeugt wird, die später wieder auf den Bildschirm gerufen werden kann. 
+
+@
+<<zeichne stabdiagramm>>=
+par(las=2)
+barplot(
+  height=<<Lese Studierendenzahlen ein>>,
+  names.arg=<<Lese Laendernamen ein>>,
+  cex.names=.5 ,main="Studierende in Deutschland",yaxt="n")
+axis(2, at=seq(0,400000,50000),
+  labels= c("0","50000","100000","150000","200000",
+             "250000","300000","350000","400000"))
+
+
+@
+Durch Klick auf \texttt{EvalRCode} entsteht folgende Grafik in einem gesonderten Fenster, mit der sich die Verteilung der Universitätsstudierenden auf die einzelnen Bundesländer 
+visualisieren lässt.
+
+
+@
+\begin{center}\includegraphics[height=10cm]{p171506-Jun-9.ps}\end{center}
+
+\begin{figure}[h]
+	\caption{Studierende in Deutschland}
+\end{figure}
+@
+% <p><img src="p171506-Jun-9.jpg">
+@
+@
+\paragraph{SavePlot}
+Gerade Anfängern bereitet das Einfügen von erstellten Grafiken in ein Dokument häufig Probleme. 
+Diese \glqq technische Hürde\grqq\ wird von \texttt{RELAX} weitgehend abgebaut:
+Ein einfacher Klick auf \textsc{SavePlot} ist ausreichend, damit \textsc{R} eine Postscript- und
+eine JPG-Datei erzeugt. Die JPG-Datei wird im Arbeitsfenster eingeblendet. Weiter erscheint 
+automatisch für \LaTeX\ bzw.\ HTML ein Einbindungsvorschlag:
+\begin{footnotesize}
+\begin{verbatim}
+\begin{center}\includegraphics[height=10cm]{NAME DER DATEI.ps}\end{center}
+
+% <p><img src="NAME.jpg">
+\end{verbatim}
+\end{footnotesize}
+Mit den in diesem Abschnitt vorgestellten Möglichkeiten, einen Report oder ein anderes Dokument mit statistischem Inhalt zu erstellen, sollte der Benutzer in die Lage versetzt worden sein, seine Ideen und Vorstellungen entsprechend umsetzen zu können.
+@
+\subsection{Wie erhalten wir einen schönen Ausdruck?}
+\paragraph{ProcessReport}
+@
+Nachdem in \texttt{RELAX} die gewünschten Berechnungen durchgeführt sind und der Text des Reports geschrieben ist, bleibt abschließend die Frage zu beantworten, wie der Benutzer
+nun zu dem gesamten Output, sprich: zu dem fertigen Dokument gelangt. Auch dieser Prozess ist im Gegensatz zu anderen Umgebungen mit sehr wenig Aufwand verbunden:
+Unter dem Menüpunkt \textsc{Wizardry} befindet sich der Eintrag \textsc{LatexReport}. Durch ein Anklicken, wird der Benutzer zunächst aufgefordert, den aktuellen Report als .rev-Datei 
+zu speichern. Anschließend erscheinen im unteren Outputfenster die Meldungen
+@
+\begin{verbatim}
+latex process finished
+\end{verbatim}
+@
+Bei Erfolg kann über  \textsc{Wizardry}  $\to$ \textsc{View} ein Programm zur Betrachtung von .dvi-Dateien mit dem fertigen Report gestartet werden. Übrigens wird parallel eine grobe HTML-Version des Reports erstellt, die mit einem Browser betrachtet werden kann. 
+@
+
+\section{Wie werde ich \texttt{RELAX} wieder los?}
+Ziel dieses Skriptes ist es, dem Leser die Anwendungsmöglichkeiten mit den entsprechenden Vorteilen von \texttt{RELAX} näher zu bringen. Es bleibt also die Hoffnung, dass der Leser 
+keinen Grund hat, \texttt{RELAX} wieder zu löschen.\\
+@
+Soll das Programm dennoch wieder entfernt werden, reicht es aus, das ensprechende Verzeichnis unter \texttt{.../library} zu löschen.\\
+@
+\newpage
+\addcontentsline{toc}{section}{Literatur}
+
+\begin{thebibliography}{99}
+\bibitem{A} Von S-Plus zum fertigen Report -- Eine Wegbeschreibung.\\
+	{\footnotesize URL: http://www.wiwi.uni-bielefeld.de/StatCompSci/lehre/material[[_]]spezifisch/praktikum99.00/revla/revla.ps}\\[2ex]
+%\normalsize{
+Ergänzend zu den im Text aufgeführten Skript zu \textsc{R}
+\bibitem{HPW} Wolf, H.P.: R --- der statistische Taschenrechner für Anfänger und Profis:
+   eine kleine Einführung.	\\
+{\footnotesize URL: http://www.wiwi.uni-bielefeld.de/\char'176wolf/lehre/ss04/liptex/Rkurs.pdf}\\[2ex]
+ ist folgende Literatur als Einführung empfehlenswert:
+%}
+\bibitem{H} Handl, Andreas: Einführung in die Statistik mit \textsc{R}\\
+	{\footnotesize URL: http://www.wiwi.uni-bielefeld.de/\char'176frohn/Lehre/Statistik1/Skript/stat12b.pdf}
+\bibitem{D} Dalgaard, Peter: Introductory statistics with R. Springer, 2002.\\[2ex]
+Folgende Bücher gehen über eine Einführung hinaus und sind für Leser interessant, 
+die sich näher mit \textsc{R} beschäftigen möchten:
+\bibitem{L} Ligges, Uwe: Programmieren mit R. Springer, 2004.
+\bibitem{V} Venables, W.N., Ripley, B.D.: Modern Applied Statistics with S-Plus. Springer, 1994.\\[2ex]
+Für Leser, die bisher noch keinen Umgang mit \LaTeX\ hatten, ist neben dem Kurzskript von
+\bibitem{PW} Wolf, H.P.: 7 und weitere 7 Minuten mit \LaTeX.	\\
+{\footnotesize URL: http://www.wiwi.uni-bielefeld.de/\char'176wolf/software/tex/vierzehn.pdf}\\[2ex]
+folgendes Buch zu empfehlen:
+\bibitem{W} Willms, Roland: \LaTeX\  echt einfach. Franzis, 2003.\\[1ex]
+Für eine umfassende Einführung in \LaTeX\ sei auf folgende Literatur hingewiesen:
+\bibitem{S} Schmidt, Walter [u.a.]: \LaTeX\ $2_\epsilon$ - Kurzbeschreibung\\
+{\footnotesize URL: ftp://ftp.uni-bielefeld.de/pub/tex/info/lshort/german/l2kurz.pdf}
+\bibitem{N} Niedermair, Elke u. Michael: \LaTeX\ (Studienausgabe). Franzis, 2004.\\[1ex]
+In der mittlerweile 3. überarb. Auf\-lage ist das Buch von H. Kopka erscheinen, das sich gut als Nachschlagewerk verwenden lässt:
+\bibitem{K} Kopka, Helmut: \LaTeX, Band 1 (Einführung). Pearson Studium, 2002.\\[1ex]
+Folgendes Buch kann als Weiterführung in \LaTeX\ genutzt werden:
+\bibitem{G} Goossens, Michel [u.a.]: Der \LaTeX-Begleiter. Pearson Studium, 2002.
+\end{thebibliography}
+\clearpage
+\appendix
+\section{Quellfile des abgedruckten Beispiels}
+Es folgt die Darstellung des Quellfiles, der natürlich nicht erfolgreich 
+gestartet werden kann.
+<<*>>=
+ Wir wollen mit dem Datensatz [[women]], der Körpergrößen (in in)
+ und Gewichte (in lbs) zeigt, ein paar datenanalytische Schritte unternehmen.
+
+ Zuerst müssen wir die Daten des im Lieferumfang von R
+ vorhandenen Datensatzes beschaffen.
+ @<<*>>=
+ data(women)
+
+ @
+ Da für uns die Einheit \glqq in\grqq\ ungewöhnlich ist, übersetzen wir diese in cm:
+ @<<*>>=
+ gr.in.cm<-women$height*2.54
+
+ @
+ Nun berechnen wir den Mittelwert der Größen in cm:
+ @<<*>>=
+ mean(gr.in.cm)
+ @
+ und erhalten:
+ \begin{verbatim}
+ Thu Nov 11 15:30:43 2004
+ [1] 165.1]]
+ \end{verbatim}
+ @
+ Hängen Größen und Gewichte zusammen?
+ Hierfür berechnen wir schnell die Korrelation, für die ja bekanntlich
+ lineare Transformationen irrelevant sind:
+ @<<*>>=
+ cor(women)
+ @
+ \begin{verbatim}
+ Thu Nov 11 15:32:40 2004
+          height    weight
+ height 1.0000000 0.9954948
+ weight 0.9954948 1.0000000
+ \end{verbatim}
+
+ @
+ Die Korrelation ist sicher höher als wir normalerweise
+ bei solche Daten erwarten. Deshalb wollen wir
+ zum Abschluss einen Blick auf einen Scatterplot der Daten werfen.
+ @<<*>>=
+ plot(women)
+
+@
+\section{Referenzliste: Knöpfe / Menüpunkte}
+\begin{tabular}{lcp{8cm}} \hline
+&& \\
+Knopf/Menü&Shortcut&Wirkung\\
+&& \\
+\hline\\
+\texttt{PlanRCode}&\textsc{ALT+p}&erzeugt ein Gerüst für einen neuen Text und Code-Chunk\\
+\texttt{EvalRCode}&\textsc{ALT+e}&führt Berechnung für den Code-Chunk aus, in dem sich der Cursor befindet\\
+\texttt{Insert}&\textsc{ALT+i}&fügt den Output einer Berechnung in das Dokument ein\\
+\texttt{TrashROutput}&\textsc{ALT+t}&entfernt den eingefügten Output wieder aus dem Dokument\\
+\textsc{Wizardry} \\ $\to$ \textsc{Latex.head}&---&fügt einen Kopf für \LaTeX-Dokumente ein\\
+\textsc{Edit} \\ $\to$ \textsc{InsertPlot}&---&fügt die aktuelle \textsc{R}-Grafik in das Dokument ein\\
+\textsc{Wizardry} \\ $\to$ \textsc{ProcessReport}&---&speichert die Datei und zeigt den Output in einem externen Viewer\\
+\textsc{Edit} \\ $\to$ \textsc{FindReportText}&\textsc{CRTL+f}&Öffnet Eingabe zum suchen von Wörtern im Report\\
+---&\textsc{CRTL+z}&die zuletzt durchgeführte Aktion wird rückgängig gemacht.
+\\\hline
+\end{tabular}
+
+@
+\section{Chunk zur Anzeige der Bilder}
+Damit für die Anzeige die Bilder gefunden werden, folgt noch ein Chunk
+mit einem kleinen Trick, der hier nicht erklärt wird.
+<<start>>=
+cat("PDF-File siehe:",file.path(.path.package("relax"),"rev","tutorial-tk.pdf"))
+pic..<-paste(.path.package("relax"),"rev/",sep="/")
+w..<-get("tworkwin",env=revive.sys); workwin<-tclvalue(tkget(w..,"1.0","end"))
+workwin<-strsplit(workwin,"\n")[[1]]
+workwin<-gsub(paste("(include","graphics)(.*)\\]\\{",sep=""),
+         paste("\\1\\2]{",pic..,sep=""),workwin)
+workwin<-gsub(paste("(sr","c=\")",sep=""),
+         paste("\\1",pic..,sep=""),workwin)
+workwin<-workwin[-(grep("pic\\.\\.",workwin)[1]:length(workwin))]
+workwin<-paste(workwin,collapse="\n")
+tkdelete(w..,"1.0","end");  tkinsert(w..,"1.0",workwin)
+"ok"
+
+@
+\end{document}
+
+
+
+
