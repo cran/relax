@@ -10,6 +10,7 @@
 %\usepackage[T1]{fontenc}
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/work/work.rtrevive/webR }}
+\date{16.Jan.2006}
 \begin{document}
 \maketitle
 \raggedright
@@ -225,8 +226,10 @@ wird die Anzahl der aufeinanderfolgenden Codezeilen festgestellt
 und auf die Output-Variable übertragen. Falls die nächste keine
 Codezeile ist, muß es sich um die Verwendung einer Verfeinerung handeln.
 In einem solchen Fall wird die nächste Verfeinerung
-identifiziert und der Bezeichner der Verfeinerung wird durch seine Definition
-ersetzt.
+identifiziert und der Bezeichner der Verfeinerung wird durch seine Definition ersetzt.
+Nicht definierte, aber verwendete Chunks führten anfangs zu einer Endlosschleife. Dieser Fehler ist inzwischen behoben [[051219]]. 
+Eine entsprechende Änderung wurde auch für 
+nicht-start-chunks fällig.
 <<transferiere Startzeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>=
 if(0==length(code.stack))break
 if("C"==substring(code.stack[1],1,1)){
@@ -242,7 +245,8 @@ if("C"==substring(code.stack[1],1,1)){
     }
     code.stack<-c(code.ch[rows],code.stack[-1])
     cat(found,", ",sep="")
-  }
+  } else code.stack <-code.stack[-1] # ignore not defined chunks!
+  # 051219 
 }
 
 @
@@ -305,7 +309,8 @@ if("C"==substring(code.stack[1],1,1)){
                     paste("C#:" ,no      ,sep=""      ),
                     code.stack)
 	}
-  }
+  } else code.stack <-code.stack[-1] # ignore not defined chunks!
+  # 051219 
 }
 
 @
@@ -455,7 +460,7 @@ Die Funktion besitzt folgenden Aufbau:
 <<define-weaveR>>=
 weaveR<-function(in.file,out.file){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204
+  # look for file webR.pdf, P. Wolf 050204, 060517
   <<initialisiere [[weaveR]]>>
   <<lese Datei ein [[weaveR]]>>
   <<substituiere mit @ versehene Zeichengruppen [[weaveR]]>>
@@ -469,12 +474,17 @@ weaveR<-function(in.file,out.file){
 
 @
 Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
 <<initialisiere [[weaveR]]>>=
 pat.use.chunk<-paste("<","<(.*)>",">",sep="")
 pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
+lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+UTF<-(1==length(grep("UTF",lcctype))) 
+UTF<- UTF | nchar(deparse("\xc3")) > 3
+if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
 
 @
 Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
@@ -498,14 +508,22 @@ Umlaute sind ein Dauerbrenner.
 Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
 in der ersten Zeile ein \emph{ß}.
 <<ersetze Umlaute [[weaveR]]>>=
-# im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-input<-gsub("\283","",input)
-input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
-# Latin1 -> TeX-Umlaute
-input<-gsub("\337","{\\\\ss}",input)
-input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
-input<-chartr("\344\366\374\304\326\334","aouAOU",input)
-
+if(!UTF){
+ # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+  input<-gsub("\283","",input)
+  input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
+  # Latin1 -> TeX-Umlaute
+  input<-gsub("\337","{\\\\ss}",input)
+  input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
+  input<-chartr("\344\366\374\304\326\334","aouAOU",input)
+}else{
+  input<-gsub("\283\237","{\\\\ss}",input)
+  input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                            "\\\\\"\\1",input)
+  input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+}
+cat("german Umlaute replaced\n")
 @
 Vor dem Wegschreiben müssen die besonderen Zeichengruppen
 zurückübersetzt werden.
@@ -681,7 +699,13 @@ for(i in seq(use.lines)){
   cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
   ref.no<-match(uli[cand],code.chunk.names)
   uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
-  if(length(uli)!=length(cand)) uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+  if(length(uli)!=length(cand)){
+    if(!UTF){ 
+      uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+    }else{
+      uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+    }
+  }
   use.lines[i]<-paste(uli,collapse="")
 }
 input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline")
@@ -709,8 +733,11 @@ könnte man den [[catcode]] so verändern:
 [[\catcode`\343=12"]] -- also in R:
 [[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
 <<schreibe Code-Zeilen [[weaveR]]>>=
-input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
-
+if(!UTF){
+  input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
+}else{
+  input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline") #060516
+}
 
 @
 <<setze Code in Text-, Header- und Verwendungszeilen [[weaveR]]>>=
@@ -798,6 +825,7 @@ if(0<length(ind.cand)) {
       if((br.open+1)<=(br.close-1)){
         h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
         h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+        h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
         h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
         h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
       x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)

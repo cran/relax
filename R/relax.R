@@ -118,7 +118,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   # how to call dvipdf
   dvipdf.command.linux<-"dvipdf"
   # text editor
-  text.editor.linux<-"eddi"
+  text.editor.linux<-"kwrite"
   # browser
   browser.linux<-"konqueror"
 
@@ -529,7 +529,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           if(is.function(try.res)){
             ok <- "OK"
           } else {
-            if(mode(try.res)=="externalptr") try.res<-"ok"
+            if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
             ok<-try.res[1]
             if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
             if(!is.character(ok)) { ok <- "OK" }
@@ -537,7 +537,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
             ok<-F
             cat(unclass(try.res),"\n")
-            cat("operation failed in:",as.character(sys.call()),"!!!\n")
+            cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
           } else { ok<-T }
 
 
@@ -666,11 +666,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       x<-gsub("(\244|\266|\274|\204|\226|\234|\237)","\283\\1",x) #ae
   }
   TcltoWin.write<-function(x){
-   x<-gsub("\283","",x)
-   x<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",x)
-   x
+   lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+   UTF<-(1==length(grep("UTF",lcctype))) 
+   UTF<- UTF | nchar(deparse("\xc3")) > 3
+   #(0==length(grep("(=de)|(=ge)",lcctype)))
+   # cat("UTF?"); print(UTF)
+   if(!UTF){
+     x<-gsub("\283","",x)
+     x<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",x)
+     return(x)
+   }else{
+     return(x)
+   }
   }
-
   tmp.file.name <- tempfile("rt-tmp")
   assign(tmp.file.name,"tmp.file.name",env=revive.sys)
 
@@ -692,11 +700,23 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
 
     # Umlaute-Ersetzung fuer Tcl-Fenster nach Html:
-    savetext<-gsub("\237","&szlig;",savetext)
-    savetext<-gsub("(\244|\266|\274|\204|\226|\234)","&\\1uml;",savetext)
-    savetext<-chartr("\244\266\274\204\226\234", "aouAOU", savetext)
-    savetext<-gsub("\283","",savetext)
-
+     lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+     UTF<-(1==length(grep("UTF",lcctype))) 
+     UTF<- UTF | nchar(deparse("\xc3")) > 3
+      if(!UTF){
+       savetext<-gsub("\237","&szlig;",savetext)
+       savetext<-gsub("(\244|\266|\274|\204|\226|\234)","&\\1uml;",savetext)
+       savetext<-chartr("\244\266\274\204\226\234", "aouAOU", savetext)
+       savetext<-gsub("\283","",savetext)
+     }else{
+       savetext<-gsub("\283\237","&szlig;",savetext)
+       savetext<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                                "&\\1uml;",savetext)
+       savetext<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                                  "aouAOU", savetext)
+     }
+     # cat("AsHtml: 283..fertig"); print(UTF)
+     
     ## savetext<-gsub("^@","</pre><p>",savetext)
     savetext<-gsub("^@","</pre>",savetext)
 
@@ -733,6 +753,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -855,10 +876,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
      }
      melde(insertline)
      melde("ak texthervor",1)
-     tkcmd("markclear",tworkwin)
+     tcl("markclear",tworkwin)
      tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
      tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-     tkcmd("marklinetypes",tworkwin)
+     tcl("marklinetypes",tworkwin)
      melde("ak texthervor",2)
 
      if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -903,10 +924,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
      try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
      tksee(tworkwin,"end")
      melde("ak texthervor",1)
-     tkcmd("markclear",tworkwin)
+     tcl("markclear",tworkwin)
      tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
      tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-     tkcmd("marklinetypes",tworkwin)
+     tcl("marklinetypes",tworkwin)
      melde("ak texthervor",2)
 
      if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -983,10 +1004,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       }
       melde(insertline)
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -1062,10 +1083,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       }
       melde(insertline)
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -1091,7 +1112,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(is.function(try.res)){
         ok <- "OK"
       } else {
-        if(mode(try.res)=="externalptr") try.res<-"ok"
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
         ok<-try.res[1]
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
@@ -1099,7 +1120,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-F
         cat(unclass(try.res),"\n")
-        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
       } else { ok<-T }
 
 
@@ -1131,10 +1152,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       }
       melde(insertline)
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -1164,7 +1185,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(is.function(try.res)){
         ok <- "OK"
       } else {
-        if(mode(try.res)=="externalptr") try.res<-"ok"
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
         ok<-try.res[1]
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
@@ -1172,7 +1193,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-F
         cat(unclass(try.res),"\n")
-        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
       } else { ok<-T }
 
 
@@ -1228,7 +1249,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         pstojpg(sub(".jpg$",".ps",jpgnames)[i],jpgnames[i])
       }
       if(file.exists(jpgnames[i]))
-        try(tkcmd("showimage",textwidget,jpgnames[i],paste(rows[i]-1,".0",sep="")))
+        try(tcl("showimage",textwidget,jpgnames[i],paste(rows[i]-1,".0",sep="")))
     }
   }
   exclude.plots<-function(tworkwin){
@@ -1317,10 +1338,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
     tksee(tworkwin,"end")
     melde("ak texthervor",1)
-    tkcmd("markclear",tworkwin)
+    tcl("markclear",tworkwin)
     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
     tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-    tkcmd("marklinetypes",tworkwin)
+    tcl("marklinetypes",tworkwin)
     melde("ak texthervor",2)
 
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -1534,7 +1555,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(is.function(try.res)){
         ok <- "OK"
       } else {
-        if(mode(try.res)=="externalptr") try.res<-"ok"
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
         ok<-try.res[1]
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
@@ -1542,7 +1563,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-F
         cat(unclass(try.res),"\n")
-        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
       } else { ok<-T }
 
 
@@ -1572,16 +1593,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       ##zeige Ergebnisse in neuem Fenster an>>
         }
-      } else { cat("evaluation not successful!!!\n") }
+      } else { cat("sorry, evaluation not successful!!!\n") }
     } else { cat("no code found!!!\n") }
     melde("event wird generiert",3)
     tkevent.generate(TopW,"<<Acticmds>>")
 
     melde("ak texthervor",1)
-    tkcmd("markclear",tworkwin)
+    tcl("markclear",tworkwin)
     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
     tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-    tkcmd("marklinetypes",tworkwin)
+    tcl("marklinetypes",tworkwin)
     melde("ak texthervor",2)
 
     ##lese Arbeitsfenster auf [[worktext]] ein##
@@ -1685,6 +1706,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1717,6 +1739,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1749,6 +1772,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1825,10 +1849,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       outfont.sys<-sub("al--.+-.+-\*",paste("al--",size,"-*",sep=""),outfont.sys)
       assign("outfont.sys",outfont.sys,env=revive.sys)
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       tkconfigure(toutwin,font=outfont.sys)
@@ -1844,6 +1868,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1914,6 +1939,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1945,6 +1971,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
+        if(nchar(such)==0) {
+          tcl("findclear",tworkwin); tkfocus(tworkwin); return()
+        }
         if(length(found<-grep(such,worktext))>0){
           line <- floor(as.numeric(tkindex(tworkwin,"insert")))
           line <- if(any(found>line)) found[found>line][1] else found[1]
@@ -1953,11 +1982,34 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           h<--1+charmatch(such,substring(h,1:nchar(h))); if(is.na(h)) h<-0 # 060605
           h<-paste(line,".",h,sep="")
           tkmark.set(tworkwin, "insert", h); tkfocus(tworkwin)
+          tworkwin<-get("tworkwin",env=revive.sys)
+          tktag.configure(tworkwin,"found",background="#000999fff",relief="raised")
+          tcl("findmatches",tworkwin,such)
         } else set.tclvalue("tvmess",paste("Warning: search string >",tclvalue("tvinfo"),"< not found!!!"))
       } # end of function
     )
     melde("FindReportText",2)
   }
+  proc<-c(  # 050628
+     "proc findmatches {w pattern} {",
+     "$w tag remove found    1.0 end",
+     "  scan [$w index end] %d numLines",
+     "  for {set i 1} {$i < $numLines} {incr i} {",
+     "    $w mark set last $i.0",
+     "    while {[regexp -indices $pattern \\",
+     "       [$w get last \"last lineend\"] indices]} {",
+     "     $w mark set first \"last + [lindex $indices 0] chars\"",
+     "     $w mark set last \"last  + 1 chars\\",
+     "                              + [lindex $indices 1] chars\"",
+     "     uplevel [$w tag add found first last]",
+     "     }",
+     "  }",
+     "}",
+      "proc findclear w {",
+        "$w tag remove found    1.0 end",
+      "}",
+    )
+  .Tcl(paste(proc,collapse="\n"))
 
   GoToLine<-function(){
     melde("GoToLine",1)
@@ -1970,6 +2022,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -1997,7 +2050,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     )
     melde("GoToLine",2)
   }
-
   if(but.Wizardry){
    WebReport<-function(){
     melde("WebReport",1)
@@ -2057,16 +2109,25 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(!file.exists(filename)){
       cat("ERROR: file",filename,"not found!!!\n");return()
     }
-    melde("latex process starts, messages: see output window\n")
+    melde("latex process starts, messages: see output window\n") 
+    # 060116: show logfile
     if((version$os=="Win32" || version$os=="mingw32")
 ){
         latex<-paste(latex.command.windows," ",filename,sep="")
         ok<-try(shell(latex,wait=T))
-        if(ok!=0){ cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") }
-    }else{
+        if(ok!=0){
+          cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+          cmd <-paste(editor.sys, sub("tex$","log",filename))
+          try(shell(cmd,wait=FALSE))
+        }
+    }else{ 
         latex<-paste(latex.command.linux," ",filename,sep="")
         ok<-try(system(latex))
-        if(ok!=0){ cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") }
+        if(ok!=0){ 
+          cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+          cmd <-paste(editor.sys, sub("tex$","log",filename))
+          try(system(paste(cmd," &")))
+        }
     }
     cat("latex process finished")
     melde("LatexReport",2)
@@ -2116,7 +2177,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       cat("ERROR: file",filename,"not compatible!!!\n");return()
     }
     if(!file.exists(filename)){
-      cat("ERROR: file",filename,"not found!!!\n");return()
+        cat("ERROR: file",filename,"not found!!!\n");return()
     }
     if((version$os=="Win32" || version$os=="mingw32")
 ){
@@ -2131,8 +2192,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
    }
    ProcessReport<-function(){
       if(file.exists(filename<-file.path(getwd(),workname.sys))){
-         res<-tkmessageBox(message=
-                   if(language=="german") paste("Datei",filename,"existiert. Soll sie ersetzt werden?")
+        res<-tkmessageBox(message=
+                   if(language=="german") 
+                      paste("Datei",filename,"existiert. Soll sie ersetzt werden?")
                    else paste(filename,"exists. Do you want to replace it?"),
                  title="Save File",icon="warning",type="yesnocancel",default="yes")
         if("externalptr"==mode(res))  res<-tclvalue(res)
@@ -2164,7 +2226,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(is.function(try.res)){
         ok <- "OK"
       } else {
-        if(mode(try.res)=="externalptr") try.res<-"ok"
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
         ok<-try.res[1]
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
@@ -2172,7 +2234,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-F
         cat(unclass(try.res),"\n")
-        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
       } else { ok<-T }
 
 
@@ -2181,13 +2243,95 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         melde(paste("report file",filename,"saved\n"),0)
         melde(paste("w",workname.sys),"cmd.msg")
       } else {
-        cat("ERROR: write operation failed!!!\n")
+        cat("ERROR: write operation failed!!!\n"); return()
       }
       Sys.sleep(0.25)
       try(weaveR(workname.sys)); Sys.sleep(0.5)
       LatexReport()
    }
-  }
+   SWEAVE<-function(){ ###060112
+      workname.Rnw<-sub("rev$","rnw",workname.sys)
+      if(file.exists(filename<-file.path(getwd(),workname.sys))){
+        res<-tkmessageBox(message=if(language=="german") 
+                      paste("Datei",workname.sys,"oder",workname.Rnw,
+                                "existiert. Soll(en) sie ersetzt werden?")
+                   else paste(filename,"or",workname.Rnw,
+                                   "exists. Do you want to replace it/them?"),
+                 title="Save File",icon="warning",type="yesnocancel",default="yes")
+        if("externalptr"==mode(res))  res<-tclvalue(res)
+        if(res=="cancel") return(); if(res=="no") return() 
+      }
+      if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
+      tworkwin<-get("tworkwin",envir=revive.sys)
+      worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
+      if(nchar(worktext)<10000){
+        worktext<-strsplit(worktext,"\n")[[1]]
+      }else{
+        get("cat","package:base")(worktext,file=get("tmp.file.name",env=revive.sys)
+)
+        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+,"",sep="\n",blank.lines.skip=FALSE)
+      }
+
+      worktext<-sub("^<<(.*)>>=(.*)","<<\\1>>=",worktext)
+      worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
+      worktext<-sub("^output-end","\\\\end{verbatim}",worktext)
+      if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
+         worktext<-c(worktext,"@\n\\end{document}")
+      worktext<-TcltoWin.write(worktext)
+      try.res <- try(cat(worktext,file=filename,sep="\n"))
+      if(is.function(try.res)){
+        ok <- "OK"
+      } else {
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
+        ok<-try.res[1]
+        if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
+        if(!is.character(ok)) { ok <- "OK" }
+      }
+      if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
+        ok<-F
+        cat(unclass(try.res),"\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      } else { ok<-T }
+
+
+
+      Sys.sleep(0.25)
+      file.copy(workname.sys,workname.Rnw)
+      frage<-"add additional arguments for Sweave then return:"; set.tclvalue("tvinfo",sweave.args.sys)
+      tkconfigure(linfo.tmp,text=frage)
+      tkpack("forget",linfo.name,linfo)
+      tkpack(linfo.tmp,einfo.tmp,side="left")
+      tkfocus(einfo.tmp)
+      tkselection.range(einfo.tmp,"0","end") ## 051219
+      tkbind(TopW,"<Escape>",function(){
+          tkbind(TopW,"<Return>","")
+          tkpack("forget",einfo.tmp,linfo.tmp)
+          tkpack(linfo.name,linfo,side="left",fill="x")
+
+
+        }
+      )
+
+
+      tkbind(TopW,"<Return>", function(){
+        tkbind(TopW,"<Return>","")
+        tkpack("forget",einfo.tmp,linfo.tmp)
+        tkpack(linfo.name,linfo,side="left",fill="x")
+
+
+        set.tclvalue("tvmess","relax")
+        sweave.args.sys<-tclvalue("tvinfo")
+        assign("sweave.args.sys",sweave.args.sys,env=revive.sys)
+        if(nchar(sweave.args.sys)!=0) {
+          sweave.call<-paste("Sweave(\"",workname.Rnw,"\",",sweave.args.sys,")",sep="")
+        } else sweave.call<-paste("Sweave(\"",workname.Rnw,"\")",sep="")
+        try(eval(parse(text=sweave.call),envir=revive.env))
+        cat("check R-window for messages!\n")
+      } # end of function
+    )
+   }
+  } # end of wizard-if
 
   FindReportChunk<-function(){
     melde("FindReportChunk",1)
@@ -2324,7 +2468,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     melde("FindLaTeXSection",2)
   }
 
-  ShowAboutRwined<-function(){
+  ShowAboutRelax<-function(){
     melde("ShowShortCuts",1)
     doc<-c("relax() is designed to support the process of data analysis, report writing,",
                  "presentation, and programming. On start it creates a new window for writing",
@@ -2358,7 +2502,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                  tkdestroy(.newl)
     })
     tkfocus(.newl)
-    melde("ShowAboutRwined",2)
+    melde("ShowAboutRelax",2)
   }
 
   ShowShortCuts<-function(){
@@ -2373,6 +2517,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                   "Alt-R:  clear output field",
                   "Alt-H:  R help",
                   "Crtl-F:  Find text in report field",
+                  "<F3>:  Find text in report field again",
                   "Crtl-S:  Save Report",
                   "Crtl-P:  Process Report: save, weave, and latex Report",
                   "Crtl-Page-down:  copy code chunk to end",
@@ -2425,6 +2570,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -2821,7 +2967,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -2829,7 +2975,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -2871,7 +3017,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -2879,7 +3025,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -2969,7 +3115,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -2977,7 +3123,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -3030,7 +3176,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -3038,7 +3184,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -3100,10 +3246,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
       tksee(tworkwin,"end")
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3128,10 +3274,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       RunStart()
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3168,7 +3314,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -3176,7 +3322,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -3196,10 +3342,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
           tksee(tworkwin,"end")
           melde("ak texthervor",1)
-          tkcmd("markclear",tworkwin)
+          tcl("markclear",tworkwin)
           tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
           tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-          tkcmd("marklinetypes",tworkwin)
+          tcl("marklinetypes",tworkwin)
           melde("ak texthervor",2)
 
           if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3220,10 +3366,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
         RunStart()
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3295,7 +3441,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.function(try.res)){
       ok <- "OK"
     } else {
-      if(mode(try.res)=="externalptr") try.res<-"ok"
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
       ok<-try.res[1]
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
@@ -3303,7 +3449,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-F
       cat(unclass(try.res),"\n")
-      cat("operation failed in:",as.character(sys.call()),"!!!\n")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
     } else { ok<-T }
 
 
@@ -3313,7 +3459,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(is.function(try.res)){
         ok <- "OK"
       } else {
-        if(mode(try.res)=="externalptr") try.res<-"ok"
+        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
         ok<-try.res[1]
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
@@ -3321,7 +3467,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-F
         cat(unclass(try.res),"\n")
-        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
       } else { ok<-T }
 
 
@@ -3331,7 +3477,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(is.function(try.res)){
           ok <- "OK"
         } else {
-          if(mode(try.res)=="externalptr") try.res<-"ok"
+          if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
           ok<-try.res[1]
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
@@ -3339,7 +3485,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-F
           cat(unclass(try.res),"\n")
-          cat("operation failed in:",as.character(sys.call()),"!!!\n")
+          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
         } else { ok<-T }
 
 
@@ -3358,10 +3504,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
           tksee(tworkwin,"end")
           melde("ak texthervor",1)
-          tkcmd("markclear",tworkwin)
+          tcl("markclear",tworkwin)
           tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
           tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-          tkcmd("marklinetypes",tworkwin)
+          tcl("marklinetypes",tworkwin)
           melde("ak texthervor",2)
 
           if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3445,10 +3591,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
     tksee(tworkwin,"end")
     melde("ak texthervor",1)
-    tkcmd("markclear",tworkwin)
+    tcl("markclear",tworkwin)
     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
     tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-    tkcmd("marklinetypes",tworkwin)
+    tcl("marklinetypes",tworkwin)
     melde("ak texthervor",2)
 
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3517,16 +3663,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
 
     h<-grep("RunStart",worktext)
-    if(0<length(h)) worktext<-worktext[1:(h[1]-2)]
+    if(0<length(h)) worktext<-worktext[1:(rev(h)[1]-2)] ## 060310
     if(length(worktext)>1) worktext<-paste(worktext,collapse="\n")
     tkdelete(tworkwin,"0.0","end")
     try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
     tksee(tworkwin,"end")
     melde("ak texthervor",1)
-    tkcmd("markclear",tworkwin)
+    tcl("markclear",tworkwin)
     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
     tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-    tkcmd("marklinetypes",tworkwin)
+    tcl("marklinetypes",tworkwin)
     melde("ak texthervor",2)
 
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3562,10 +3708,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
     tksee(tworkwin,"end")
     melde("ak texthervor",1)
-    tkcmd("markclear",tworkwin)
+    tcl("markclear",tworkwin)
     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
     tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-    tkcmd("marklinetypes",tworkwin)
+    tcl("marklinetypes",tworkwin)
     melde("ak texthervor",2)
 
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3597,10 +3743,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
       tksee(tworkwin,"end")
       melde("ak texthervor",1)
-      tkcmd("markclear",tworkwin)
+      tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-      tkcmd("marklinetypes",tworkwin)
+      tcl("marklinetypes",tworkwin)
       melde("ak texthervor",2)
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -3632,6 +3778,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack("forget",linfo.name,linfo)
     tkpack(linfo.tmp,einfo.tmp,side="left")
     tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
     tkbind(TopW,"<Escape>",function(){
         tkbind(TopW,"<Return>","")
         tkpack("forget",einfo.tmp,linfo.tmp)
@@ -4521,6 +4668,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   revpath.sys  <- getwd()         # Pfad zum Revwebpaperverzeichnis
   secno.sys    <- "0"             # aktuelle SecNo. in der Revdatei
   string.sys   <- ""              # Default-Suchstring
+  sweave.args.sys<-""  # Default-Setzung weiterer Sweave-Argumente
 
   sizes<-c("8-80","10-100","12-120","14-140","18-180","24-240","*-2000")
   tfont.sys    <- "-Adobe-helvetica-Medium-R-Normal--14-140-*" # Text-Schrift
@@ -4542,6 +4690,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkevent.add("<<Modify>>",    "<Alt_L><m>")
     tkevent.add("<<PlanRCode>>",   "<Alt_L><p>")
     tkevent.add("<<FindReportText>>",   "<Control_L><f>")
+    tkevent.add("<<GoToLine>>",   "<Control_L><g>")
     tkevent.add("<<SaveReport>>",   "<Control_L><s>")
     tkevent.add("<<ProcessReport>>",   "<Control_L><p>")
     tkevent.add("<<RemoveOut>>",   "<Alt_L><r>")
@@ -4609,7 +4758,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+0")
   tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
-                        "relax 1.00 - 050624"))
+                        "relax 1.01 - 060518"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -4717,8 +4866,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   mbEdit.menu<-tkmenu(mbEdit,font="-Adobe-helvetica-Medium-R-Normal--12-140-*" # ,foreground="#124800"
 )
   tkconfigure(mbEdit, menu=mbEdit.menu)
-  tkadd(mbEdit.menu, "command", command=ShowAboutRwined,
-        label="ShowAboutRwined:   what's relax?")
+  tkadd(mbEdit.menu, "command", command=ShowAboutRelax,
+        label="ShowAboutRelax:   what's relax?")
   tkadd(mbEdit.menu, "separator")
   tkadd(mbEdit.menu, "command", command=ShowShortCuts,
         label="ShowShortCuts:   show short cuts for text field")
@@ -4776,6 +4925,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         label="ShowLogFile:   open Latex log file by editor")
    tkadd(mbRevweb.menu,"command", command=DvipdfReport,
         label="DvipdfReport:   translate dvi- in pdf-file")
+   tkadd(mbRevweb.menu, "separator")
+   tkadd(mbRevweb.menu,"command", command=SWEAVE,
+        label="SWEAVE:   save and Sweave file")
    ##tkadd(mbRevweb.menu, "separator")
    ##definiere ggf.\ Eintrag [[FormatTeXLines]]##
    ##erstelle Menüeintrag für Funktionstasten-Puffer##
@@ -4856,7 +5008,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           side="left")
 
            ##implementiere Testknopf##
-  tworkwin<-tktext(fworkwin, background="#c81e6ff23", font=tfont.sys, undo=1)#cff#d0f0ff
+  tworkwin<-tktext(fworkwin, background="#c81e6ff23", font=tfont.sys) #cff#d0f0ff
+  try(tkconfigure(tworkwin, undo=1)) # 050704
   workbar<-tkscrollbar(fworkwin)
   tkconfigure(tworkwin,yscrollcommand=function(...) tkset(workbar,...))
   tkconfigure(workbar, command=function(...) tkyview(tworkwin,...))
@@ -5021,8 +5174,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                                  slider(obj.name="tree.center",obj.value=c(-1.1,.8))
                                  slider(obj.name="chair.center",obj.value=c(.3,-1.2))
                                  set.tree<-function(...){
-                                   xy<-locator(n=1)
-                                   slider(obj.name="tree.center",obj.value=c(xy$x,xy$y))
+                                   # cat("click on desired position in graphics device!!!\n")
+                                   # xy<-unlist(locator(n=1)); xy<-c(xy$x,xy$y)
+                                   xy<-c(runif(1,-1,1),runif(1,-1.5,0))
+                                   slider(obj.name="tree.center",obj.value=xy)
                                    redo()
                                  }
                                  set.chair<-function(...){ #   xy<-locator(n=1); xy<-c(xy$x,xy$y)
@@ -5050,6 +5205,36 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   melde("frame info defined",3)
 
   tkbind(TopW, "<<FindReportText>>", FindReportText)
+  tkbind(TopW,"<F3>", function(){  # 050628
+        set.tclvalue("tvmess","relax")
+        if(!exists("string.sys",env=revive.sys)) return()
+        such<-get("string.sys",env=revive.sys)
+        if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
+        tworkwin<-get("tworkwin",envir=revive.sys)
+        worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
+        if(nchar(worktext)<10000){
+          worktext<-strsplit(worktext,"\n")[[1]]
+        }else{
+          get("cat","package:base")(worktext,file=get("tmp.file.name",env=revive.sys)
+)
+          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+,"",sep="\n",blank.lines.skip=FALSE)
+        }
+
+        if(length(found<-grep(such,worktext))>0){
+          line <- floor(as.numeric(tkindex(tworkwin,"insert")))
+          line <- if(any(found>line)) found[found>line][1] else found[1]
+          tksee(tworkwin,paste(line,".1",sep=""))
+          h<-worktext[line]
+          h<--1+charmatch(such,substring(h,1:nchar(h))); if(is.na(h)) h<-0 # 060605
+          h<-paste(line,".",h,sep="")
+          tkmark.set(tworkwin, "insert", h); tkfocus(tworkwin)
+        } else set.tclvalue("tvmess",paste("Warning: search string >",such,"< not found!!!"))
+      } # end of function
+  )
+
+
+  tkbind(TopW, "<<GoToLine>>", GoToLine)
 
   tkbind(TopW, "<<ProcessReport>>", ProcessReport)
 
@@ -5264,10 +5449,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       }
                       melde(insertline)
                       melde("ak texthervor",1)
-                      tkcmd("markclear",tworkwin)
+                      tcl("markclear",tworkwin)
                       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
                       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-                      tkcmd("marklinetypes",tworkwin)
+                      tcl("marklinetypes",tworkwin)
                       melde("ak texthervor",2)
 
                       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -5293,7 +5478,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(is.function(try.res)){
                         ok <- "OK"
                       } else {
-                        if(mode(try.res)=="externalptr") try.res<-"ok"
+                        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
                         ok<-try.res[1]
                         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                         if(!is.character(ok)) { ok <- "OK" }
@@ -5301,7 +5486,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                         ok<-F
                         cat(unclass(try.res),"\n")
-                        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+                        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
                       } else { ok<-T }
 
 
@@ -5333,10 +5518,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       }
                       melde(insertline)
                       melde("ak texthervor",1)
-                      tkcmd("markclear",tworkwin)
+                      tcl("markclear",tworkwin)
                       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
                       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-                      tkcmd("marklinetypes",tworkwin)
+                      tcl("marklinetypes",tworkwin)
                       melde("ak texthervor",2)
 
                       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -5366,7 +5551,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(is.function(try.res)){
                         ok <- "OK"
                       } else {
-                        if(mode(try.res)=="externalptr") try.res<-"ok"
+                        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
                         ok<-try.res[1]
                         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                         if(!is.character(ok)) { ok <- "OK" }
@@ -5374,7 +5559,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                         ok<-F
                         cat(unclass(try.res),"\n")
-                        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+                        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
                       } else { ok<-T }
 
 
@@ -5393,7 +5578,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(is.function(try.res)){
                         ok <- "OK"
                       } else {
-                        if(mode(try.res)=="externalptr") try.res<-"ok"
+                        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
                         ok<-try.res[1]
                         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                         if(!is.character(ok)) { ok <- "OK" }
@@ -5401,7 +5586,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                         ok<-F
                         cat(unclass(try.res),"\n")
-                        cat("operation failed in:",as.character(sys.call()),"!!!\n")
+                        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
                       } else { ok<-T }
 
 
@@ -5413,10 +5598,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
                       tksee(tworkwin,"end")
                       melde("ak texthervor",1)
-                      tkcmd("markclear",tworkwin)
+                      tcl("markclear",tworkwin)
                       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
                       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-                      tkcmd("marklinetypes",tworkwin)
+                      tcl("marklinetypes",tworkwin)
                       melde("ak texthervor",2)
 
                       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)

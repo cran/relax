@@ -1,11 +1,15 @@
 weaveR<-function(in.file,out.file){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204
+  # look for file webR.pdf, P. Wolf 050204, 060517
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
   pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
   pat.verbatim.end<-"\\\\end\\{verbatim\\}"
   pat.leerzeile<-"^(\\ )*$"
+  lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+  UTF<-(1==length(grep("UTF",lcctype))) 
+  UTF<- UTF | nchar(deparse("\xc3")) > 3
+  if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
 
   if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
   if(!file.exists(in.file)){
@@ -80,13 +84,22 @@ weaveR<-function(in.file,out.file){
     cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
     ref.no<-match(uli[cand],code.chunk.names)
     uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
-    if(length(uli)!=length(cand)) uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+    if(length(uli)!=length(cand)){
+      if(!UTF){ 
+        uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+      }else{
+        uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+      }
+    }
     use.lines[i]<-paste(uli,collapse="")
   }
   input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline")
 
-  input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
-
+  if(!UTF){
+    input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
+  }else{
+    input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline") #060516
+  }
 
   typ<-"TEXT"
   index<-which(line.typ==typ)
@@ -130,6 +143,7 @@ weaveR<-function(in.file,out.file){
           if((br.open+1)<=(br.close-1)){
             h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
             h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
@@ -187,6 +201,7 @@ weaveR<-function(in.file,out.file){
           if((br.open+1)<=(br.close-1)){
             h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
             h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
@@ -244,6 +259,7 @@ weaveR<-function(in.file,out.file){
           if((br.open+1)<=(br.close-1)){
             h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
             h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
@@ -262,14 +278,22 @@ weaveR<-function(in.file,out.file){
 
 
 
-  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-  input<-gsub("\283","",input)
-  input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
-  # Latin1 -> TeX-Umlaute
-  input<-gsub("\337","{\\\\ss}",input)
-  input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
-  input<-chartr("\344\366\374\304\326\334","aouAOU",input)
-
+  if(!UTF){
+   # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+    input<-gsub("\283","",input)
+    input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
+    # Latin1 -> TeX-Umlaute
+    input<-gsub("\337","{\\\\ss}",input)
+    input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
+    input<-chartr("\344\366\374\304\326\334","aouAOU",input)
+  }else{
+    input<-gsub("\283\237","{\\\\ss}",input)
+    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                              "\\\\\"\\1",input)
+    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                                "aouAOU", input)
+  }
+  cat("german Umlaute replaced\n")
   input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
   input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
 

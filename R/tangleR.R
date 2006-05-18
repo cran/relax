@@ -70,7 +70,8 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
              }
              code.stack<-c(code.ch[rows],code.stack[-1])
              cat(found,", ",sep="")
-           }
+           } else code.stack <-code.stack[-1] # ignore not defined chunks!
+           # 051219 
          }
 
        }
@@ -115,7 +116,8 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
                            paste("C#:" ,no      ,sep=""      ),
                            code.stack)
                }
-         }
+         } else code.stack <-code.stack[-1] # ignore not defined chunks!
+         # 051219 
        }
 
       }

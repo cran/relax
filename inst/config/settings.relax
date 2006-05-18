@@ -38,7 +38,7 @@ view.command.linux<-"xdvi"
 # how to call dvipdf
 dvipdf.command.linux<-"dvipdf"
 # text editor
-text.editor.linux<-"eddi"
+text.editor.linux<-"kwrite"
 # browser
 browser.linux<-"konqueror"
 

@@ -89,7 +89,7 @@ slider(sl.functions, sl.names, sl.mins, sl.maxs, sl.deltas, sl.defaults, but.fun
 ## This example cannot be run by examples() but should work in an interactive R session
 plot.sample.norm<-function(){
  refresh.code<-function(...){
-   mu<-slider(no=1); sd<-slider(no=1); n<-slider(no=3)
+   mu<-slider(no=1); sd<-slider(no=2); n<-slider(no=3)
    x<-rnorm(n,mu,sd)
    plot(x)
  }
