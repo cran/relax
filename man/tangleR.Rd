@@ -9,7 +9,7 @@
 }
 \usage{
 tangleR(in.file, out.file, expand.roots = NULL,
-expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
+expand.root.start = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,14 +20,11 @@ expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
   all will be processed }
   \item{expand.root.start}{ if TRUE (default) root chunk
   "start" will be expanded }
-  \item{insert.comments}{ if TRUE comments with chunk inofs will be 
-                          added to the code }
-  \item{add.extension}{ if TRUE output file name will get extension .R }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
   and code chunks. An \code{@} character (in column 1 of a line)
-  indicates the beginning of a text chunk. \preformatted{<<name of code chunk>>=}
+  indicates the beginning of a text chunk. \code{<<name of code chunk>>=}
   (starting at column 1 of a line) is a header line of a code chunk with
   a name defined by the text between \code{<<} and \code{>>=}.
   A code chunk is finished by the beginning of the next text chunk.
@@ -52,8 +49,7 @@ expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
 \seealso{  \code{\link{weaveR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work 
-## in an interactive R session
+## This example cannot be run by examples() but should be work in an interactive R session
   tangleR("testfile.rev")
 }
 "tangleR(\"testfile.rev\")"

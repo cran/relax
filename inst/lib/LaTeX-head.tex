@@ -1,25 +1,9 @@
-\documentclass[a4paper]{article} %  --- LaTeX preamble ==============
-%  --- title page ===================================================
-   \title{Report: \rule{30mm}{.1mm}}                        
-   \author{File: \jobname.rev\\in: JOBPATH}                 
-%   \date{}
-%  --- sizes of non text elements ===================================
-\renewcommand{\textchunkcommands}{\normalsize}
-\renewcommand{\codechunkcommands}{\small}
-\renewcommand{\Routputcommands}{\footnotesize}
-%  ==================================================================
-%  --- packages  \usepackage{graphicx,mathpazo,courier,alltt,amssymb}
-\usepackage{graphicx}
-%  --- fonts 
-% \usepackage[scaled=.95]{helvet}
+\documentclass{article}
+\usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+% \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
+\usepackage[scaled=.95]{helvet}
 \usepackage[T1]{fontenc}
-%  --- commands to control the layout of text and code chunks 
-\parskip1ex \parindent0mm
-%  --- end of preamble ==============================================
-\begin{document}  \maketitle
-% object index -- remove next line to disable object index
-@index.of.objects
-% list of code chunks -- remove next line to disable list of chunks
-@list.of.chunks
-%  --- begin of document ============================================
+\title{Report: \rule{30mm}{.1mm}}
+\author{File: \jobname.rev\\in: JOBPATH}
+\begin{document}\maketitle
 

@@ -7,16 +7,13 @@
   of weaving. As a result a html-file is generated.
 }
 \usage{
-weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
+weaveRhtml(in.file,out.file)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
-  \item{out.file}{ name of output file; 
-   if this argument is missing the extension of the
-   input file is turned to \code{.html} }
-  \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
-   html sequences}
+  \item{out.file}{ name of output file; if this argument is missing the extension of the
+  input file is turned to \code{.html} }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -28,16 +25,6 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
   Within the code chunk you are allowed to use other code chunks by referencing
   them by name ( for example by: \code{<<name of code chunk>>} ).
   In this way you can separate a big job in smaller ones.
-
-  Rweb speciality: A code chunk with a code chunk name containing  \code{"Rweb"} 
-  as the first four characters will be translated to a text input field and
-  a submit button \code{compute via Rweb}. 
-  By pressing this button the code of the text field will be
-  sent for evaluation to Rweb \code{http://rweb.stat.umn.edu/Rweb/} 
-  and the results appears in a new browser window. 
-  This link to Rweb has been inspirited by web pages like 
-  \url{http://www.stat.umn.edu/geyer/3011/examp/reg.html} written
-  by Charlie Geyer \url{http://www.stat.umn.edu/~charlie}.
 
   Technical remarks:
   To format small pieces of code in text chunks you have to put them in
@@ -56,31 +43,21 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 
   Further details:
   Some LaTeX macros are transformed to improve the html document.
-
-  1. \code{weaveRhtml} looks for the LaTeX macros \verb{\\author},     
-    \verb{\\title} and \verb{\\date} at the beginning of the input text.
-     If these macros are found their arguments are used to construct a simple
-     html-head. 
-
-  2. \verb{\\section\{...\}, \\subsection\{...\}, \\paragraph\{...\}} macros 
-     will be extracted to include some section titles, subsection titles, 
-     paragraph titles in bold face fonts. Additionally a simple table 
-     of contents is generated.
-
-  3. Text lines between \verb{\\begin\{center\}} and \verb{\\end\{center\}}
-     are centered.
-
-  4. Text lines between \verb{\\begin\{quote\}} and \verb{\\end\{quote\}}
-     are shifted a little bit to the right.
-
-  5. Text lines between \verb{\\begin\{itemize\}} and \verb{\\end\{itemize\}}
-     define a listing. The items of such a list have to begin with \verb{\\item}.
-
-  6. \verb{\\emh\{xyz\}} is transformed to \verb{<i>xyz</i>} 
-     -- \verb{xyz} will appear italic.
-
-  7. \verb{\\texttt\{xyz\}} is transformed to \verb{<code>xyz</code>} 
-     -- this is formated like code.
+  1. \code{weaveRhtml} looks for the LaTeX macros \code{\author}, 
+  \code{\title} and \code{\date} at the beginning of the input text.
+  If these macros are found their arguments are used to construct a simple
+  html-head. 
+  2. \code{\section\{...\}, \subsection\{...\}, \paragraph\{...\}} macros will be extracted
+  to include some section titles, subsection titles, paragraph titles in bold face fonts.
+  Additionally a simple table of contents is generated.
+  3. Text lines between \code{\begin\{center\}} and \code{\end\{center\}}
+  are centered.
+  4. Text lines between \code{\begin\{quote\}} and \code{\end\{quote\}}
+  are shifted a little bit to the right.
+  5. Text lines between \code{\begin\{itemize\}} and \code{\end\{itemize\}}
+  define a listing. The items of such a list have to begin with \code{\item}.
+  6. \code{\emh\{xyz\}} is transformed to \code{<i>xyz</i>} -- \code{xyz} will appear italic.
+  7. \code{\texttt\{xyz\}} is transformed to \code{<code>xyz</code>} -- this is formated like code.
 }
 \value{
   a html file is generated
@@ -90,8 +67,7 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 \seealso{  \code{\link{weaveR}}, \code{\link{tangleR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work 
-## in an interactive R session
+## This example cannot be run by examples() but should be work in an interactive R session
   weaveRhtml("testfile.rev","testfile.tex")
   weaveR("testfile.rev")
 }
@@ -105,4 +81,5 @@ weaveRhtml<-function(in.file,out.file){
 \keyword{file}
 \keyword{documentation}
 \keyword{programming}
+
 

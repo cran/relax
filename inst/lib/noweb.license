@@ -1,0 +1,18 @@
+noweb.sty is copied from the noweb system designed by Norman Ramsey 
+(see: http://www.eecs.harvard.edu/~nr/noweb/).
+
+gnoweb.sty is a "german" version of noweb.sty.
+
+
+Copyright notice:
+
+Noweb is copyright 1989-1999 by Norman Ramsey. All rights reserved.
+
+You may use and distribute noweb for any purpose, for free. 
+You may modify noweb and create derived works, provided you retain the copyright notice, 
+but the result may not be called noweb without my written consent. 
+You may do anything you like with programs created with noweb. 
+You may even sell noweb itself, for example, as part of a CD-ROM distribution, 
+provided that what you sell is the true, complete, and unmodified noweb.
+
+
