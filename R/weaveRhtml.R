@@ -1,17 +1,17 @@
-weaveRhtml<-function(in.file,out.file){
+weaveRhtml<-function(in.file,out.file,replace.german.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 060920
-  verbose<-FALSE
+  # look for file webR.pdf, P. Wolf 060920 / 070309
+  require(tcltk)
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
   pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
   pat.verbatim.end<-"\\\\end\\{verbatim\\}"
   pat.leerzeile<-"^(\\ )*$"
-  lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
-  UTF<-(1==length(grep("UTF",lcctype))) 
-  UTF<- UTF | nchar(deparse("\xc3")) > 3
-  if(verbose)  {if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")}
-
+  .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+  UTF<-0<length(grep("utf",UTF))
+  if(exists("DEBUG")){ 
+     if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n") 
+  }
   get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
   ## print("get.argument")
     command<-paste("\\\\",command,sep="")
@@ -103,10 +103,15 @@ weaveRhtml<-function(in.file,out.file){
     return("Error in weaveRhtml: file not found")
   }
   input<-readLines(in.file) 
+  try(if(replace.german.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  # LATIN1-Dok 
+            input<-iconv(input,"LATIN1","")
+  })
   input<-gsub("\t","      ",input)
-
+  input<-c(input,"@")
   length.input<-length(input)
 
+  input<-sub('^% (<p><img src="t)',"\\1",input)
+  input<-sub('^%(<!--latex-)',"\\1",input)
   h<-grep("^[ ]*%",input)
   if(0<length(h)) input<-input[-h]
 
@@ -158,6 +163,8 @@ weaveRhtml<-function(in.file,out.file){
   input<-sub("\\\\end\\{quote}","</ul>",input)
   input<-sub("\\\\begin\\{itemize}","<ul>",input)
   input<-sub("\\\\end\\{itemize}","</ul>",input)
+  input<-sub("\\\\begin\\{enumerate}","<ul>",input)
+  input<-sub("\\\\end\\{enumerate}","</ul>",input)
   input<-sub("\\\\item","</li><li>",input)
 
   input[text.start.index]<-"<p>"    # vorher: @
@@ -183,7 +190,7 @@ weaveRhtml<-function(in.file,out.file){
         "<a name=\"codechunk",no,"\"></a>",
         "<a href=\"#codechunk",1+(no%%max(no)),"\">",
         "<br>Chunk:",no," <i>&lt;",code.start.lines,def.ref.no,
-        "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a><br>",sep="")
+        "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a><br>",sep="") 
   input[code.start.index]<-code.start.lines
 
   use.lines<-input[use.index]
@@ -200,7 +207,7 @@ weaveRhtml<-function(in.file,out.file){
     }
     cand<-grep("uSeCHUNK",uli); uli<-sub("uSeCHUNK","",uli)
     ref.no<-match(uli[cand],code.chunk.names)
-    uli[cand]<-paste("<code>&lt;",uli[cand]," ",ref.no,"&gt;</code>",sep="")
+    uli[cand]<-paste("</code>&lt;",uli[cand]," ",ref.no,"&gt;<code>",sep="")
     if(length(uli)!=length(cand)){
       if(!UTF){ 
         uli[-cand]<-paste("",uli[-cand],"",sep="") #050612
@@ -208,7 +215,7 @@ weaveRhtml<-function(in.file,out.file){
         uli[-cand]<-paste("",uli[-cand],"",sep="") #060516
       }
     }
-    use.lines[i]<-paste(uli,collapse="")
+    use.lines[i]<-paste("<code>",paste(uli,collapse=""),"</code>")
   }
   input[use.index]<-paste(leerzeichen.vor.use,use.lines,"<br>")
 
@@ -245,9 +252,9 @@ weaveRhtml<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -298,9 +305,9 @@ weaveRhtml<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -351,9 +358,9 @@ weaveRhtml<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -383,22 +390,28 @@ weaveRhtml<-function(in.file,out.file){
 
 
 
-  if(!UTF){
+  if(replace.german.umlaute){
+   if(!UTF){
     # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-    input<-gsub("\283","",input)
-    input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
-    # Latin1 -> TeX-Umlaute
-    input<-gsub("\337","&szlig;",input) # SZ
-    input<-gsub("(\344|\366|\374|\304|\326|\334)","&\\1uml;",input)
-    input<-chartr("\344\366\374\304\326\334","aouAOU",input)
-  }else{
-    input<-gsub("\283\237","&szlig;",input)
-    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
-                              "&\\1uml;",input)
-    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+      pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+      uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+      uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+      input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+      input<-gsub(substring(uml.latin1,7,7),"&szlig;",input) # replace sz
+      uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+      input<-gsub(uml.pattern,"&\\1uml;",input)  # replace Umlaute ae->&aeuml; 
+      # replace Umlaute &aeuml;->&auml;  
+      input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)  
+   }else{
+      input<-gsub("\283\237","&szlig;",input)
+      input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                                "&\\1uml;",input)
+      input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
                                 "aouAOU", input)
+   }
   }
-  if(verbose) cat("german Umlaute replaced\n")
+  if(exists("DEBUG")) cat("german Umlaute replaced\n")
+
   #input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
   input<-gsub("DoSpCloseKl-ESC","&gt;&gt;",gsub("DoSpOpenKl-ESC","&lt;&lt;",input))
   input<-gsub("DoEckCloseKl-ESC","]]",gsub("DoEckOpenKl-ESC","[[",input))
@@ -419,7 +432,8 @@ weaveRhtml<-function(in.file,out.file){
       sec<-c(sec,paste(x[2:(en-1)],collapse=""))
       input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
     }
-    command.links<-paste("<a href=\"#",command,seq(com.lines),"\">",sec,"</a>",sep="")
+    command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                        "\">",sec,"</a>\n",sep="") 
   }
 
   sec.links<-command.links
@@ -440,7 +454,8 @@ weaveRhtml<-function(in.file,out.file){
       sec<-c(sec,paste(x[2:(en-1)],collapse=""))
       input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
     }
-    command.links<-paste("<a href=\"#",command,seq(com.lines),"\">",sec,"</a>",sep="")
+    command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                        "\">",sec,"</a>\n",sep="") 
   }
 
   atag<-"<h4>"; etag<-"</h4>"; command<-"subsubsection"
@@ -459,7 +474,8 @@ weaveRhtml<-function(in.file,out.file){
       sec<-c(sec,paste(x[2:(en-1)],collapse=""))
       input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
     }
-    command.links<-paste("<a href=\"#",command,seq(com.lines),"\">",sec,"</a>",sep="")
+    command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                        "\">",sec,"</a>\n",sep="") 
   }
 
   atag<-"<br><b>"; etag<-"</b>"; command<-"paragraph"
@@ -478,14 +494,15 @@ weaveRhtml<-function(in.file,out.file){
       sec<-c(sec,paste(x[2:(en-1)],collapse=""))
       input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
     }
-    command.links<-paste("<a href=\"#",command,seq(com.lines),"\">",sec,"</a>",sep="")
+    command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                        "\">",sec,"</a>\n",sep="") 
   }
 
   subsec.links<-command.links
   subsec.no<-com.lines
   contents<-c(paste(seq(sec.links),sec.links),paste("&nbsp;&nbsp;",subsec.links))[order(c(sec.no,subsec.no))]
   ## print(contents)
-  ## if(verbose) print("head")
+  ## if(  DEBUG-Flag gesetzt  ) print("head")
   head<-grep("^\\\\title|^\\\\author|^\\\\date",input)
   if(0<length(head)){
     h<-min(max(head)+5,length(input))
@@ -502,10 +519,13 @@ weaveRhtml<-function(in.file,out.file){
   }
   if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
     input<-input[-(1:h[1])]
-  input[1]<-paste(collapse="\n",
+    titel.titel<-gsub("\n","--",paste(titel,collapse="--"))
+    titel.titel<-gsub("<br>","--",titel.titel)
+    titel.titel<-gsub("\\\\","--",titel.titel)
+    input[1]<-paste(collapse="\n",
     "<!--  generated by weaveRhtml --><html><head>",
     "<meta content=\"text/html; charset=ISO-8859-1\">",
-    "<title>",titel,"</title></head>",
+    "<title>",titel.titel,"</title></head>",
     "<body bgcolor=\"#FFFFFF\">",
     "<h1>",if(!is.null(titel))titel,"</h1>",
     "<h2>",if(!is.null(autor))autor,"</h2>",
@@ -521,7 +541,6 @@ weaveRhtml<-function(in.file,out.file){
     input<-transform.command.line("texttt",input,"<code>","</code>")
   }
 
-
   input<-gsub("\\\\newpage","",input)
   input<-gsub("\\\\tableofcontents","",input)
   input<-gsub("\\\\raggedright","",input)
@@ -529,6 +548,58 @@ weaveRhtml<-function(in.file,out.file){
   h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",input)
   if(0<length(h)) input<-input[-h]
 
+    txt<-input
+    ind.Rweb<-grep("^<a name=\"codechunk.*<i>&lt;Rweb",txt) ; txt[ind.Rweb]
+    ind.p   <-grep(paste("^<","p>",sep=""),txt) ; txt[ind.p]
+    if(length(ind.p)>0){
+      ind.Rweb.codes<-lapply(ind.Rweb,function(x) (x+1):(ind.p[ind.p>x][1]-1))
+      ## if( DEBUG-Flag gesetzt ) print(ind.Rweb.codes)
+      Rwebbegin<-paste(c(  # Rweb start 
+        '<hr SIZE=3><form onSubmit =" return checkData(this)"',
+        '  action="http://rweb.stat.umn.edu/cgi-bin/Rweb/Rweb.cgi" ',
+        '  enctype="multipart/form-data" method="post" target="_blank"><p>',
+        '<label for="filedata" size=20>data frame (load LOCAL file): </label>',
+        '<input type="file" name="FileData" id="filedata" size=30 >',
+        '<br><br>',
+        '<label for="urldata" size=20>data frame (via www -> URL): </label>',
+        '<input type="TEXT" name="URLData" size=40 id="urldata" YyYyY>',
+        '<br><br>',
+        '<label for="Rcode">R-Code:</label>',
+        '<textarea name="Rcode" rows="XxXxX" cols="80" id="Rcode">\n'
+        ),collapse=" ")
+      Rwebend<-  paste(c( # Rweb end
+        '</textarea><p>',
+        '<input type="submit" value="compute via Rweb">',
+        '<input type="reset" value="reset">',
+        '</form><hr SIZE=3>',
+        ' '),collapse=" ")
+      for(i in seq(ind.Rweb.codes)){
+        h<-sub("<code>","",txt[ind.Rweb.codes[[i]]])
+        h<-sub("<br>","",h)
+        h<-sub("</code>","",h)
+        h<-gsub("[&]nbsp[;]"," ",h)
+        data.http<-""    # ; data.loc<-""
+        ind<-length(grep("read.table",h))
+        if(0<length(ind)) {
+          h[ind]<-paste("#",h[ind],"# choose data by input field!!")
+          ind<-ind[1]
+          if(0<length(grep("http:",h[ind]))) {
+             data.http<-sub(".*(http)","\"\\1",h[ind])
+             data.http<-paste("value=",sub(".*(\".*\").*$","\\1",data.http),sep="")
+          }
+        }
+        rb<-sub("YyYyY",data.http,Rwebbegin)
+        h[1]<-paste(sub("XxXxX",as.character(length(h)),rb),h[1],sep="")
+        h[length(h)]<-paste(h[length(h)],Rwebend)
+        txt[ind.Rweb.codes[[i]]]<-h
+      }
+      input<-txt
+    }
+
+
+
+
+  input<-gsub("<br>","<br>\n",input)
   if(missing(out.file)||in.file==out.file){
     out.file<-sub("\\.([A-Za-z])*$","",in.file)
   }

@@ -1,15 +1,20 @@
-weaveR<-function(in.file,out.file){
+weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307
+  require(tcltk)
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
   pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
   pat.verbatim.end<-"\\\\end\\{verbatim\\}"
   pat.leerzeile<-"^(\\ )*$"
-  lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
-  UTF<-(1==length(grep("UTF",lcctype))) 
-  UTF<- UTF | nchar(deparse("\xc3")) > 3
-  if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
+  .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+  UTF<-0<length(grep("utf",UTF))
+  if(exists("DEBUG")){
+    if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n")
+  }
+  if(!UTF){ 
+        char267<-eval(parse(text='"\\267"'))
+  }
 
   if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
   if(!file.exists(in.file)){
@@ -18,6 +23,10 @@ weaveR<-function(in.file,out.file){
   }
   # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
   input<-readLines(in.file) # 2.1.0
+  try(if(replace.german.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
+      # LATIN1-Dok :
+      input<-iconv(input,"LATIN1","")
+  })
   length.input<-length(input)
 
   input<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",input))
@@ -56,7 +65,8 @@ weaveR<-function(in.file,out.file){
   line.typ[code.index]<-"CODE"
 
 
-  input[text.start.index]<-""
+  ## input[text.start.index]<-""
+  input[text.start.index]<-"\\textchunkcommands"
 
   code.chunk.names<-code.start.lines<-sub(pat.chunk.header,"\\1",input[code.start.index])
   use.lines<-input[use.index]
@@ -72,8 +82,10 @@ weaveR<-function(in.file,out.file){
   input[code.start.index]<-code.start.lines
 
   use.lines<-input[use.index]
-  leerzeichen.vor.use<-paste("\\verb|",sub("[^ ](.*)$","",use.lines),"|",sep="")
-  use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-8)
+  leerzeichen.vor.use<-paste("\\verb|",
+                                             sub("[^ ](.*)$"," ",use.lines),
+                                             "|",sep="") ## plus 1 Leerzeichen 
+  use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-7) ## 8
   for(i in seq(use.lines)){
     uli<-use.lines[i]
     repeat{
@@ -84,21 +96,23 @@ weaveR<-function(in.file,out.file){
     cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
     ref.no<-match(uli[cand],code.chunk.names)
     uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
+  #  formating code within use references 
     if(length(uli)!=length(cand)){
       if(!UTF){ 
-        uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+        uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
       }else{
         uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
       }
     }
     use.lines[i]<-paste(uli,collapse="")
   }
-  input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline")
+  input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline\\rule{0mm}{0mm}%",sep="")
 
   if(!UTF){
-    input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
+    input[code.index]<-paste("\\verb",char267," ",code.lines," ",char267,
+                                            "\\newline\\rule{0mm}{0mm}%",sep="")
   }else{
-    input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline") #060516
+    input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline\\rule{0mm}{0mm}%") #060516
   }
 
   typ<-"TEXT"
@@ -129,9 +143,9 @@ weaveR<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -187,9 +201,9 @@ weaveR<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -245,9 +259,9 @@ weaveR<-function(in.file,out.file){
     if(0<length(ind.cand)) {
       # zerlege Zeile in token der Form [[,  ]] und sonstige
       zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-         zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+         zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
          zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-         gsub("\333","",zs)
+         gsub("aAzsplitAa","",zs)
       })
       # suche von vorn beginnend zusammenpassende [[-]]-Paare
       z<-unlist(lapply(zsplit,function(x){
@@ -278,28 +292,38 @@ weaveR<-function(in.file,out.file){
 
 
 
-  if(!UTF){
+  if(replace.german.umlaute){
+   if(!UTF){
    # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-    input<-gsub("\283","",input)
-    input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
-    # Latin1 -> TeX-Umlaute
-    input<-gsub("\337","{\\\\ss}",input)
-    input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
-    input<-chartr("\344\366\374\304\326\334","aouAOU",input)
-  }else{
+      pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+      uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+      uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+      input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+      input<-gsub(substring(uml.latin1,7,7),"{\\\\ss}",input) # replace sz
+      uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+      input<-gsub(uml.pattern,"\\\\\"\\1",input)  # replace Umlaute ae->&aeuml; 
+  # replace Umlaute &aeuml;->&auml;
+      input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)   
+   }else{
     input<-gsub("\283\237","{\\\\ss}",input)
     input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
                               "\\\\\"\\1",input)
     input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
                                 "aouAOU", input)
+   }
+   if(exists("DEBUG")){
+    cat("german Umlaute replaced\n")
+   }
   }
-  cat("german Umlaute replaced\n")
   input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
   input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
 
   input[1]<-paste(
        "\\newcounter{Rchunkno}",
-       "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
+       "\\newcommand{\\codechunkcommands}{\\relax}",
+       "\\newcommand{\\textchunkcommands}{\\relax}",
+       "\\newcommand{\\makemarginno}{\\codechunkcommands\\stepcounter{Rchunkno}",
+       ##  "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
        "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}\\makebox[0mm]{",
        "\\arabic{Rchunkno}",
        "}\\hspace*{3em}}",

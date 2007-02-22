@@ -3,8 +3,18 @@
 % b) Nr in RELAX-Chunk: "define-DESCRIPTION", 
 % c) aktualisiere RELAX-Chunk: "define-dorx"
 % d) Nr in Datei "install.dir/dorx"
-% e) cp to www
-% f) upload to cran
+% e) $HOME/R/work/install.dir>  ./dorx   starten
+% f) cp install.dir/relax_1.07.*  $HOME/www/public_html/software/relax/R-2.4.0
+% g) upload to cran
+%     ftp ftp://cran.R-project.org/incoming/
+%     ftp> put relax_1.07.tar.gz
+%     ftp> bye
+% Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel??
+% Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel
+% Codeausblendmechanismus??
+% Warnungsmechanismus von R-2.4.0 beachten
+% UTF-Fehlervermeidung (Berwin)
+% Farbsetzung innerhalb von Codechunks verbessert
 % webRweave eingebaut
 % configurierbare Hoehe
 % Klammernmatchanzeige 4.7.2006
@@ -90,7 +100,7 @@
 @
 %% ============================================================== %% neue Versionen: ändere auch "dorx" in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.04 - 061110"
+"relax 1.07 - 070315b"
 @
 <<relax>>=
 "relax"
@@ -788,7 +798,7 @@ in der Umgebung [[revive.sys]] gehalten, so daß sie nicht mit den
 Objekten des Anwenders kollidieren können.
 [[wm protocol . WM_DELETE_WINDOW { puts "kein ordentlicher Ausstieg" }]]
 <<generiere Top-Level-Fenster mit verschiedenen Frames>>=
-TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+0")
+TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+15")
 tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
                       <<Version von [[relax]]>>))
 tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
@@ -1262,7 +1272,7 @@ if(but.Wizardry){
  tkadd(mbRevweb.menu,"command", command=SWEAVEB,
       label="SWEAVE:   save, Sweave (new process) and LaTeX file")
  ##tkadd(mbRevweb.menu, "separator")
- ##definiere ggf.\ Eintrag [[FormatTeXLines]]##
+ <<definiere ggf.\ Eintrag [[FormatTeXLines]]>>
  ##erstelle Menüeintrag für Funktionstasten-Puffer##
  ## tkadd(mbRevweb.menu, "separator")
  ## tkadd(mbRevweb.menu,"command", command=LoadRwtools,
@@ -1284,9 +1294,9 @@ if(<<das OS ist Linux>>){
       0<length(system("which dvips",TRUE,TRUE))) FTL.ok<-TRUE
   }
 if(FTL.ok){
+  tkadd(mbRevweb.menu, "separator")
   tkadd(mbRevweb.menu, "command", command=FormatTeXLines,
             label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
-  tkadd(mbRevweb.menu, "separator")
 }
 
 @
@@ -1476,7 +1486,16 @@ gesteuert, die Höhe über [[tworkheight]].
 Jedoch erwies sich die explizite Eingabe der Maße als zu lästig, so daß
 jetzt das Arbeitsfenster über Mausaktionen verändert werden kann.
 Das Report-Fenster paßt sich in der Breite und der Höhe automatisch an.
-Weiterhin wird für Windows-Freunde PASTE über [[Crtl-v]] realisiert.
+Weiterhin wird für Windows-Freunde PASTE über [[Ctrl-v]] realisiert.
+% Control-V, Control_V, Control-C, Control_C, Ctrl-C, ctrl-c
+Für Apple-Apfel-v wird die Zwischenablage von Apple gelesen
+und an der Stelle der Schreibmarke eingefügt.
+Für Apfel-c wird nach einer kurzen Zeitverzögerung 
+das Clipboard von tcl/tk gelesen 
+und der Apple-Zwischenablage übergeben,
+Für Apfel-x wird die identische Funktion aufgerufen,
+da das Aisschneiden selbst schon durch tcl/tk
+realisiert wird.
 <<definiere Report-Text-Frame>>=
 tworkwin<-tktext(fworkwin, background="#c81e6ff23", font=tfont.sys) #cff#d0f0ff
 try(tkconfigure(tworkwin, undo=1)) # 050704
@@ -1486,10 +1505,53 @@ tkconfigure(workbar, command=function(...) tkyview(tworkwin,...))
 tkpack(workbar ,side="right",fill="y")
 tkpack(tworkwin,fill="both",expand="yes")
 tkinsert(tworkwin,"0.0",paste("% New Report:",date(),"\n"))
-### CLIPBOARD-Funktion PASTE a la windows
-tkevent.add("@<<Paste>>",   "<Control_L><v>")
-tkbind(tworkwin,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+### CLIPBOARD-Funktion PASTE a la windows / clipboard
+if(<<OS ist Mac-Mini-Tiger>> ){
+  # mac-PASTE, ctrl-v
+  mac.paste<-function(...){
+     try({.Tcl("clipboard append hello")
+            .Tcl("clipboard clear")
+            news<-base::scan(file=pipe("pbpaste","r"),what="",
+                                         sep="\n",blank.lines.skip=FALSE)
+            tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+  }
+  ### tkevent.add("@<<Paste>>", "<Control_L><v>")
+  tkbind(tworkwin,"<Control_L><v>",mac.paste)
+  # mac-COPY
+  mac.copy<-function(...){  ## Ctrl-C
+     news<-""
+     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+     if(news=="empty") return()
+     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+            base::cat(news,file=<<tmp>>)
+            system(paste("pbcopy < ",<<tmp>>))
+            .Tcl("clipboard append hello")
+            .Tcl("clipboard clear")})
+  } 
+  ##tkevent.add("@<<Copy>>",  "<Control_L><c><KeyRelease>")
+  ##tkbind(tworkwin,"@<<Copy>>",mac.copy) 
+  tkbind(tworkwin,"<Control_L><c>",mac.copy) 
+  # mac-extract
+  tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")
+  tkbind(tworkwin,"@<<extract>>",mac.copy) 
+}else{
+  tkevent.add("@<<Paste>>",   "<Control_L><v>")
+  tkbind(tworkwin,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+}
+@
+@
+Im Netz gefundene Strategie zur Feststellung, ob CLIPBOARD leer ist.
+\begin{verbatim}
+.Tcl("clipboard clear")
+.Tcl("clipboard append hello")
+tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa leer} {set aa voll}"))
+[1] "voll"
 
+.Tcl("clipboard clear")
+#.Tcl("clipboard append hello")
+tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa leer} {set aa voll}"))
+[1] "leer"
+\end{verbatim}
 
 @
 <<alte Version: Verwendung von [[.Tk.ID]]>>=
@@ -1640,6 +1702,7 @@ function(tworkwin){
     "set type 0\n",
     "for {set i 1} {$i < $anzzeilen} {incr i} {",
      "set zeile [$w get $i.0 $i.end]",
+     "set iv [ expr $i-1 ]",
      "if {$type==1}                           {\n set type 2\n}",
      "if {[regexp \"^@\"             $zeile]} {\n set type 0\n}",
      "if {[regexp \"^@<<.*>>=\"     $zeile]} {\n set type 1\n}",
@@ -1647,7 +1710,8 @@ function(tworkwin){
      "if {[regexp \"^output-start\"  $zeile]}  {\n set type 3\n}",
      "if {[regexp \"^\\\\\\\\begin\\{verbatim\\}\" $zeile]} {\n set type 3\n}",
      "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
-     "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
+     # "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
+     "if {$type==2} {\n uplevel $w tag add code    $iv.end $i.end \n}",
      "if {$type==3} {\n uplevel $w tag add output  $i.0 $i.end \n}",
      "if {$type==4} {\n uplevel $w tag add tex     $i.0 $i.end",
                                                  "; set type 0 \n}",
@@ -1996,7 +2060,7 @@ SetOutputLength<-function(){
 <<definiere Kopf-Zeilen-Funktionen>>=
 ConfigRelax<-function(){
   melde("ConfigRelax",1)
-      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
       tkpack(fcmd<-tkframe(.newl))
       Save<-tkbutton(fcmd,width=15,text="save settings",command=function(){
 		 newsettings<-paste(tclvalue(tkget(tt,"0.0","end")),"\n")
@@ -2160,7 +2224,9 @@ if(but.Wizardry){
   if(!file.exists(workname.sys)){
     cat(paste("Error: File",workname.sys,"not found!!!"));return()
   }
-  try(weaveR(workname.sys));try(tangleR(workname.sys))
+  try(weaveR(workname.sys,
+                     replace.german.umlaute=replace.german.umlaute.sys))
+  try(tangleR(workname.sys))
   melde("WebReport",2)
  }
  LaTeX.head<-function(){
@@ -2229,6 +2295,9 @@ if(but.Wizardry){
   if(is.null(n)||5>n||substring(filename,n-3,n)!=".dvi"){
     cat("ERROR: file",filename,"not compatible!!!\n");return()
   }
+  if(<<OS ist Mac-Mini-Tiger>> ){
+        filename<-sub("dvi$","pdf",filename)   
+  }    
   if(!file.exists(filename)){
     cat("ERROR: file",filename,"not found!!!\n");return()
   }
@@ -2236,7 +2305,11 @@ if(but.Wizardry){
       view<-paste(view.command.windows," ",filename,sep="")
       try(shell(view,wait=F))
   }else{
-      view<-paste(view.command.linux,"  ",filename," &",sep="")
+      if(<<das OS ist Linux>>) 
+        view<-paste(view.command.linux,"  ",filename," &",sep="")
+      if(<<OS ist Mac-Mini-Tiger>> ){
+        view<-paste(view.command.mac,"  ",filename," &",sep="")
+      }
       try(system(view))
   }
   melde("ViewReport",2)
@@ -2284,7 +2357,9 @@ if(but.Wizardry){
       cat("ERROR: write operation failed!!!\n"); return()
     }
     Sys.sleep(0.25)
-    try(weaveR(workname.sys)); Sys.sleep(0.5)
+    try(weaveR(workname.sys,
+                     replace.german.umlaute=replace.german.umlaute.sys))
+    Sys.sleep(0.5)
     LatexReport()
  }
  SWEAVE<-function(){ ###060112
@@ -2353,8 +2428,7 @@ SWEAVEB<-function(){ ###060112
                 outfile,sep="")
 if(<<das OS ist Windows>>){
    shell(cmd)
-}
-if(<<das OS ist Linux>>){
+}else{
     system(cmd)
 }
       news<-readLines(outfile)
@@ -2374,14 +2448,25 @@ tkbind(TopW, "@<<ProcessReport>>", ProcessReport)
 @
 Hier ist ein Vorschlag für einen Kopf eines LaTeX-Dokumentes:
 <<LaTeX-head>>=
+%  --- begin of preamble
 \documentclass{article}
+%  --- packages
 \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+%  --- for noweb users
 % \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
-\usepackage[scaled=.95]{helvet}
-\usepackage[T1]{fontenc}
+%  --- fonts 
+\usepackage[scaled=.95]{helvet}\usepackage[T1]{fontenc}
+%  --- commands to control the layout of text and code chunks 
+\parskip1ex
+\parindent0mm
+\renewcommand{\textchunkcommands}{\normalsize}
+\renewcommand{\codechunkcommands}{\small}
+%  --- titlepage
 \title{Report: \rule{30mm}{.1mm}}
 \author{File: \jobname.rev\\in: JOBPATH}
+%  --- end of preamble
 \begin{document}\maketitle
+%  --- begin of document
 
 @
 Früher wurde über die Variable [[rtrevweb.home]] festgelegt, in welchem Paket sich unter
@@ -2425,7 +2510,9 @@ Die alte rtrevweb-Lösung mittels noweb:
     if(0==system(paste("which",path.revweb))&&!exists("weaveR.flag")){
      try(system(paste(path.revweb," ",name)))
     }else{
-     try(weaveR(revname));try(tangleR(sub(".rev$","",revname)))
+     try(weaveR(revname,
+                     replace.german.umlaute=replace.german.umlaute.sys))
+     try(tangleR(sub(".rev$","",revname)))
     }
   }
  } # end of old rtrevweb
@@ -2485,7 +2572,7 @@ FindReportChunk<-function(){
 InsertLaTeXEnv<-function(){
   melde("InsertLaTeXEnv",1)
   newtop<-tktoplevel();tkwm.title(newtop,"LaTeX-environment? -- Esc=Exit, Return=Selection")
-  tkwm.geometry(newtop,"+0+0")
+  tkwm.geometry(newtop,"+0+15")
   scr <- tkscrollbar(newtop, command=function(...)tkyview(tl,...))
   tl<-tklistbox(newtop,height=7,width=70,selectmode="single",
               yscrollcommand=function(...)tkset(scr,...),background="white")
@@ -2574,7 +2661,7 @@ ShowAboutRelax<-function(){
 	       "---------------------------------------------------------","",""
                )
   try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
-  .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0")
+  .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
   tkpack(tt<-tktext(.newl,height=length(doc)))
   tkwm.title(.newl,paste("What's relax? ","Exit by Return or Escape!"))
   try(tkinsert(tt,"0.0",paste(doc,collapse="\n")))
@@ -2630,7 +2717,7 @@ ShowShortCuts<-function(){
                 "Crtl-D:  delete character right of cursor",
                 "Crtl-H:  delete character left of cursor",
                 "Crtl-K:  delete characters from cursor to end of line"     )
-  .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0")
+  .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
   tkpack(tt<-tktext(.newl,height=length(keys)))
   tkwm.title(.newl,paste("shortcuts of relax and text field,","Exit by Return or Escape!"))
   try(tkinsert(tt,"0.0",paste(keys,collapse="\n")))
@@ -2670,7 +2757,7 @@ FindRFns<-function(){
       found<-paste(paste(found[,1],
                          substring("         ",1,pmax(1,10-nchar(found[,1]))),
                          found[,2]),collapse="\n")
-      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
       tkwm.title(.newl,paste("zu >",such,"< gefundene Funktionen, ",
                              "Beendigung durch Escape oder Return!"))
       try(tkinsert(tt,"0.0",paste(found,collapse="\n")))
@@ -2720,6 +2807,7 @@ Auf [[bildname]] darf ein Name mit oder ohne Endung [[.ps]] angegeben werden.
 if(!is.null(bildname)&&nchar(bildname)>0){
   n<-nchar(bildname<-gsub(" ","",bildname))
   bildname<-sub(".ps$","",bildname)
+  
 # Postscript:
   psname <-paste(bildname,".ps", sep="")
   news<-paste("@\n \\begin{center}","\\includegraphics[",
@@ -2739,8 +2827,13 @@ if(!is.null(bildname)&&nchar(bildname)>0){
   }else{
     try.res<-try({dev.copy(bitmap,type="jpeg",jpgname);dev.off()})
   }
+# gif:
+  if(<<OS ist Mac-Mini-Tiger>> ){
+    gifname<-sub("jpg$","gif",jpgname) 
+    try.res<-try({system(paste("convert",jpgname,gifname))})
+  }
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
-  if(!ok) cat("Error: *jpg file not generated by dev.copy!!!\n")
+  if(!ok) cat("Error: jpg of gif file not generated by dev.copy!!!\n")
   melde(paste("p", psname), "cmd.msg")
 }
 
@@ -2777,7 +2870,9 @@ die Prozedur [[.Tcl]] innerhalb [[show.plots]] aufgerufen.
 show.plots<-function(textwidget,is.reportwin=T,path.of.plots){
  try(.Tcl( paste(
   "proc showimage {w im place} {",
-   "$w image create $place -image [image create photo -format jpeg -file $im]",
+   if(<<OS ist Mac-Mini-Tiger>>) 
+    "$w image create $place -image [image create photo -format gif -file $im]" else
+    "$w image create $place -image [image create photo -format jpeg -file $im]"  ,
   "}", sep="\n") ) )
   if(is.reportwin){
     tworkwin <- textwidget
@@ -2788,12 +2883,16 @@ show.plots<-function(textwidget,is.reportwin=T,path.of.plots){
                     function(x){ x<-x[2]; strsplit(x,"\"")[[1]][1] }))
   }
 #  print(jpgnames)
+  picnames<-if(<<OS ist Mac-Mini-Tiger>>) sub(".jpg$",".gif",jpgnames) else jpgnames
   for(i in seq(along=rows)){
-    if(file.exists(sub(".jpg$",".ps",jpgnames)[i])&(!file.exists(jpgnames[i]))){
-      pstojpg(sub(".jpg$",".ps",jpgnames)[i],jpgnames[i])
+    if(!<<OS ist Mac-Mini-Tiger>>){
+      if(file.exists(sub(".jpg$",".ps",picnames)[i])&
+                                 (!file.exists(picnames[i]))){
+        pstojpg(sub(".jpg$",".ps",picnames)[i],picnames[i])
+      }
     }
-    if(file.exists(jpgnames[i]))
-      try(tcl("showimage",textwidget,jpgnames[i],paste(rows[i]-1,".0",sep="")))
+    if(file.exists(picnames[i]))
+      try(tcl("showimage",textwidget,picnames[i],paste(rows[i]-1,".0",sep="")))
   }
 }
 exclude.plots<-function(tworkwin){
@@ -2917,10 +3016,10 @@ FormatTeXLines<-function(){
        try(shell("del tmptmp.tex tmptmp.aux tmptmp.log tmptmp.ppm tmptmp.crp tmptmp.dvi tmptmp.ps"))
   }
   # passe workttext an, integriere Bild
-  news<-paste("\n%    end-latex-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
+  news<-paste("\n%<!--latex-end-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
   line<-paste(texend,".0",sep="")
   <<schreibe [[news]] hinter [[line]]>>
-  line<-paste(texbegin+1,".0",sep=""); news<-"%<!--begin-latex\n"
+  line<-paste(texbegin+1,".0",sep=""); news<-"%<!--latex-begin--\n"
   <<schreibe [[news]] hinter [[line]]>>
   <<zeige Bilder im Textfenster an>>
   melde("FormatTeXLines",2)
@@ -3052,7 +3151,7 @@ fHelp.R<-function(){
         sys.cmd<-if(<<das OS ist Windows>>) "type" else "cat"
         out<-try(system(paste(sys.cmd,such),T))
         out<-out[-grep("^_",out)]
-        .newl  <- tktoplevel(); tkwm.geometry(.newl,"+0+0")
+        .newl  <- tktoplevel(); tkwm.geometry(.newl,"+0+15")
         tkwm.title(.newl,paste("help text found: >",such,"< -- ",
                               "quit by Escape or Return!"))
         tkpack(tt<-tktext(.newl))
@@ -3392,9 +3491,10 @@ fEvalRCode<-function(){ # vorher EvalCursorChunk
         <<sichere letzten Zustand unter [[report-UnDo-bak.rev]]>>
         sink(<<tmp.sink>>);get("print",pos="package:base")(try.res);sink()
         news<-paste(myscan(<<tmp.sink>>,"",sep="\n"),collapse="\n")
-        if(nchar(news)>maxol.sys)
+        if(nchar(news)>maxol.sys){
             news<-paste(substring(news,1,maxol.sys),"...",sep="\n")
-            news<-paste("", date(), news,"",sep="\n")
+        }
+        news<-paste("", date(), news,"",sep="\n")
         <<schreibe [[news]] ans Ende des Outputfeldes>>
     ##zeige Ergebnisse in neuem Fenster an>>
       }
@@ -3409,7 +3509,45 @@ fEvalRCode<-function(){ # vorher EvalCursorChunk
 }
 
 @
+as.numeric(R.version$major)*100+as.numeric(R.version$minor)
 <<zeige ggf. Warnungen an>>=
+options(show.error.messages=FALSE)
+try({xxxxxxxxxxxxxxxxxxxxxxxxxxxxx})
+options(show.error.messages=TRUE)
+if(204<=Rversion){
+  OLD.WARNING<-get("LAST.WARNING", envir = revive.sys)
+  LAST.WARNING<-"no warnings"
+  if(exists("last.warning")) 
+    try(LAST.WARNING<-get("last.warning", envir = baseenv()))
+  LAST.WARNING<-c(LAST.WARNING,"no warnings")[1]
+  if(LAST.WARNING!="no warnings"){
+    if(!identical(LAST.WARNING,OLD.WARNING)){
+      assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+      news<-c("last.warning(s):",
+                   paste(paste(names(LAST.WARNING),LAST.WARNING,sep=" in: "),collapse="\n"))
+      <<schreibe [[news]] ans Ende des Outputfeldes>>
+    } # else { print("no new warnings") }
+  }
+}else{
+  if(exists("last.warning",envir = .GlobalEnv)){
+    lw<-get("last.warning",envir = .GlobalEnv)
+    h<-grep("X11",names(lw)); if(length(h)>0) lw<-lw[-grep("X11",names(lw))]
+    if(length(lw)>0){
+      news<-c("last.warning(s):",
+                   paste(paste(names(lw),lw,sep=" in: "),collapse="\n"))
+      try(rm(last.warning,envir = .GlobalEnv))
+      <<schreibe [[news]] ans Ende des Outputfeldes>>
+    }
+  }
+}
+@
+<<setze einige Konstanten>>=
+LAST.WARNING<-"no warnings"
+assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+Rversion<-as.numeric(R.version$major)*100+as.numeric(R.version$minor)
+
+@
+<<OLD: zeige ggf. Warnungen an>>=
 options(show.error.messages=FALSE)
 try({xxxxxxxxxxxxxxxxxxxxxxxxxxxxx})
 options(show.error.messages=TRUE)
@@ -3559,10 +3697,10 @@ daß das betreffende Widget über den Namen [[twin]] ansprechbar ist.
 
 Ein in einem Textfenster eingegebener Umlaut führt beim Auslesen
 auf eine R-Char-Variable zwei Zeichen zum Vorschein. Damit 
-bei der Speicherung ein Windows-Umlaut in der Datei ankommt muss
+bei der Speicherung ein Windows-Umlaut in der Datei ankommt, muss
 eine Ersetzung erfolgen. 
-Der Datei-Code für die Umlaute in
-[[äöüÄÖÜß]] ist [["\344\366\374\304\326\334\337"]]. 
+Der Datei-Code für die Umlaute unter Latin1 ist für
+[[äöüÄÖÜß]] gegeben durch [["\344\366\374\304\326\334\337"]]. 
 Für die Erzeugung eines Rückstriches muss beachtet werden,
 dass der Rückstrich auf derselben Taste wie [[ß]] liegt.
 <<stelle besondere Zeichen in [[twin]] zur Verfügung>>=
@@ -3570,13 +3708,15 @@ f.sonderzeichen<-function(zeichen){
   function(){
     tkinsert(twin,"insert",zeichen)
     if(<<das OS ist Windows>>)tkdelete(twin,"insert-1chars")
+    if(<<OS ist Mac-Mini-Tiger>>)tkdelete(twin,"insert-1chars")
   }
 }
 f.umlaut<-function(zeichen){
   function(){
     return()
-    if(zeichen=="\337" & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
-    tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
+    #char337<-eval(parse(text='"\\337"'))
+    #if(zeichen==char337 & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
+    #tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
   }
 }
 tkbind(twin,"@<<LKeckig>>", f.sonderzeichen("["))
@@ -3587,6 +3727,12 @@ tkbind(twin,"@<<RKgeschw>>",f.sonderzeichen("}"))
 tkbind(twin,"@<<Klammera>>",f.sonderzeichen("@"))
 tkbind(twin,"@<<Pipe>>",    f.sonderzeichen("|"))
 tkbind(twin,"@<<Backsl>>",  f.sonderzeichen("\\"))
+renewhighlighting<-function(){
+  tworkwin<-get("tworkwin",env=revive.sys)
+  <<aktualisiere Texthervorhebungen>>
+}
+# tkbind(twin,"@<<Klammeraffe>>",renewhighlighting)
+tkbind(twin,"<Return>",renewhighlighting)
 
 @
 \subsubsection{Arbeitsfenster: [[Strg Pagedown]] zur Kopie alter Code-Chunk}
@@ -4033,7 +4179,7 @@ SaveDiffReport<-function(){
     if(ch.new[length(ch.new)]) lines<-lines[-length(lines)]
     difftext<-worktext[unique(lines)]
     # speichere difftext
-    SaveAsHtml(difftext,filename)
+    ### SaveAsHtml(difftext,filename)
     try.res <-try(cat(difftext,file=filename,sep="\n"))
   }
   melde("SaveDiffReport",2)
@@ -4170,7 +4316,8 @@ dann vorgenommen, wenn der Report gespeichert wird.
 <<speichere Report als Html-File>>=
 {
   melde("weaveRhtml",1)
-  weaveRhtml(workname.sys)
+  weaveRhtml(workname.sys,
+                     replace.german.umlaute=replace.german.umlaute.sys)
   melde("weaveRhtml",2)
 }
 @
@@ -4289,8 +4436,12 @@ ViewReport.html<-function(){
   }else{
     fname<-paste("file://",getwd(),.Platform$file.sep,sub("rev$","html",filename),sep="")
     if(version$os=="Win32" || version$os=="mingw32"){
-         if(browser.sys=="") shell(paste("explorer", fname),wait=FALSE) else
-	                                 shell(paste(browser.sys, fname),wait=FALSE)  # 050607
+         browser.exe<- if(browser.sys=="") "explorer" else browser.sys
+	 res<-shell(paste(browser.exe, fname),wait=FALSE)
+         if(res!=0){
+           cat("ERROR:",browser.exe,"/ file not found\n")
+           cat("please, start and load file on foot\n")
+         }
     }else
         if(browser.sys==""){
 	  if(file.exists(options()$browser))
@@ -4311,6 +4462,9 @@ Achtung Seiteneffekt: Sie wird nicht automatisch wieder entfernt.
 <<definiere Kopf-Zeilen-Funktionen>>=
 EditReport<-function(){
   melde("EditReport",1)
+  if(<<OS ist Mac-Mini-Tiger>> ){
+     cat("Sorry: not implemented yet!\n"); return()
+  }    
   <<lese Arbeitsfenster auf [[worktext]] ein>>
   worktext<-TcltoWin.write(worktext)
   try.res <-try(cat(worktext,file=<<tmp>>,sep="\n"))
@@ -4917,7 +5071,7 @@ readline<-function(prompt=""){
     return(readline(prompt=prompt))
   }
   .newl<-tktoplevel()
-  tkwm.title(.newl, "text input"); tkwm.geometry(.newl,"+0+0")
+  tkwm.title(.newl, "text input"); tkwm.geometry(.newl,"+0+15")
   <<schreibe letzte Ausgabe als Info in Widget [[.newl]]>>
   eline<-tkentry(.newl,textvariable="tvreadline")
   set.tclvalue("tvreadline","")
@@ -5011,7 +5165,7 @@ menu<-function(choices, graphics=FALSE, title=""){
     return(menu(choices=choices,graphics=graphics,title=title))
   }else{
     TopN<-tktoplevel()
-    tkwm.geometry(TopN,"+0+0"); if(title!="")tkwm.title(TopN, title)
+    tkwm.geometry(TopN,"+0+15"); if(title!="")tkwm.title(TopN, title)
     nc<-length(choices<- c(choices, "EXIT"))
     mch<-max(chars<-nchar(choices)); leer<-paste(rep(" ",mch),collapse="")
     choices<-paste(choices, substring(leer,1,mch-chars) )
@@ -5049,7 +5203,7 @@ menu<-function(choices, graphics=FALSE, title=""){
  }else{
   TopN<-tktoplevel()
   if(title=="") title<-"select item, press Return (or exit by Esc)"
-  tkwm.geometry(TopN,"+0+0"); tkwm.title(TopN, title)
+  tkwm.geometry(TopN,"+0+15"); tkwm.title(TopN, title)
   if(missing(choices)||length(choices)==0) choices<-"relax"
   choices<-paste(seq(choices),": ",choices, sep="")
   nc<-length(choices<- c(choices, "EXIT"))
@@ -5119,7 +5273,7 @@ scan<-get("scan",pos="package:base")
 @
 <<realisiere [[scan]] für [[relax]]>>=
 typ<-if(is.numeric(what)) "Zahlen-Eingabe" else "Text-Eingabe"
-.newl<-tktoplevel(); tkwm.title(.newl, typ); tkwm.geometry(.newl,"+0+0")
+.newl<-tktoplevel(); tkwm.title(.newl, typ); tkwm.geometry(.newl,"+0+15")
 revive.sys<-get("revive.sys",envir=revive.env)
 assign(".newl",.newl,envir=revive.sys)
 <<schreibe letzte Ausgabe als Info in Widget [[.newl]]>>
@@ -5470,27 +5624,39 @@ get.dim.1.data<-function(){
 Mit der Datensatzermittlungsfunktion [[ds]] ist nicht viel zu tun.
 <<ermittle eindimensionale Datensätze>>=
 <<definiere eine Datensatzsuchfunktion>>
-DS<-c( ds(-1), ds(1) ,ds(<<stelle Nummer von [[relax]] im Suchpfad fest>>)
-             , "-5:5 # integers from -5 to 5", "rep(7,5) # vector: (7,7,7,7,7)")
+DS<-c( ds.of.R("vector"),ds(-1), ds(1),
+           ds(<<stelle Nummer von [[relax]] im Suchpfad fest>>),
+           "-5:5 # integers from -5 to 5", "rep(7,5) # vector: (7,7,7,7,7)")
 
 @
 Zur Ermittlung von Datensätzen mit die Funktion [[ds]] aber
 erst noch definiert werden:
 <<definiere eine Datensatzsuchfunktion>>=
-ds<-function(pos=1,mode="numeric",struc=is.vector){
+ds<-function(pos=1,type,mode="numeric",struc=is.vector){
   if(pos>0){
    obj<-ls(pos=pos)
    obj<-obj[unlist(lapply(obj ,function(o,pos)
      exists(o,where=pos,mode="numeric") &&
      eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
-   if(0==length(obj)) return(NULL) else return(obj)
   }else{
    obj<-ls(env=revive.env)
    obj<-obj[unlist(lapply(obj ,function(o)
      exists(o,where=revive.env,mode="numeric") &&
      eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
-   if(0==length(obj)) return(NULL) else return(obj)
   }
+  if(0==length(obj)) return(NULL) else return(obj)
+}
+ds.of.R<-function(type="vector"){
+  dat<-ls(pos=grep("datasets",search()))
+  dat.type<-unlist(lapply(dat,function(x) {       
+         num<-mode(x<-eval(parse(text=x)))
+         num<-ifelse(is.array(x),"array",num)
+         num<-ifelse(is.list(x),"list",num)
+         num<-ifelse(is.matrix(x),"matrix",num)
+         num<-ifelse(is.data.frame(x),"matrix",num)
+         num<-ifelse(num=="numeric","vector",num)
+         num }))
+  return(dat[dat.type==type])
 }
 
 
@@ -5510,7 +5676,7 @@ get.dim.2.data<-function(){
 @
 <<ermittle zweidimensionale Datensätze>>=
 <<definiere eine Datensatzsuchfunktion>>
-DS<-ds(struc=is.matrix)
+DS<-c(ds.of.R("matrix"),ds(struc=is.matrix))
 DS<-c(DS,"matrix(sample(100),50,2)","cbind(1:100,rnorm(100,mean=0,sd=1))")
 DS<-c(DS, ds(-1,struc=is.matrix), ds(1,struc=is.matrix) ,
            ds(<<stelle Nummer von [[relax]] im Suchpfad fest>> ,struc=is.matrix) )
@@ -5568,7 +5734,7 @@ choose.col<-function(obj,title="Which variable?"){
 <<definiere Funktion [[listboxmenu()]]>>=
 listboxmenu<-function(choices,title="items",addexit=TRUE){
     if(addexit) choices<-c(choices,"EXIT")
-    lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+    lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
     tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
     ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
     lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -5678,7 +5844,7 @@ ein Mechanismus zur Unterbrechung benötigt. Hierbei hilft die
 auf einen {\sc Return}-Druck wartet.
 <<auskommentiert: definiere [[.Return]]>>=
 .Return<-function(title="Return!"){
-      .newl  <- tktoplevel(); tkwm.geometry(.newl,"+0+0")
+      .newl  <- tktoplevel(); tkwm.geometry(.newl,"+0+15")
       tkpack(tklabel(.newl,text=title))
       tkbind(.newl,"<Return>",function(){
                                tkdestroy(.newl);
@@ -5698,12 +5864,42 @@ Externe Dateien können seltsame Charaktere enthalten.
 Diese müssen dann ersetzt werden.
 <<definiere Input/Output-Funktionen neu>>=
 WinToTcl.read<-function(x){
+  try(if(is.UTF&&replace.german.umlaute.sys && any(is.na(iconv(x,"","LATIN1")))){  
+    # Latin1 document loaded->translate to utf-8
+    res<-tkmessageBox(message=if(language=="german") 
+        "Soll das Encoding des Dokuments (?Latin1?) auf das lokale umgesetzt werden?"
+      else 
+        "Do you want to change the encoding of the document (?latin1?) to the local one?",
+            title="Encoding?",icon="warning",type="yesnocancel",default="no")
+    if("externalptr"==mode(res))  res<-tclvalue(res)
+    if(res=="yes"){
+      x<-iconv(x,"LATIN1","")
+      cat("Latin1 Encoding of document has been changed to local coding\n")
+    }
+  })
+  try(if(!is.UTF&&replace.german.umlaute.sys && any(is.na(iconv(x,"","LATIN1")))){  
+    # utf-8 document loaded->translate to Latin1
+    res<-tkmessageBox(message=if(language=="german") 
+        "Soll das Encoding des Dokuments (?UTF-8?) auf das lokale umgesetzt werden?"
+      else 
+        "Do you want to change the encoding (?utf-8?) of the document to the local one?",
+            title="Encoding?",icon="warning",type="yesnocancel",default="no")
+    if("externalptr"==mode(res))  res<-tclvalue(res)
+    if(res=="yes"){
+      x<-iconv(x,"utf-8","")
+      cat("utf-8 Coding of document has been changed to local coding\n")
+    }
+  })
   return(x)
+}
+
+@
+<<old WinToTcl.read>>=
  # x<-chartr("\204\224\201\216\231\232\341","\244\266\274\204\226\234\237",x) # old dos
     x<-chartr("\314\316\317\330\332\333\336","\244\266\274\204\226\234\237",x) # old unix
     x<-chartr("\344\366\374\304\326\334\337","\244\266\274\204\226\234\237",x)
     x<-gsub("(\244|\266|\274|\204|\226|\234|\237)","\283\\1",x) #ae
-}
+
 @
 Umlautumwandlung beim Schreiben von Dateien
 Externe Dateien können seltsame Charaktere enthalten.
@@ -5724,11 +5920,46 @@ liefert die Zeichenkette [["\"<c3>\""]], die aus 6 Zeichen besteht,
 wogegen unter iso-8955 eine Zeichenkette der Länge 3:
 zwei Tüddelchen und einem [[A]] mit einer Tilde resultiert.
 Dieses können wir zur Unterscheidung verwenden.
+Leider war dieses Vorgehen war immer erfolgreich,
+so dass nun 999 umgewandelt und untersucht wird, was dabei herauskommt.
+In Abhängigkeit davon wird nun die Funktion [[TcltoWin.write]] definiert.
 <<definiere Input/Output-Funktionen neu>>=
+if(is.UTF)  TcltoWin.write<-function(x){ return(x) } else {
+  # Latin1-Umwandlung von Umlauten
+  pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+  uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+  uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+  TcltoWin.write<-function(x){
+    if(replace.german.umlaute.sys){
+      x<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",x))
+    }
+    return(x)
+  }
+}
+@
+<<stelle lokales Coding fest: [[is.UTF]]>>=
+.Tcl("set XYZ [encoding system]")
+is.UTF<- 0<length(grep("utf",tclvalue("XYZ")))
+@
+<<old 20070228>>=
+TcltoWin.write<-function(x){
+   x<-gsub("\283","",x)
+   x<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",x)
+   return(x)
+ }
+
+@
+<<OLD vor 23.11.2006: definiere Input/Output-Funktionen neu>>=
+#if(exists("intToUtf8")) {  
+#   is.UTF<-substring(intToUtf8(as.integer(999)),2,2)=="" 
+#}else{
+#  is.UTF<-FALSE }
 TcltoWin.write<-function(x){
  lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
  UTF<-(1==length(grep("UTF",lcctype))) 
- UTF<- UTF | nchar(deparse("\xc3")) > 3
+ # UTF<- UTF | nchar(deparse("\xc3")) > 3
+ is.UTF<-substring(intToUtf8(as.integer(999)),2,2)==""
+ UTF<- UTF | is.UTF
  #(0==length(grep("(=de)|(=ge)",lcctype)))
  # cat("UTF?"); print(UTF)
  if(!UTF){
@@ -5760,9 +5991,13 @@ Umlautersetzung für Html-Datei-Speicherung.
  
 <<ersetze Umlaute; [[AsHtml]]>>=
 # Umlaute-Ersetzung fuer Tcl-Fenster nach Html:
- lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
- UTF<-(1==length(grep("UTF",lcctype))) 
- UTF<- UTF | nchar(deparse("\xc3")) > 3
+ #lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+ #UTF<-(1==length(grep("UTF",lcctype))) 
+ ## UTF<- UTF | nchar(deparse("\xc3")) > 3
+ #is.UTF<-substring(intToUtf8(as.integer(999)),2,2)==""
+ .Tcl("set XYZ [encoding system]")
+ UTF<-is.UTF<- 0<length(grep("utf",tclvalue("XYZ")))
+ #UTF<- UTF | is.UTF
   if(!UTF){
    savetext<-gsub("\237","&szlig;",savetext)
    savetext<-gsub("(\244|\266|\274|\204|\226|\234)","&\\1uml;",savetext)
@@ -5844,10 +6079,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   <<lade das [[Img]]-Paket für [[Tcl/Tk]]>>
   <<definiere Funktionen zum Umgang mit [[Tcl]]-Variablen>>
   <<generiere eine neue Umgebung für die Anwenderdaten>>
+  <<stelle lokales Coding fest: [[is.UTF]]>>
   <<definiere Input/Output-Funktionen neu>>
   <<ermittle Namen einer temporären Datei>>
   <<ermittle Namen einer Sink-Datei>>
-  <<definiere [[SaveAsHtml]]>>           ##definiere Testknopf\-funktion##
+  ##definiere [[SaveAsHtml]]##           
+  ##definiere Testknopf\-funktion##
   <<definiere Funktionen allgemeiner Knöpfe>>
   <<definiere Kopf-Zeilen-Funktionen>>                       ##setze Umgebung für Knopf\-funktionen##
 	  ##setze Umgebung für Testknopf\-funktion##   ##setze Umgebung für Zeilen-Funktionen##
@@ -5905,7 +6142,7 @@ Folgende Konstante werden jetzt in der Datei config/settings.relax gesetzt:
 language<-"english"
 # language<-"german"
 # maximal characters of output to be shown
-maxol.sys<-2500
+maxol.sys<-4000
 # size of fonts # set of values: 1,2, ..., 7
 initial.font.size<-4
 # height of included postscript plot in LaTeX document:
@@ -5920,6 +6157,8 @@ relaxwindow.height.sys<-"700"
 relaxwindow.width.sys<-"700"
 # use of "tab"-key for name completion
 name.complete.sys<-TRUE
+# replace german umlaute
+replace.german.umlaute.sys<-TRUE
 #############################################
 ## special settings for windows
 # how to call LaTeX
@@ -5931,7 +6170,8 @@ dvipdf.command.windows<-"dvipdfm"
 # text editor
 text.editor.windows<-"notepad"
 # browser
-# browser.windows<-"c:/Programme/.../mozilla"
+# browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
+pdfview.windows<-"acroread"
 #############################################
 ## special settings for linux
 path.tcltk.package.img<-"/usr/local/lib"
@@ -5941,11 +6181,37 @@ latex.command.linux<-"echo q | latex"
 view.command.linux<-"xdvi"
 # how to call dvipdf
 dvipdf.command.linux<-"dvipdf"
-# text editor
+# text editor ?????????
 text.editor.linux<-"kwrite"
 # browser
 browser.linux<-"konqueror"
+# pdf viewer
+pdfview.linux<-"acroread"
+#############################################
+## special settings for mac
+# how to call LaTeX
+latex.command.mac<-"echo q | pdflatex" 
+# view command for viewing .dvi files
+view.command.mac<-"open " 
+# how to call dvipdf
+dvipdf.command.mac<-"dvipdf" 
+# text editor
+text.editor.mac<-"nano"
+# browser
+browser.mac<-"safari"
 
+@
+zum Thema pdf: 
+PDF ist nicht Acrobat und noch nicht einmal Adobe
+
+\begin{verbatim}
+http://www.einfach-fuer-alle.de/artikel/pdf-fakten-meinungen/:
+Lassen Sie uns noch etwas aus dem Weg räumen: Acrobat ist nicht gleich PDF und PDF ist nicht gleich Acrobat. Neben Acrobat können viele Programme PDFs darstellen. GSview ist eine bekannte Wahl und funktioniert unter Windows, Mac, OS/2 und Linux. Andere Optionen:
+
+    * Unter Windows: Jaws PDF Editor (nicht der Screenreader)
+    * Unter MacOS X: Vorschau, Graphikkonverter, Safari und OmniGraffle
+    * Unter Linux oder Unix: OpenOffice / StarOffice
+\end{verbatim}
 @
 <<old settings for windows, used in: [[FormatTeXLines]]>>=
 # path to ghostscript
@@ -5959,6 +6225,7 @@ try({
   h<-scan(file=file.path(relax.path,"config/settings.relax"),what="",sep="\n")
   for(i in seq(h)) eval(parse(text=h[i]))
 })
+editor.sys<-text.editor.mac
 if(<<das OS ist Windows>>) {
   editor.sys <- text.editor.windows
 }
@@ -5971,6 +6238,12 @@ if(<<das OS ist Windows>>) {
 }
 if(<<das OS ist Linux>>) {
   if(exists("browser.linux")) browser.sys <- browser.linux
+}
+if(<<OS ist Mac-Mini-Tiger>>){
+  latex.command.linux<-latex.command.mac
+  view.command.linux<-view.command.mac
+  dvipdf.command.linux<-dvipdf.command.mac
+  text.editor.linux<-text.editor.mac
 }
 if(!exists("initial.font.size")) initial.font.size<-4
 initial.font.size<-initial.font.size[1]
@@ -6050,7 +6323,7 @@ DefineFKeys<-function(){
       F.no<-tclvalue("tvinfo")
       <<setze Manager nach {\sc Return} in Normalzustand>>
       if(!any(F.no==as.character(1:8))) return() else F.no<-as.numeric(F.no)
-      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+      .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
       twin<-tt; <<stelle besondere Zeichen in [[twin]] zur Verfügung>>
       tkwm.title(.newl,paste("contents of function key","Definition by Escape!"))
       F.buffers<-get("F.buffers",env=revive.sys)
@@ -6094,7 +6367,8 @@ if(<<das OS ist Windows>>){
   }
   settclenvvars()
   try(.Tcl("package require Img"))
-} else{
+} 
+if(<<das OS ist Linux>>){
   <<setze unter [[Unix]] Pfad in [[Tcl/Tk]] zum Image-Paket>>
 }
 
@@ -6301,6 +6575,8 @@ if(<<das OS ist Windows>> | <<das OS ist Linux>>){
   tkevent.add("@<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
   tkevent.add("@<<szumlaut>>",      "<ssharp><KeyRelease>")
   tkevent.add("@<<Backsl>>",    "<Alt_L><ssharp>")
+#  tkevent.add("@<<Klammeraffe>>",  
+#                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
 } else {                                               #f <hpguilder>
   tkevent.add("@<<EvalRCode>>",  "<ae>")
   tkevent.add("@<<AdvanceNo>>", "<aring>")
@@ -6323,7 +6599,51 @@ if(<<das OS ist Windows>> | <<das OS ist Linux>>){
   tkevent.add("@<<Backsl>>",    "<Alt_R><backslash>")
   tkevent.add("@<<Pipe>>",      "<Alt_R><bar>")
 }
+if(<<OS ist Mac-Mini-Tiger>>){
+  tkevent.add("@<<EvalRCode>>",  "<Meta_L><e>")
+  tkevent.add("@<<Down>>",  "<Meta_L><d>")
+  tkevent.add("@<<Up>>",  "<Meta_L><u>")
+  tkevent.add("@<<AdvanceNo>>", "<Meta_L><a>")
+  tkevent.add("@<<TrashROutput>>","<Meta_L><t>")
+  tkevent.add("@<<Next>>",      "<Meta_L><n>")
+  tkevent.add("@<<Help.R>>",   "<Meta_L><h>")
+  tkevent.add("@<<Modify>>",    "<Meta_L><m>")
+  tkevent.add("@<<PlanRCode>>",   "<Meta_L><p>")
+  tkevent.add("@<<FindReportText>>",   "<Control_L><f>")
+  tkevent.add("@<<GoToLine>>",   "<Control_L><g>")
+  tkevent.add("@<<SaveReport>>",   "<Control_L><s>")
+  tkevent.add("@<<ProcessReport>>",   "<Control_L><p>")
+  tkevent.add("@<<RemoveOut>>",   "<Meta_L><r>")
+  tkevent.add("@<<Insert>>",   "<Meta_L><i>")
+  tkevent.add("@<<SavePlot>>","<Meta_L><s>")
+  tkevent.add("@<<CopyToEnd>>",   "<Alt_L><c>")
+  tkevent.add("@<<CopyOld>>",   "<Alt_L><x>")
+  tkevent.add("@<<RunNo>>",     "<Meta_L><r>")
+  tkevent.add("@<<SetNo>>",     "<Meta_L><s>")
+  #tkevent.add("@<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
+  tkevent.add("@<<RKgeschw>>",  "<Meta_L><0>")
+  tkevent.add("@<<LKgeschw>>",  "<Meta_L><7>")
+  tkevent.add("@<<RKeckig>>",   "<Meta_L><9>")
+  tkevent.add("@<<LKeckig>>",   "<Meta_L><8>")
+  #tkevent.add("@<<Tilde>>",     "<Meta_L><plus>")
+  tkevent.add("@<<Klammera>>",  "<Meta_L><q>")
+  #tkevent.add("@<<Backsl>>",    "<Meta_L><ssharp>")
+  tkevent.add("@<<Pipe>>",      "<Meta_L><less>")
+  #tkevent.add("@<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
+  #tkevent.add("@<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
+  #tkevent.add("@<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
+  #tkevent.add("@<<Aeumlaut>>",      "<Adiaeresis><KeyRelease>")
+  #tkevent.add("@<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
+  #tkevent.add("@<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
+  #tkevent.add("@<<szumlaut>>",      "<ssharp><KeyRelease>")
+  #tkevent.add("@<<Backsl>>",    "<Meta_L><ssharp>")
+#  tkevent.add("@<<Klammeraffe>>",  
+#                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
+} 
 
+@
+<<OS ist Mac-Mini-Tiger>>=
+substring(version$os,1,7)=="darwin8"
 @
 <<das OS ist Linux>>=
 substring(version$os,1,5)=="linux"
@@ -6378,8 +6698,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.04
-Date: 2006-11-09
+Version: 1.07
+Date: 2007-02-22
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -6541,7 +6861,7 @@ slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
     return(obj.value)
   }
   if(missing(title)) title<-"slider control widget"
-  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+0")
+  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+15")
   if(missing(sl.names)) sl.names<-NULL
   if(missing(sl.functions)) sl.functions<-function(...){}
   for(i in seq(sl.names)){
@@ -6763,7 +7083,7 @@ function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
     return(obj.value)
   }
   if(missing(title)) title<-"slider control widget"
-  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+0")
+  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+15")
   if(missing(sl.names)) sl.names<-NULL
   if(missing(sl.functions)) sl.functions<-function(...){}
   for(i in seq(sl.names)){
@@ -6805,7 +7125,7 @@ function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
 Das Skript [[dorw]] erzeugt aufgerufen in [[install.dir]] die wesentlichen Datei
 des Paket-Quellverzeichnisses [[install.dir/relax]]. Es wird generiert durch:
 \begin{verbatim}
-notangle -Rdefine-dorw relax.rev > dorw; chmod +x dorw
+notangle -Rdefine-dorx relax.rev > dorx; chmod +x dorx
 \end{verbatim}
 <<define-dorx>>=
 # dorx: Installationsskript fuer relax
@@ -6835,10 +7155,14 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.04.tar.gz
+R CMD INSTALL --library=lib relax_1.07.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
-cd $HOME/work/relax/install.dir/lib; zip -r relax_1.04.zip relax/*
-mv relax_1.04.zip ..
+cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.07.zip relax/*
+mv relax_1.07.zip ..
+
+cd ..
+## cp relax_1.07.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.4.0/
+cp relax_1.07.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.4.0/relax-mac1.zip
 
 # exit 0
 

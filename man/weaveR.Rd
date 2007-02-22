@@ -7,13 +7,15 @@
   of weaving. As a result a LaTeX file is generated.
 }
 \usage{
-weaveR(in.file,out.file)
+weaveR(in.file,out.file,replace.german.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if missing the extension of the
   input file is turned to \code{.tex} }
+  \item{replace.german.umlaute}{ if TRUE german umlaute will be replaced by 
+   TeX sequences}
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text

@@ -10,7 +10,7 @@
 %\usepackage[T1]{fontenc}
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
-\date{20.Sep.2006}
+\date{20.09.2006, 10.11.2006}
 \begin{document}
 \maketitle
 \raggedright
@@ -26,7 +26,7 @@ notangle -Rdefine-weaveR         webR.rev > ../install.dir/relax/R/weaveR.R
 notangle -Rdefine-weaveR-help webR.rev > ../install.dir/relax/man/weaveR.Rd
 notangle -Rdefine-weaveRhtml  webR.rev > ../install.dir/relax/R/weaveRhtml.R
 notangle -Rdefine-weaveRhtml-help webR.rev > ../install.dir/relax/man/weaveRhtml.Rd
-
+# noweave -delay .index webR.rev > webR.tex; latex webR; dvipdf webR
 @
 \section{TEIL I --- TANGLE}
 \subsection{Problemstellung}
@@ -460,9 +460,9 @@ Eckige Klammern in Verbatim-Umgebungen werden nicht ersetzt.
 \end{itemize}
 Die Funktion besitzt folgenden Aufbau:
 <<define-weaveR>>=
-weaveR<-function(in.file,out.file){
+weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307
   <<initialisiere [[weaveR]]>>
   <<lese Datei ein [[weaveR]]>>
   <<substituiere mit @ versehene Zeichengruppen [[weaveR]]>>
@@ -475,18 +475,34 @@ weaveR<-function(in.file,out.file){
 }
 
 @
-Zunächst fixieren wir die Suchmuster für wichtige Dinge.
-Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Das Encoding wird mittels tcltk festgestellt.
 <<initialisiere [[weaveR]]>>=
+require(tcltk)
 pat.use.chunk<-paste("<","<(.*)>",">",sep="")
 pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
+.Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+UTF<-0<length(grep("utf",UTF))
+if(<<DEBUG-Flag gesetzt>>){
+  if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n")
+}
+if(!UTF){ 
+      char267<-eval(parse(text='"\\267"'))
+}
+
+@
+ALT: Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Versuche zum UTF-Problem:
+[[is.utf<-"\"<c3>\""==deparse("\xc3")]]
+[[is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""]]
+<<old>>=
 lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
 UTF<-(1==length(grep("UTF",lcctype))) 
-UTF<- UTF | nchar(deparse("\xc3")) > 3
-if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
+is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
+UTF<- UTF | is.utf
 
 @
 Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
@@ -498,6 +514,10 @@ if(!file.exists(in.file)){
 }
 # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
 input<-readLines(in.file) # 2.1.0
+try(if(replace.german.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
+    # LATIN1-Dok :
+    input<-iconv(input,"LATIN1","")
+})
 length.input<-length(input)
 
 @
@@ -510,6 +530,32 @@ Umlaute sind ein Dauerbrenner.
 Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
 in der ersten Zeile ein \emph{ß}.
 <<ersetze Umlaute [[weaveR]]>>=
+if(replace.german.umlaute){
+ if(!UTF){
+ # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+    uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+    input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+    input<-gsub(substring(uml.latin1,7,7),"{\\\\ss}",input) # replace sz
+    uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+    input<-gsub(uml.pattern,"\\\\\"\\1",input)  # replace Umlaute ae->&aeuml; 
+# replace Umlaute &aeuml;->&auml;
+    input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)   
+ }else{
+  input<-gsub("\283\237","{\\\\ss}",input)
+  input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                            "\\\\\"\\1",input)
+  input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+ }
+ if(<<DEBUG-Flag gesetzt>>){
+  cat("german Umlaute replaced\n")
+ }
+}
+@
+Diese Darstellung ließ sich unter utf-8 nicht anzeigen!
+<<alte Umlautersetzung weaveR>>=
 if(!UTF){
  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
   input<-gsub("\283","",input)
@@ -525,7 +571,7 @@ if(!UTF){
   input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
                               "aouAOU", input)
 }
-cat("german Umlaute replaced\n")
+
 @
 Vor dem Wegschreiben müssen die besonderen Zeichengruppen
 zurückübersetzt werden.
@@ -537,7 +583,10 @@ input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
 <<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>=
 input[1]<-paste(
      "\\newcounter{Rchunkno}",
-     "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
+     "\\newcommand{\\codechunkcommands}{\\relax}",
+     "\\newcommand{\\textchunkcommands}{\\relax}",
+     "\\newcommand{\\makemarginno}{\\codechunkcommands\\stepcounter{Rchunkno}",
+     ##  "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
      "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}\\makebox[0mm]{",
      "\\arabic{Rchunkno}",
      "}\\hspace*{3em}}",
@@ -639,7 +688,8 @@ line.typ[code.index]<-"CODE"
 Es müssen nur die Klammeraffen entfernt werden. Einfacher ist es
 den entsprechenden Zeilen etwas Leeres zuzuweisen.
 <<erledige Text-Chunk-Starts [[weaveR]]>>=
-input[text.start.index]<-""
+## input[text.start.index]<-""
+input[text.start.index]<-"\\textchunkcommands"
 
 @
 <<extrahiere Header-, Code- und Verwendungszeilen [[weaveR]]>>=
@@ -687,10 +737,28 @@ aussehen:
  Chunk Nummer \chunkref{chunkA} zeigt die Erstellung einer Graphik.
 \end{verbatim}
 @
+Code-Chunk-Verwendungszeilen.
+Zuerst werden die Leerzeichen vor den Verwendungszeilen
+auf [[leerzeichen.vor.use]] ergänzt um ein zusätzliches
+Leerzeichen abgelegt und ohne diese auf [[use.lines]]
+abgelegt. Jede Verwendungszeile wird in einem 
+Schleifendurchgang der fo-Schleife untersucht:
+Dabei werden die Chunk-Namen solange aufgebrochen,
+bis alle in einzelnen Elementen von [[uli]] stehen.
+Die Stellen von [[uli]] mit Chunk-Namen werden auf 
+[[cand]] gemerkt. Dann können die Namen gesucht
+und um die Nummer ergänzt werden.
+Die mit Nummern und TeX-Klammern versehenen
+[[uli]]-Einträge werden zusammengepackt und auf
+[[use.lines]] zurückgespielt.
+Zuvor müssen die Nicht-Chunk-Namen jedoch noch
+wie Code behandelt werden!
 <<schreibe Code-Verwendungszeilen [[weaveR]]>>=
 use.lines<-input[use.index]
-leerzeichen.vor.use<-paste("\\verb|",sub("[^ ](.*)$","",use.lines),"|",sep="")
-use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-8)
+leerzeichen.vor.use<-paste("\\verb|",
+                                           sub("[^ ](.*)$"," ",use.lines),
+                                           "|",sep="") ## plus 1 Leerzeichen 
+use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-7) ## 8
 for(i in seq(use.lines)){
   uli<-use.lines[i]
   repeat{
@@ -701,16 +769,17 @@ for(i in seq(use.lines)){
   cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
   ref.no<-match(uli[cand],code.chunk.names)
   uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
+#  formating code within use references 
   if(length(uli)!=length(cand)){
     if(!UTF){ 
-      uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
+      uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
     }else{
       uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
     }
   }
   use.lines[i]<-paste(uli,collapse="")
 }
-input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline")
+input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline\\rule{0mm}{0mm}%",sep="")
 
 @
 <<old: schreibe Code-Verwendungszeilen [[weaveR]]>>=
@@ -736,9 +805,10 @@ könnte man den [[catcode]] so verändern:
 [[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
 <<schreibe Code-Zeilen [[weaveR]]>>=
 if(!UTF){
-  input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
+  input[code.index]<-paste("\\verb",char267," ",code.lines," ",char267,
+                                          "\\newline\\rule{0mm}{0mm}%",sep="")
 }else{
-  input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline") #060516
+  input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline\\rule{0mm}{0mm}%") #060516
 }
 
 @
@@ -813,9 +883,9 @@ ind.cand<-grep("\\[\\[(.*)\\]\\]",lines.to.check)
 if(0<length(ind.cand)) {
   # zerlege Zeile in token der Form [[,  ]] und sonstige
   zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-     zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+     zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
      zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-     gsub("\333","",zs)
+     gsub("aAzsplitAa","",zs)
   })
   # suche von vorn beginnend zusammenpassende [[-]]-Paare
   z<-unlist(lapply(zsplit,function(x){
@@ -875,13 +945,15 @@ weaveR("out.rev"); system("cat q|latex out.tex")
   of weaving. As a result a LaTeX file is generated.
 }
 \usage{
-weaveR(in.file,out.file)
+weaveR(in.file,out.file,replace.german.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if missing the extension of the
   input file is turned to \code{.tex} }
+  \item{replace.german.umlaute}{ if TRUE german umlaute will be replaced by 
+   TeX sequences}
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -950,9 +1022,9 @@ entsprechen denen von [[weaveR]]. Auch die grobe Struktur
 und besonders der Anfang der Lösung wurde im wesentlichen
 kopiert. Die Funktion besitzt folgenden Aufbau:
 <<define-weaveRhtml>>=
-weaveRhtml<-function(in.file,out.file){
+weaveRhtml<-function(in.file,out.file,replace.german.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 060920
+  # look for file webR.pdf, P. Wolf 060920 / 070309
   <<initialisiere [[weaveRhtml]]>>
   <<lese Datei ein [[weaveRhtml]]>>
   <<entferne Kommentarzeichen [[weaveRhtml]]>>
@@ -965,24 +1037,39 @@ weaveRhtml<-function(in.file,out.file){
   <<definiere einfachen head [[weaveRhtml]]>>
   <<setze Schriften um [[weaveRhtml]]>>
   <<entferne unbrauchbare Makros [[weaveRhtml]]>>
+  <<baue ggf.\ Rweb-Felder ein>>
+  <<integriere Newline hinter Zeilenumbrüchen>>
   <<schreibe Ergebnis in Datei [[weaveRhtml]]>>
   "ok"
 }
 
 @
+<<DEBUG-Flag gesetzt>>=
+exists("DEBUG")
+@
 Zunächst fixieren wir die Suchmuster für wichtige Dinge.
 Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
 <<initialisiere [[weaveRhtml]]>>=
-verbose<-FALSE
+require(tcltk)
 pat.use.chunk<-paste("<","<(.*)>",">",sep="")
 pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
+.Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+UTF<-0<length(grep("utf",UTF))
+if(<<DEBUG-Flag gesetzt>>){ 
+   if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n") 
+}
+@
+<<old>>=
 lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
 UTF<-(1==length(grep("UTF",lcctype))) 
-UTF<- UTF | nchar(deparse("\xc3")) > 3
-if(verbose)  {if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")}
+is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
+UTF<- UTF | is.utf
+if(<<DEBUG-Flag gesetzt>>){
+  if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
+}
 
 @
 Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
@@ -993,8 +1080,11 @@ if(!file.exists(in.file)){
   return("Error in weaveRhtml: file not found")
 }
 input<-readLines(in.file) 
+try(if(replace.german.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  # LATIN1-Dok 
+	  input<-iconv(input,"LATIN1","")
+})
 input<-gsub("\t","      ",input)
-
+input<-c(input,"@")
 length.input<-length(input)
 
 @
@@ -1004,6 +1094,8 @@ input<-gsub("@\\]\\]","DoEckCloseKl-ESC",gsub("@\\[\\[","DoEckOpenKl-ESC",input)
 
 @
 <<entferne Kommentarzeichen [[weaveRhtml]]>>=
+input<-sub('^% (<p><img src="t)',"\\1",input)
+input<-sub('^%(<!--latex-)',"\\1",input)
 h<-grep("^[ ]*%",input)
 if(0<length(h)) input<-input[-h]
 
@@ -1011,8 +1103,35 @@ if(0<length(h)) input<-input[-h]
 Umlaute sind ein Dauerbrenner.
 Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
 in der ersten Zeile ein \emph{ß}.
+[[.Tcl("set XYZ [encoding system]"); tclvalue("XYZ")]], z.B.: iso8859-15, utf-8
+[[localeToCharset()]] liefert: "ISO8859-1" bzw.: [[ [1] "UTF-8" "ISO8859-1"]]
 <<ersetze Umlaute [[weaveRhtml]]>>=
-if(!UTF){
+if(replace.german.umlaute){
+ if(!UTF){
+  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+    uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+    input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+    input<-gsub(substring(uml.latin1,7,7),"&szlig;",input) # replace sz
+    uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+    input<-gsub(uml.pattern,"&\\1uml;",input)  # replace Umlaute ae->&aeuml; 
+    # replace Umlaute &aeuml;->&auml;  
+    input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)  
+ }else{
+    input<-gsub("\283\237","&szlig;",input)
+    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                              "&\\1uml;",input)
+    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+ }
+}
+if(<<DEBUG-Flag gesetzt>>) cat("german Umlaute replaced\n")
+
+@
+<<old Umlaut-Replace>>=
+if(replace.german.umlaute){
+ if(!UTF){
   # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
   input<-gsub("\283","",input)
   input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
@@ -1020,14 +1139,23 @@ if(!UTF){
   input<-gsub("\337","&szlig;",input) # SZ
   input<-gsub("(\344|\366|\374|\304|\326|\334)","&\\1uml;",input)
   input<-chartr("\344\366\374\304\326\334","aouAOU",input)
-}else{
+ }else{
   input<-gsub("\283\237","&szlig;",input)
   input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
                             "&\\1uml;",input)
   input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
                               "aouAOU", input)
+ }
 }
-if(verbose) cat("german Umlaute replaced\n")
+if(<<DEBUG-Flag gesetzt>>) cat("german Umlaute replaced\n")
+
+@
+<<alternative zu [[!UTF]]>>=
+  # input<-iconv(input,"utf-8","")
+  # input<-gsub("ß","&szlig;",input)
+  # input<-gsub("(ä|ö|ü|Ä|Ö|Ü)","&\\1uml;",input)
+  # input<-chartr("äöüÄÖÜ","aouAOU",input)
+
 @
 Vor dem Wegschreiben müssen die besonderen Zeichengruppen
 zurückübersetzt werden.
@@ -1165,12 +1293,13 @@ if(0<length(com.lines<-grep(paste("^\\\\",command,sep=""),input))){
     sec<-c(sec,paste(x[2:(en-1)],collapse=""))
     input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
   }
-  command.links<-paste("<a href=\"#",command,seq(com.lines),"\">",sec,"</a>",sep="")
+  command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                      "\">",sec,"</a>\n",sep="") 
 }
 
 @
 <<definiere einfachen head [[weaveRhtml]]>>=
-## if(verbose) print("head")
+## if(  DEBUG-Flag gesetzt  ) print("head")
 head<-grep("^\\\\title|^\\\\author|^\\\\date",input)
 if(0<length(head)){
   h<-min(max(head)+5,length(input))
@@ -1187,10 +1316,13 @@ if(0<length(head)){
 }
 if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
   input<-input[-(1:h[1])]
-input[1]<-paste(collapse="\n",
+  titel.titel<-gsub("\n","--",paste(titel,collapse="--"))
+  titel.titel<-gsub("<br>","--",titel.titel)
+  titel.titel<-gsub("\\\\","--",titel.titel)
+  input[1]<-paste(collapse="\n",
   "<!--  generated by weaveRhtml --><html><head>",
   "<meta content=\"text/html; charset=ISO-8859-1\">",
-  "<title>",titel,"</title></head>",
+  "<title>",titel.titel,"</title></head>",
   "<body bgcolor=\"#FFFFFF\">",
   "<h1>",if(!is.null(titel))titel,"</h1>",
   "<h2>",if(!is.null(autor))autor,"</h2>",
@@ -1211,6 +1343,62 @@ h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",inpu
 if(0<length(h)) input<-input[-h]
 
 @
+Die Rweb-Funktionalität ist entstanden in Anlehnung an Seiten 
+von Charlie Geyer [[http://www.stat.umn.edu/~charlie/]], wie:
+[[http://www.stat.umn.edu/geyer/3011/examp/reg.html]]
+<<baue ggf.\ Rweb-Felder ein>>=
+  txt<-input
+  ind.Rweb<-grep("^<a name=\"codechunk.*<i>&lt;Rweb",txt) ; txt[ind.Rweb]
+  ind.p   <-grep(paste("^<","p>",sep=""),txt) ; txt[ind.p]
+  if(length(ind.p)>0){
+    ind.Rweb.codes<-lapply(ind.Rweb,function(x) (x+1):(ind.p[ind.p>x][1]-1))
+    ## if( DEBUG-Flag gesetzt ) print(ind.Rweb.codes)
+    Rwebbegin<-paste(c(  # Rweb start 
+      '<hr SIZE=3><form onSubmit =" return checkData(this)"',
+      '  action="http://rweb.stat.umn.edu/cgi-bin/Rweb/Rweb.cgi" ',
+      '  enctype="multipart/form-data" method="post" target="_blank"><p>',
+      '<label for="filedata" size=20>data frame (load LOCAL file): </label>',
+      '<input type="file" name="FileData" id="filedata" size=30 >',
+      '<br><br>',
+      '<label for="urldata" size=20>data frame (via www -> URL): </label>',
+      '<input type="TEXT" name="URLData" size=40 id="urldata" YyYyY>',
+      '<br><br>',
+      '<label for="Rcode">R-Code:</label>',
+      '<textarea name="Rcode" rows="XxXxX" cols="80" id="Rcode">\n'
+      ),collapse=" ")
+    Rwebend<-  paste(c( # Rweb end
+      '</textarea><p>',
+      '<input type="submit" value="compute via Rweb">',
+      '<input type="reset" value="reset">',
+      '</form><hr SIZE=3>',
+      ' '),collapse=" ")
+    for(i in seq(ind.Rweb.codes)){
+      h<-sub("<code>","",txt[ind.Rweb.codes[[i]]])
+      h<-sub("<br>","",h)
+      h<-sub("</code>","",h)
+      h<-gsub("[&]nbsp[;]"," ",h)
+      data.http<-""    # ; data.loc<-""
+      ind<-length(grep("read.table",h))
+      if(0<length(ind)) {
+        h[ind]<-paste("#",h[ind],"# choose data by input field!!")
+        ind<-ind[1]
+        if(0<length(grep("http:",h[ind]))) {
+           data.http<-sub(".*(http)","\"\\1",h[ind])
+           data.http<-paste("value=",sub(".*(\".*\").*$","\\1",data.http),sep="")
+        }
+      }
+      rb<-sub("YyYyY",data.http,Rwebbegin)
+      h[1]<-paste(sub("XxXxX",as.character(length(h)),rb),h[1],sep="")
+      h[length(h)]<-paste(h[length(h)],Rwebend)
+      txt[ind.Rweb.codes[[i]]]<-h
+    }
+    input<-txt
+  }
+
+
+
+
+@
 <<zentriere und quote [[weaveRhtml]]>>=
 input<-sub("\\\\begin\\{center}","<center>",input)
 input<-sub("\\\\end\\{center}","</center>",input)
@@ -1218,6 +1406,8 @@ input<-sub("\\\\begin\\{quote}","<ul>",input)
 input<-sub("\\\\end\\{quote}","</ul>",input)
 input<-sub("\\\\begin\\{itemize}","<ul>",input)
 input<-sub("\\\\end\\{itemize}","</ul>",input)
+input<-sub("\\\\begin\\{enumerate}","<ul>",input)
+input<-sub("\\\\end\\{enumerate}","</ul>",input)
 input<-sub("\\\\item","</li><li>",input)
 
 @
@@ -1229,7 +1419,11 @@ if(0<length(h<-grep("\\\\texttt",input))){
   input<-transform.command.line("texttt",input,"<code>","</code>")
 }
 
-
+@
+Nur für die Lesbarkeit der Html-Dateien werden noch ein paar Zeilenumbrüche
+eingefügt.
+<<integriere Newline hinter Zeilenumbrüchen>>=
+input<-gsub("<br>","<br>\n",input)
 @
 Zum Schluss müssen wir die modifizierte Variable [[input]] wegschreiben.
 <<schreibe Ergebnis in Datei [[weaveRhtml]]>>=
@@ -1366,7 +1560,7 @@ code.start.lines<-paste(
       "<a name=\"codechunk",no,"\"></a>",
       "<a href=\"#codechunk",1+(no%%max(no)),"\">",
       "<br>Chunk:",no," <i>&lt;",code.start.lines,def.ref.no,
-      "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a><br>",sep="")
+      "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a><br>",sep="") 
 input[code.start.index]<-code.start.lines
 
 @
@@ -1385,7 +1579,7 @@ for(i in seq(use.lines)){
   }
   cand<-grep("uSeCHUNK",uli); uli<-sub("uSeCHUNK","",uli)
   ref.no<-match(uli[cand],code.chunk.names)
-  uli[cand]<-paste("<code>&lt;",uli[cand]," ",ref.no,"&gt;</code>",sep="")
+  uli[cand]<-paste("</code>&lt;",uli[cand]," ",ref.no,"&gt;<code>",sep="")
   if(length(uli)!=length(cand)){
     if(!UTF){ 
       uli[-cand]<-paste("",uli[-cand],"",sep="") #050612
@@ -1393,7 +1587,7 @@ for(i in seq(use.lines)){
       uli[-cand]<-paste("",uli[-cand],"",sep="") #060516
     }
   }
-  use.lines[i]<-paste(uli,collapse="")
+  use.lines[i]<-paste("<code>",paste(uli,collapse=""),"</code>")
 }
 input[use.index]<-paste(leerzeichen.vor.use,use.lines,"<br>")
 
@@ -1515,9 +1709,9 @@ ind.cand<-grep("\\[\\[(.*)\\]\\]",lines.to.check)
 if(0<length(ind.cand)) {
   # zerlege Zeile in token der Form [[,  ]] und sonstige
   zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-     zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+     zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
      zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-     gsub("\333","",zs)
+     gsub("aAzsplitAa","",zs)
   })
   # suche von vorn beginnend zusammenpassende [[-]]-Paare
   z<-unlist(lapply(zsplit,function(x){
@@ -1574,13 +1768,15 @@ weaveRhtml("/home/wiwi/pwolf/tmp/doof")
   of weaving. As a result a html-file is generated.
 }
 \usage{
-weaveRhtml(in.file,out.file)
+weaveRhtml(in.file,out.file,replace.german.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if this argument is missing the extension of the
-  input file is turned to \code{.html} }
+   input file is turned to \code{.html} }
+  \item{replace.german.umlaute}{ if TRUE german umlaute will be replaced by 
+   html sequences}
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -1592,6 +1788,16 @@ weaveRhtml(in.file,out.file)
   Within the code chunk you are allowed to use other code chunks by referencing
   them by name ( for example by: \code{@<<name of code chunk>>} ).
   In this way you can separate a big job in smaller ones.
+
+  Rweb speciality: A code chunk with a code chunk name containing  \code{"Rweb"} 
+  as the first four characters will be translated to a text input field and
+  a submit button \code{compute via Rweb}. 
+  By pressing this button the code of the text field will be
+  sent for evaluation to Rweb \code{http://rweb.stat.umn.edu/Rweb/} 
+  and the results appears in a new browser window. 
+  This link to Rweb has been inspirited by web pages like 
+  \url{http://www.stat.umn.edu/geyer/3011/examp/reg.html} written
+  by Charlie Geyer \url{http://www.stat.umn.edu/~charlie}.
 
   Technical remarks:
   To format small pieces of code in text chunks you have to put them in

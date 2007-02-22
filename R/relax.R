@@ -87,7 +87,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   language<-"english"
   # language<-"german"
   # maximal characters of output to be shown
-  maxol.sys<-2500
+  maxol.sys<-4000
   # size of fonts # set of values: 1,2, ..., 7
   initial.font.size<-4
   # height of included postscript plot in LaTeX document:
@@ -102,6 +102,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   relaxwindow.width.sys<-"700"
   # use of "tab"-key for name completion
   name.complete.sys<-TRUE
+  # replace german umlaute
+  replace.german.umlaute.sys<-TRUE
   #############################################
   ## special settings for windows
   # how to call LaTeX
@@ -113,7 +115,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   # text editor
   text.editor.windows<-"notepad"
   # browser
-  # browser.windows<-"c:/Programme/.../mozilla"
+  # browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
+  pdfview.windows<-"acroread"
   #############################################
   ## special settings for linux
   path.tcltk.package.img<-"/usr/local/lib"
@@ -123,15 +126,30 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   view.command.linux<-"xdvi"
   # how to call dvipdf
   dvipdf.command.linux<-"dvipdf"
-  # text editor
+  # text editor ?????????
   text.editor.linux<-"kwrite"
   # browser
   browser.linux<-"konqueror"
+  # pdf viewer
+  pdfview.linux<-"acroread"
+  #############################################
+  ## special settings for mac
+  # how to call LaTeX
+  latex.command.mac<-"echo q | pdflatex" 
+  # view command for viewing .dvi files
+  view.command.mac<-"open " 
+  # how to call dvipdf
+  dvipdf.command.mac<-"dvipdf" 
+  # text editor
+  text.editor.mac<-"nano"
+  # browser
+  browser.mac<-"safari"
 
   try({
     h<-scan(file=file.path(relax.path,"config/settings.relax"),what="",sep="\n")
     for(i in seq(h)) eval(parse(text=h[i]))
   })
+  editor.sys<-text.editor.mac
   if((version$os=="Win32" || version$os=="mingw32")
 ) {
     editor.sys <- text.editor.windows
@@ -149,6 +167,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ) {
     if(exists("browser.linux")) browser.sys <- browser.linux
   }
+  if(substring(version$os,1,7)=="darwin8"){
+    latex.command.linux<-latex.command.mac
+    view.command.linux<-view.command.mac
+    dvipdf.command.linux<-dvipdf.command.mac
+    text.editor.linux<-text.editor.mac
+  }
   if(!exists("initial.font.size")) initial.font.size<-4
   initial.font.size<-initial.font.size[1]
   if(is.na(initial.font.size) || all(initial.font.size!=(1:7))) initial.font.size<-4
@@ -163,7 +187,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     settclenvvars()
     try(.Tcl("package require Img"))
-  } else{
+  } 
+  if(substring(version$os,1,5)=="linux"
+){
     Img.ok<-F
     if(file.exists(path.tcltk.package.img)){ # pwolf-lokal
             addTclPath(path.tcltk.package.img); Img.ok<-T
@@ -184,6 +210,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   revive.sys<-environment()
   assign("revive.sys", revive.sys, envir=revive.env)
 
+  .Tcl("set XYZ [encoding system]")
+  is.UTF<- 0<length(grep("utf",tclvalue("XYZ")))
   readline<-function(prompt=""){
     if(! (any((h<-'tkwait.variable("tvexit")')==substring(sys.calls(),1,nchar(h))) ||
           0 < length(grep("revive.env",as.character(sys.calls()) ) )
@@ -192,7 +220,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       return(readline(prompt=prompt))
     }
     .newl<-tktoplevel()
-    tkwm.title(.newl, "text input"); tkwm.geometry(.newl,"+0+0")
+    tkwm.title(.newl, "text input"); tkwm.geometry(.newl,"+0+15")
     if(exists("running.function") && running.function=="relax"
 ){
       tkpack(minfo<-tkmessage(.newl,width="1000",justify="left",relief="raised"))
@@ -250,13 +278,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                      tkinsert(twin,"insert",zeichen)
                      if((version$os=="Win32" || version$os=="mingw32")
 )tkdelete(twin,"insert-1chars")
+                     if(substring(version$os,1,7)=="darwin8")tkdelete(twin,"insert-1chars")
                    }
                  }
                  f.umlaut<-function(zeichen){
                    function(){
                      return()
-                     if(zeichen=="\337" & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
-                     tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
+                     #char337<-eval(parse(text='"\\337"'))
+                     #if(zeichen==char337 & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
+                     #tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
                    }
                  }
                  tkbind(twin,"<<LKeckig>>", f.sonderzeichen("["))
@@ -267,6 +297,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                  tkbind(twin,"<<Klammera>>",f.sonderzeichen("@"))
                  tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                  tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
+                 renewhighlighting<-function(){
+                   tworkwin<-get("tworkwin",env=revive.sys)
+                   melde("ak texthervor",1)
+                   tcl("markclear",tworkwin)
+                   tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                   tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                   tcl("marklinetypes",tworkwin)
+                   melde("ak texthervor",2)
+
+                 }
+                 # tkbind(twin,"<<Klammeraffe>>",renewhighlighting)
+                 tkbind(twin,"<Return>",renewhighlighting)
 
     if(!exists("tworkwin"))
       tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -323,7 +365,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
    }else{
     TopN<-tktoplevel()
     if(title=="") title<-"select item, press Return (or exit by Esc)"
-    tkwm.geometry(TopN,"+0+0"); tkwm.title(TopN, title)
+    tkwm.geometry(TopN,"+0+15"); tkwm.title(TopN, title)
     if(missing(choices)||length(choices)==0) choices<-"relax"
     choices<-paste(seq(choices),": ",choices, sep="")
     nc<-length(choices<- c(choices, "EXIT"))
@@ -406,7 +448,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       } else {
         typ<-if(is.numeric(what)) "Zahlen-Eingabe" else "Text-Eingabe"
-        .newl<-tktoplevel(); tkwm.title(.newl, typ); tkwm.geometry(.newl,"+0+0")
+        .newl<-tktoplevel(); tkwm.title(.newl, typ); tkwm.geometry(.newl,"+0+15")
         revive.sys<-get("revive.sys",envir=revive.env)
         assign(".newl",.newl,envir=revive.sys)
         if(exists("running.function") && running.function=="relax"
@@ -468,13 +510,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                          tkinsert(twin,"insert",zeichen)
                          if((version$os=="Win32" || version$os=="mingw32")
 )tkdelete(twin,"insert-1chars")
+                         if(substring(version$os,1,7)=="darwin8")tkdelete(twin,"insert-1chars")
                        }
                      }
                      f.umlaut<-function(zeichen){
                        function(){
                          return()
-                         if(zeichen=="\337" & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
-                         tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
+                         #char337<-eval(parse(text='"\\337"'))
+                         #if(zeichen==char337 & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
+                         #tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
                        }
                      }
                      tkbind(twin,"<<LKeckig>>", f.sonderzeichen("["))
@@ -485,6 +529,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                      tkbind(twin,"<<Klammera>>",f.sonderzeichen("@"))
                      tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                      tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
+                     renewhighlighting<-function(){
+                       tworkwin<-get("tworkwin",env=revive.sys)
+                       melde("ak texthervor",1)
+                       tcl("markclear",tworkwin)
+                       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                       tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                       tcl("marklinetypes",tworkwin)
+                       melde("ak texthervor",2)
+
+                     }
+                     # tkbind(twin,"<<Klammeraffe>>",renewhighlighting)
+                     tkbind(twin,"<Return>",renewhighlighting)
 
         bexit<-tkbutton(.newl, text="Exit: end of input")
         tkpack(tscan, bexit); tkfocus(tscan)
@@ -667,93 +723,54 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   melde("cat saved",3)
 
   WinToTcl.read<-function(x){
+    try(if(is.UTF&&replace.german.umlaute.sys && any(is.na(iconv(x,"","LATIN1")))){  
+      # Latin1 document loaded->translate to utf-8
+      res<-tkmessageBox(message=if(language=="german") 
+          "Soll das Encoding des Dokuments (?Latin1?) auf das lokale umgesetzt werden?"
+        else 
+          "Do you want to change the encoding of the document (?latin1?) to the local one?",
+              title="Encoding?",icon="warning",type="yesnocancel",default="no")
+      if("externalptr"==mode(res))  res<-tclvalue(res)
+      if(res=="yes"){
+        x<-iconv(x,"LATIN1","")
+        cat("Latin1 Encoding of document has been changed to local coding\n")
+      }
+    })
+    try(if(!is.UTF&&replace.german.umlaute.sys && any(is.na(iconv(x,"","LATIN1")))){  
+      # utf-8 document loaded->translate to Latin1
+      res<-tkmessageBox(message=if(language=="german") 
+          "Soll das Encoding des Dokuments (?UTF-8?) auf das lokale umgesetzt werden?"
+        else 
+          "Do you want to change the encoding (?utf-8?) of the document to the local one?",
+              title="Encoding?",icon="warning",type="yesnocancel",default="no")
+      if("externalptr"==mode(res))  res<-tclvalue(res)
+      if(res=="yes"){
+        x<-iconv(x,"utf-8","")
+        cat("utf-8 Coding of document has been changed to local coding\n")
+      }
+    })
     return(x)
-   # x<-chartr("\204\224\201\216\231\232\341","\244\266\274\204\226\234\237",x) # old dos
-      x<-chartr("\314\316\317\330\332\333\336","\244\266\274\204\226\234\237",x) # old unix
-      x<-chartr("\344\366\374\304\326\334\337","\244\266\274\204\226\234\237",x)
-      x<-gsub("(\244|\266|\274|\204|\226|\234|\237)","\283\\1",x) #ae
   }
-  TcltoWin.write<-function(x){
-   lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
-   UTF<-(1==length(grep("UTF",lcctype))) 
-   UTF<- UTF | nchar(deparse("\xc3")) > 3
-   #(0==length(grep("(=de)|(=ge)",lcctype)))
-   # cat("UTF?"); print(UTF)
-   if(!UTF){
-     x<-gsub("\283","",x)
-     x<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",x)
-     return(x)
-   }else{
-     return(x)
-   }
+
+  if(is.UTF)  TcltoWin.write<-function(x){ return(x) } else {
+    # Latin1-Umwandlung von Umlauten
+    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+    uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+    TcltoWin.write<-function(x){
+      if(replace.german.umlaute.sys){
+        x<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",x))
+      }
+      return(x)
+    }
   }
   tmp.file.name <- tempfile("rt-tmp")
   assign(tmp.file.name,"tmp.file.name",env=revive.sys)
 
   tmp.sink.name <- tempfile("rt-sink")
   assign(tmp.sink.name,"tmp.sink.name",env=revive.sys)
-  SaveAsHtml<-function(savetext,filename="lotto.rev"){
-    
-    # savetext<-gsub("<p>",NL,savetext)
-
-    savetext<-gsub("@<<","&lt;&lt;",savetext)
-
-    #savetext<-gsub("((\\\\begin\\{verbatim\\})|(output-start))","<p><pre>",savetext)
-    #savetext<-gsub("((\\\\end\\{verbatim\\})|(output-end))",  "</pre><p>",savetext)
-    savetext<-gsub("((\\\\begin\\{verbatim\\})|(output-start))","<pre>",savetext) #2.1.0
-    savetext<-gsub("((\\\\end\\{verbatim\\})|(output-end))",  "</pre>",savetext) #2.1.0
-
-    if(length(h<-grep("includegraphics",savetext))>0){
-      savetext[h]<-paste("<!--",savetext[h],"-->")
-    }
-
-    # Umlaute-Ersetzung fuer Tcl-Fenster nach Html:
-     lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
-     UTF<-(1==length(grep("UTF",lcctype))) 
-     UTF<- UTF | nchar(deparse("\xc3")) > 3
-      if(!UTF){
-       savetext<-gsub("\237","&szlig;",savetext)
-       savetext<-gsub("(\244|\266|\274|\204|\226|\234)","&\\1uml;",savetext)
-       savetext<-chartr("\244\266\274\204\226\234", "aouAOU", savetext)
-       savetext<-gsub("\283","",savetext)
-     }else{
-       savetext<-gsub("\283\237","&szlig;",savetext)
-       savetext<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
-                                "&\\1uml;",savetext)
-       savetext<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
-                                  "aouAOU", savetext)
-     }
-     # cat("AsHtml: 283..fertig"); print(UTF)
-     
-    ## savetext<-gsub("^@","</pre><p>",savetext)
-    savetext<-gsub("^@","</pre>",savetext)
-
-    no <- grep("<<(.*)>>=",savetext)
-    if(0<length(no)){
-      savetext<-gsub("^<<(.*)>>=",  "&lt;&lt;\\1 ",savetext)
-      savetext[no]<-paste(savetext[no],1:length(no),"&gt;&gt;=<pre>")
-      savetext<-gsub("<<(.*)>>","</pre>&lt;&lt;\\1&gt;&gt; <pre>",savetext)
-    }
-    savetext<-gsub("#<(.*)>#","</pre>&lt;\\1&gt;<pre>",savetext)
-
-
-    # savetext<-gsub(NL,"<p>",savetext)
-
-    savetext<-c("<HTML><HEAD><TITLE>$$1</TITLE></HEAD>",
-                "<BODY BGCOLOR=\"#FFFFFF\">", savetext, "</BODY></HTML>")
-
-    savetext<-sub("$","<br>",savetext)
-    savetext<-sub("pre><br>$","pre>",savetext)
-    n<-nchar(filename)
-    if(is.null(n)||5>n||substring(filename,n-3,n)!=".rev"){
-        cat("ERROR: File name not ok!!!\n")
-    }else{
-        filename<-paste(substring(filename,1,n-3),"html",sep="")
-        try(get("cat","package:base")(savetext,sep="\n",file=filename))
-    }
-
-  }
-           ##definiere Testknopf\-funktion##
+  ##definiere [[SaveAsHtml]]##           
+  ##definiere Testknopf\-funktion##
   fHelp.R<-function(){
     melde("fHelp.R",1)
     frage<-"name of R function?"; set.tclvalue("tvinfo",string.sys)
@@ -1051,6 +1068,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(!is.null(bildname)&&nchar(bildname)>0){
       n<-nchar(bildname<-gsub(" ","",bildname))
       bildname<-sub(".ps$","",bildname)
+      
     # Postscript:
       psname <-paste(bildname,".ps", sep="")
       news<-paste("@\n \\begin{center}","\\includegraphics[",
@@ -1190,6 +1208,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       }else{
         try.res<-try({dev.copy(bitmap,type="jpeg",jpgname);dev.off()})
       }
+    # gif:
+      if(substring(version$os,1,7)=="darwin8" ){
+        gifname<-sub("jpg$","gif",jpgname) 
+        try.res<-try({system(paste("convert",jpgname,gifname))})
+      }
       if(is.function(try.res)){
         ok <- "OK"
       } else {
@@ -1205,7 +1228,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       } else { ok<-T }
 
 
-      if(!ok) cat("Error: *jpg file not generated by dev.copy!!!\n")
+      if(!ok) cat("Error: jpg of gif file not generated by dev.copy!!!\n")
       melde(paste("p", psname), "cmd.msg")
     }
 
@@ -1230,7 +1253,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   show.plots<-function(textwidget,is.reportwin=T,path.of.plots){
    try(.Tcl( paste(
     "proc showimage {w im place} {",
-     "$w image create $place -image [image create photo -format jpeg -file $im]",
+     if(substring(version$os,1,7)=="darwin8") 
+      "$w image create $place -image [image create photo -format gif -file $im]" else
+      "$w image create $place -image [image create photo -format jpeg -file $im]"  ,
     "}", sep="\n") ) )
     if(is.reportwin){
       tworkwin <- textwidget
@@ -1252,12 +1277,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       function(x){ x<-x[2]; strsplit(x,"\"")[[1]][1] }))
     }
   #  print(jpgnames)
+    picnames<-if(substring(version$os,1,7)=="darwin8") sub(".jpg$",".gif",jpgnames) else jpgnames
     for(i in seq(along=rows)){
-      if(file.exists(sub(".jpg$",".ps",jpgnames)[i])&(!file.exists(jpgnames[i]))){
-        pstojpg(sub(".jpg$",".ps",jpgnames)[i],jpgnames[i])
+      if(!substring(version$os,1,7)=="darwin8"){
+        if(file.exists(sub(".jpg$",".ps",picnames)[i])&
+                                   (!file.exists(picnames[i]))){
+          pstojpg(sub(".jpg$",".ps",picnames)[i],picnames[i])
+        }
       }
-      if(file.exists(jpgnames[i]))
-        try(tcl("showimage",textwidget,jpgnames[i],paste(rows[i]-1,".0",sep="")))
+      if(file.exists(picnames[i]))
+        try(tcl("showimage",textwidget,picnames[i],paste(rows[i]-1,".0",sep="")))
     }
   }
   exclude.plots<-function(tworkwin){
@@ -1587,9 +1616,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 );get("print",pos="package:base")(try.res);sink()
           news<-paste(myscan(get("tmp.file.name",env=revive.sys)
 ,"",sep="\n"),collapse="\n")
-          if(nchar(news)>maxol.sys)
+          if(nchar(news)>maxol.sys){
               news<-paste(substring(news,1,maxol.sys),"...",sep="\n")
-              news<-paste("", date(), news,"",sep="\n")
+          }
+          news<-paste("", date(), news,"",sep="\n")
           if(!exists("toutwin"))
             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
           pos.to.insert<-"end"
@@ -1618,25 +1648,48 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     options(show.error.messages=FALSE)
     try({xxxxxxxxxxxxxxxxxxxxxxxxxxxxx})
     options(show.error.messages=TRUE)
-    if(exists("last.warning",envir = .GlobalEnv)){
-      lw<-get("last.warning",envir = .GlobalEnv)
-      h<-grep("X11",names(lw)); if(length(h)>0) lw<-lw[-grep("X11",names(lw))]
-      if(length(lw)>0){
-        news<-c("last.warning(s):",
+    if(204<=Rversion){
+      OLD.WARNING<-get("LAST.WARNING", envir = revive.sys)
+      LAST.WARNING<-"no warnings"
+      if(exists("last.warning")) 
+        try(LAST.WARNING<-get("last.warning", envir = baseenv()))
+      LAST.WARNING<-c(LAST.WARNING,"no warnings")[1]
+      if(LAST.WARNING!="no warnings"){
+        if(!identical(LAST.WARNING,OLD.WARNING)){
+          assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+          news<-c("last.warning(s):",
+                       paste(paste(names(LAST.WARNING),LAST.WARNING,sep=" in: "),collapse="\n"))
+          if(!exists("toutwin"))
+            toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+          pos.to.insert<-"end"
+          news<-paste(gsub("\n+","\n",news),collapse="\n")
+          try(tkinsert(toutwin,pos.to.insert,news))
+          tksee(toutwin,"end - 0 lines")
+          melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+
+
+        } # else { print("no new warnings") }
+      }
+    }else{
+      if(exists("last.warning",envir = .GlobalEnv)){
+        lw<-get("last.warning",envir = .GlobalEnv)
+        h<-grep("X11",names(lw)); if(length(h)>0) lw<-lw[-grep("X11",names(lw))]
+        if(length(lw)>0){
+          news<-c("last.warning(s):",
                        paste(paste(names(lw),lw,sep=" in: "),collapse="\n"))
-        try(rm(last.warning,envir = .GlobalEnv))
-        if(!exists("toutwin"))
-          toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-        pos.to.insert<-"end"
-        news<-paste(gsub("\n+","\n",news),collapse="\n")
-        try(tkinsert(toutwin,pos.to.insert,news))
-        tksee(toutwin,"end - 0 lines")
-        melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+          try(rm(last.warning,envir = .GlobalEnv))
+          if(!exists("toutwin"))
+            toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+          pos.to.insert<-"end"
+          news<-paste(gsub("\n+","\n",news),collapse="\n")
+          try(tkinsert(toutwin,pos.to.insert,news))
+          tksee(toutwin,"end - 0 lines")
+          melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
+        }
       }
     }
-
     melde("fEvalRCode",2)
   }
 
@@ -1904,7 +1957,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   ConfigRelax<-function(){
     melde("ConfigRelax",1)
-        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
         tkpack(fcmd<-tkframe(.newl))
         Save<-tkbutton(fcmd,width=15,text="save settings",command=function(){
                    newsettings<-paste(tclvalue(tkget(tt,"0.0","end")),"\n")
@@ -2064,7 +2117,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(!file.exists(workname.sys)){
       cat(paste("Error: File",workname.sys,"not found!!!"));return()
     }
-    try(weaveR(workname.sys));try(tangleR(workname.sys))
+    try(weaveR(workname.sys,
+                       replace.german.umlaute=replace.german.umlaute.sys))
+    try(tangleR(workname.sys))
     melde("WebReport",2)
    }
    LaTeX.head<-function(){
@@ -2164,6 +2219,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(is.null(n)||5>n||substring(filename,n-3,n)!=".dvi"){
       cat("ERROR: file",filename,"not compatible!!!\n");return()
     }
+    if(substring(version$os,1,7)=="darwin8" ){
+          filename<-sub("dvi$","pdf",filename)   
+    }    
     if(!file.exists(filename)){
       cat("ERROR: file",filename,"not found!!!\n");return()
     }
@@ -2172,7 +2230,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         view<-paste(view.command.windows," ",filename,sep="")
         try(shell(view,wait=F))
     }else{
-        view<-paste(view.command.linux,"  ",filename," &",sep="")
+        if(substring(version$os,1,5)=="linux"
+) 
+          view<-paste(view.command.linux,"  ",filename," &",sep="")
+        if(substring(version$os,1,7)=="darwin8" ){
+          view<-paste(view.command.mac,"  ",filename," &",sep="")
+        }
         try(system(view))
     }
     melde("ViewReport",2)
@@ -2254,7 +2317,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         cat("ERROR: write operation failed!!!\n"); return()
       }
       Sys.sleep(0.25)
-      try(weaveR(workname.sys)); Sys.sleep(0.5)
+      try(weaveR(workname.sys,
+                       replace.german.umlaute=replace.german.umlaute.sys))
+      Sys.sleep(0.5)
       LatexReport()
    }
    SWEAVE<-function(){ ###060112
@@ -2426,9 +2491,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   if((version$os=="Win32" || version$os=="mingw32")
 ){
      shell(cmd)
-  }
-  if(substring(version$os,1,5)=="linux"
-){
+  }else{
       system(cmd)
   }
         news<-readLines(outfile)
@@ -2494,7 +2557,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   InsertLaTeXEnv<-function(){
     melde("InsertLaTeXEnv",1)
     newtop<-tktoplevel();tkwm.title(newtop,"LaTeX-environment? -- Esc=Exit, Return=Selection")
-    tkwm.geometry(newtop,"+0+0")
+    tkwm.geometry(newtop,"+0+15")
     scr <- tkscrollbar(newtop, command=function(...)tkyview(tl,...))
     tl<-tklistbox(newtop,height=7,width=70,selectmode="single",
                 yscrollcommand=function(...)tkset(scr,...),background="white")
@@ -2606,7 +2669,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                  "---------------------------------------------------------","",""
                  )
     try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
-    .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0")
+    .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
     tkpack(tt<-tktext(.newl,height=length(doc)))
     tkwm.title(.newl,paste("What's relax? ","Exit by Return or Escape!"))
     try(tkinsert(tt,"0.0",paste(doc,collapse="\n")))
@@ -2662,7 +2725,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                   "Crtl-D:  delete character right of cursor",
                   "Crtl-H:  delete character left of cursor",
                   "Crtl-K:  delete characters from cursor to end of line"     )
-    .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0")
+    .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
     tkpack(tt<-tktext(.newl,height=length(keys)))
     tkwm.title(.newl,paste("shortcuts of relax and text field,","Exit by Return or Escape!"))
     try(tkinsert(tt,"0.0",paste(keys,collapse="\n")))
@@ -2709,7 +2772,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         found<-paste(paste(found[,1],
                            substring("         ",1,pmax(1,10-nchar(found[,1]))),
                            found[,2]),collapse="\n")
-        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
         tkwm.title(.newl,paste("zu >",such,"< gefundene Funktionen, ",
                                "Beendigung durch Escape oder Return!"))
         try(tkinsert(tt,"0.0",paste(found,collapse="\n")))
@@ -2777,7 +2840,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
          try(shell("del tmptmp.tex tmptmp.aux tmptmp.log tmptmp.ppm tmptmp.crp tmptmp.dvi tmptmp.ps"))
     }
     # passe workttext an, integriere Bild
-    news<-paste("\n%    end-latex-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
+    news<-paste("\n%<!--latex-end-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
     line<-paste(texend,".0",sep="")
     if(!exists("tworkwin"))
       tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -2798,7 +2861,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     melde("inserted characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-    line<-paste(texbegin+1,".0",sep=""); news<-"%<!--begin-latex\n"
+    line<-paste(texbegin+1,".0",sep=""); news<-"%<!--latex-begin--\n"
     if(!exists("tworkwin"))
       tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
 
@@ -3266,7 +3329,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     {
       melde("weaveRhtml",1)
-      weaveRhtml(workname.sys)
+      weaveRhtml(workname.sys,
+                         replace.german.umlaute=replace.german.umlaute.sys)
       melde("weaveRhtml",2)
     }
     melde("SaveHtml",2)
@@ -3342,7 +3406,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(ch.new[length(ch.new)]) lines<-lines[-length(lines)]
       difftext<-worktext[unique(lines)]
       # speichere difftext
-      SaveAsHtml(difftext,filename)
+      ### SaveAsHtml(difftext,filename)
       try.res <-try(cat(difftext,file=filename,sep="\n"))
     }
     melde("SaveDiffReport",2)
@@ -3593,8 +3657,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }else{
       fname<-paste("file://",getwd(),.Platform$file.sep,sub("rev$","html",filename),sep="")
       if(version$os=="Win32" || version$os=="mingw32"){
-           if(browser.sys=="") shell(paste("explorer", fname),wait=FALSE) else
-                                           shell(paste(browser.sys, fname),wait=FALSE)  # 050607
+           browser.exe<- if(browser.sys=="") "explorer" else browser.sys
+           res<-shell(paste(browser.exe, fname),wait=FALSE)
+           if(res!=0){
+             cat("ERROR:",browser.exe,"/ file not found\n")
+             cat("please, start and load file on foot\n")
+           }
       }else
           if(browser.sys==""){
             if(file.exists(options()$browser))
@@ -3608,6 +3676,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   EditReport<-function(){
     melde("EditReport",1)
+    if(substring(version$os,1,7)=="darwin8" ){
+       cat("Sorry: not implemented yet!\n"); return()
+    }    
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
     tworkwin<-get("tworkwin",envir=revive.sys)
     worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
@@ -3982,19 +4053,21 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
 
         if(!any(F.no==as.character(1:8))) return() else F.no<-as.numeric(F.no)
-        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+0");tkpack(tt<-tktext(.newl))
+        .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
         twin<-tt; f.sonderzeichen<-function(zeichen){
                     function(){
                       tkinsert(twin,"insert",zeichen)
                       if((version$os=="Win32" || version$os=="mingw32")
 )tkdelete(twin,"insert-1chars")
+                      if(substring(version$os,1,7)=="darwin8")tkdelete(twin,"insert-1chars")
                     }
                   }
                   f.umlaut<-function(zeichen){
                     function(){
                       return()
-                      if(zeichen=="\337" & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
-                      tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
+                      #char337<-eval(parse(text='"\\337"'))
+                      #if(zeichen==char337 & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
+                      #tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
                     }
                   }
                   tkbind(twin,"<<LKeckig>>", f.sonderzeichen("["))
@@ -4005,6 +4078,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                   tkbind(twin,"<<Klammera>>",f.sonderzeichen("@"))
                   tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                   tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
+                  renewhighlighting<-function(){
+                    tworkwin<-get("tworkwin",env=revive.sys)
+                    melde("ak texthervor",1)
+                    tcl("markclear",tworkwin)
+                    tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                    tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                    tcl("marklinetypes",tworkwin)
+                    melde("ak texthervor",2)
+
+                  }
+                  # tkbind(twin,"<<Klammeraffe>>",renewhighlighting)
+                  tkbind(twin,"<Return>",renewhighlighting)
 
         tkwm.title(.newl,paste("contents of function key","Definition by Escape!"))
         F.buffers<-get("F.buffers",env=revive.sys)
@@ -4034,7 +4119,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       choices<-scan(file="r.tmp","",sep="\n")
       listboxmenu<-function(choices,title="items",addexit=TRUE){
           if(addexit) choices<-c(choices,"EXIT")
-          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
           tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
           ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
           lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4070,7 +4155,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     DS<-c("sample(99)","sample(99,replace=T)","rnorm(99,mean=0,sd=1)","rexp(99)")
     listboxmenu<-function(choices,title="items",addexit=TRUE){
         if(addexit) choices<-c(choices,"EXIT")
-        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
         tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
         ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
         lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4142,32 +4227,44 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   get.dim.1.data<-function(){
    (function(){
-    ds<-function(pos=1,mode="numeric",struc=is.vector){
+    ds<-function(pos=1,type,mode="numeric",struc=is.vector){
       if(pos>0){
        obj<-ls(pos=pos)
        obj<-obj[unlist(lapply(obj ,function(o,pos)
          exists(o,where=pos,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
-       if(0==length(obj)) return(NULL) else return(obj)
       }else{
        obj<-ls(env=revive.env)
        obj<-obj[unlist(lapply(obj ,function(o)
          exists(o,where=revive.env,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
-       if(0==length(obj)) return(NULL) else return(obj)
       }
+      if(0==length(obj)) return(NULL) else return(obj)
+    }
+    ds.of.R<-function(type="vector"){
+      dat<-ls(pos=grep("datasets",search()))
+      dat.type<-unlist(lapply(dat,function(x) {       
+             num<-mode(x<-eval(parse(text=x)))
+             num<-ifelse(is.array(x),"array",num)
+             num<-ifelse(is.list(x),"list",num)
+             num<-ifelse(is.matrix(x),"matrix",num)
+             num<-ifelse(is.data.frame(x),"matrix",num)
+             num<-ifelse(num=="numeric","vector",num)
+             num }))
+      return(dat[dat.type==type])
     }
 
 
 
-    DS<-c( ds(-1), ds(1) ,ds(which(paste("package","relax"
+    DS<-c( ds.of.R("vector"),ds(-1), ds(1),
+               ds(which(paste("package","relax"
 ,sep=":")==search())
-)
-                 , "-5:5 # integers from -5 to 5", "rep(7,5) # vector: (7,7,7,7,7)")
+),
+               "-5:5 # integers from -5 to 5", "rep(7,5) # vector: (7,7,7,7,7)")
 
     listboxmenu<-function(choices,title="items",addexit=TRUE){
         if(addexit) choices<-c(choices,"EXIT")
-        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
         tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
         ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
         lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4239,25 +4336,36 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   get.dim.2.data<-function(){
    (function(){
-    ds<-function(pos=1,mode="numeric",struc=is.vector){
+    ds<-function(pos=1,type,mode="numeric",struc=is.vector){
       if(pos>0){
        obj<-ls(pos=pos)
        obj<-obj[unlist(lapply(obj ,function(o,pos)
          exists(o,where=pos,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
-       if(0==length(obj)) return(NULL) else return(obj)
       }else{
        obj<-ls(env=revive.env)
        obj<-obj[unlist(lapply(obj ,function(o)
          exists(o,where=revive.env,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
-       if(0==length(obj)) return(NULL) else return(obj)
       }
+      if(0==length(obj)) return(NULL) else return(obj)
+    }
+    ds.of.R<-function(type="vector"){
+      dat<-ls(pos=grep("datasets",search()))
+      dat.type<-unlist(lapply(dat,function(x) {       
+             num<-mode(x<-eval(parse(text=x)))
+             num<-ifelse(is.array(x),"array",num)
+             num<-ifelse(is.list(x),"list",num)
+             num<-ifelse(is.matrix(x),"matrix",num)
+             num<-ifelse(is.data.frame(x),"matrix",num)
+             num<-ifelse(num=="numeric","vector",num)
+             num }))
+      return(dat[dat.type==type])
     }
 
 
 
-    DS<-ds(struc=is.matrix)
+    DS<-c(ds.of.R("matrix"),ds(struc=is.matrix))
     DS<-c(DS,"matrix(sample(100),50,2)","cbind(1:100,rnorm(100,mean=0,sd=1))")
     DS<-c(DS, ds(-1,struc=is.matrix), ds(1,struc=is.matrix) ,
                ds(which(paste("package","relax"
@@ -4266,7 +4374,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
     listboxmenu<-function(choices,title="items",addexit=TRUE){
         if(addexit) choices<-c(choices,"EXIT")
-        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+        lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
         tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
         ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
         lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4433,25 +4541,36 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   choosecol<-function(){
     (function(){
-      ds<-function(pos=1,mode="numeric",struc=is.vector){
+      ds<-function(pos=1,type,mode="numeric",struc=is.vector){
         if(pos>0){
          obj<-ls(pos=pos)
          obj<-obj[unlist(lapply(obj ,function(o,pos)
            exists(o,where=pos,mode="numeric") &&
            eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
-         if(0==length(obj)) return(NULL) else return(obj)
         }else{
          obj<-ls(env=revive.env)
          obj<-obj[unlist(lapply(obj ,function(o)
            exists(o,where=revive.env,mode="numeric") &&
            eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
-         if(0==length(obj)) return(NULL) else return(obj)
         }
+        if(0==length(obj)) return(NULL) else return(obj)
+      }
+      ds.of.R<-function(type="vector"){
+        dat<-ls(pos=grep("datasets",search()))
+        dat.type<-unlist(lapply(dat,function(x) {       
+               num<-mode(x<-eval(parse(text=x)))
+               num<-ifelse(is.array(x),"array",num)
+               num<-ifelse(is.list(x),"list",num)
+               num<-ifelse(is.matrix(x),"matrix",num)
+               num<-ifelse(is.data.frame(x),"matrix",num)
+               num<-ifelse(num=="numeric","vector",num)
+               num }))
+        return(dat[dat.type==type])
       }
 
 
 
-      DS<-ds(struc=is.matrix)
+      DS<-c(ds.of.R("matrix"),ds(struc=is.matrix))
       DS<-c(DS,"matrix(sample(100),50,2)","cbind(1:100,rnorm(100,mean=0,sd=1))")
       DS<-c(DS, ds(-1,struc=is.matrix), ds(1,struc=is.matrix) ,
                  ds(which(paste("package","relax"
@@ -4460,7 +4579,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       listboxmenu<-function(choices,title="items",addexit=TRUE){
           if(addexit) choices<-c(choices,"EXIT")
-          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
           tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
           ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
           lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4493,7 +4612,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(is.null(choices<-dimnames(obj)[[2]])) choices<-1:ncol(obj)
         listboxmenu<-function(choices,title="items",addexit=TRUE){
             if(addexit) choices<-c(choices,"EXIT")
-            lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+            lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
             tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
             ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
             lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4586,7 +4705,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       listboxmenu<-function(choices,title="items",addexit=TRUE){
           if(addexit) choices<-c(choices,"EXIT")
-          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
           tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
           ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
           lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4673,7 +4792,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       listboxmenu<-function(choices,title="items",addexit=TRUE){
           if(addexit) choices<-c(choices,"EXIT")
-          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
           tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
           ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
           lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4754,7 +4873,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       listboxmenu<-function(choices,title="items",addexit=TRUE){
           if(addexit) choices<-c(choices,"EXIT")
-          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+0")
+          lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
           tkwm.title(lbmTop,"Selection by Click and Return, Quit by Esc")
           ltit<-tklabel(lbmTop,text=title); lbframe<-tkframe(lbmTop)
           lb<-tklistbox(lbframe,height=8,width=60); sb<-tkscrollbar(lbframe)
@@ -4838,6 +4957,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     myhead.menu(item="2-dim methods",code=get.dim.2.methods,menu.no=1)   # ok
   }
 
+  LAST.WARNING<-"no warnings"
+  assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+  Rversion<-as.numeric(R.version$major)*100+as.numeric(R.version$minor)
+
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
@@ -4903,6 +5026,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkevent.add("<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
     tkevent.add("<<szumlaut>>",      "<ssharp><KeyRelease>")
     tkevent.add("<<Backsl>>",    "<Alt_L><ssharp>")
+  #  tkevent.add("<<Klammeraffe>>",  
+  #                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
   } else {                                               #f <hpguilder>
     tkevent.add("<<EvalRCode>>",  "<ae>")
     tkevent.add("<<AdvanceNo>>", "<aring>")
@@ -4925,6 +5050,47 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkevent.add("<<Backsl>>",    "<Alt_R><backslash>")
     tkevent.add("<<Pipe>>",      "<Alt_R><bar>")
   }
+  if(substring(version$os,1,7)=="darwin8"){
+    tkevent.add("<<EvalRCode>>",  "<Meta_L><e>")
+    tkevent.add("<<Down>>",  "<Meta_L><d>")
+    tkevent.add("<<Up>>",  "<Meta_L><u>")
+    tkevent.add("<<AdvanceNo>>", "<Meta_L><a>")
+    tkevent.add("<<TrashROutput>>","<Meta_L><t>")
+    tkevent.add("<<Next>>",      "<Meta_L><n>")
+    tkevent.add("<<Help.R>>",   "<Meta_L><h>")
+    tkevent.add("<<Modify>>",    "<Meta_L><m>")
+    tkevent.add("<<PlanRCode>>",   "<Meta_L><p>")
+    tkevent.add("<<FindReportText>>",   "<Control_L><f>")
+    tkevent.add("<<GoToLine>>",   "<Control_L><g>")
+    tkevent.add("<<SaveReport>>",   "<Control_L><s>")
+    tkevent.add("<<ProcessReport>>",   "<Control_L><p>")
+    tkevent.add("<<RemoveOut>>",   "<Meta_L><r>")
+    tkevent.add("<<Insert>>",   "<Meta_L><i>")
+    tkevent.add("<<SavePlot>>","<Meta_L><s>")
+    tkevent.add("<<CopyToEnd>>",   "<Alt_L><c>")
+    tkevent.add("<<CopyOld>>",   "<Alt_L><x>")
+    tkevent.add("<<RunNo>>",     "<Meta_L><r>")
+    tkevent.add("<<SetNo>>",     "<Meta_L><s>")
+    #tkevent.add("<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
+    tkevent.add("<<RKgeschw>>",  "<Meta_L><0>")
+    tkevent.add("<<LKgeschw>>",  "<Meta_L><7>")
+    tkevent.add("<<RKeckig>>",   "<Meta_L><9>")
+    tkevent.add("<<LKeckig>>",   "<Meta_L><8>")
+    #tkevent.add("<<Tilde>>",     "<Meta_L><plus>")
+    tkevent.add("<<Klammera>>",  "<Meta_L><q>")
+    #tkevent.add("<<Backsl>>",    "<Meta_L><ssharp>")
+    tkevent.add("<<Pipe>>",      "<Meta_L><less>")
+    #tkevent.add("<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
+    #tkevent.add("<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
+    #tkevent.add("<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
+    #tkevent.add("<<Aeumlaut>>",      "<Adiaeresis><KeyRelease>")
+    #tkevent.add("<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
+    #tkevent.add("<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
+    #tkevent.add("<<szumlaut>>",      "<ssharp><KeyRelease>")
+    #tkevent.add("<<Backsl>>",    "<Meta_L><ssharp>")
+  #  tkevent.add("<<Klammeraffe>>",  
+  #                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
+  } 
          ##definiere Testknopf-Ereignis>>
   implement.but<-
   function(but,frame,mess=" ",side="right",relief="raised",short.cut=T,bwf=1){
@@ -4942,9 +5108,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   }
   melde("Implement.but defined",3)
 
-  TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+0")
+  TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+15")
   tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
-                        "relax 1.04 - 061110"))
+                        "relax 1.07 - 070315b"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -5118,7 +5284,26 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
    tkadd(mbRevweb.menu,"command", command=SWEAVEB,
         label="SWEAVE:   save, Sweave (new process) and LaTeX file")
    ##tkadd(mbRevweb.menu, "separator")
-   ##definiere ggf.\ Eintrag [[FormatTeXLines]]##
+   FTL.ok<-FALSE
+   if( (version$os=="Win32" || version$os=="mingw32")
+ ){
+         libpath<-file.path(relax.path,"lib")
+         if(file.exists(file.path(libpath,"pnmcrop.exe")) &&
+            file.exists(file.path(libpath,"ppmtojpeg.exe")) &&
+            file.exists(file.path(libpath,"netpbm.dll")) &&
+            file.exists(file.path(libpath,"libjpeg.dll"))) FTL.ok<-TRUE
+   }
+   if(substring(version$os,1,5)=="linux"
+){
+      if(0<length(system("which convert",TRUE,TRUE)) &&
+         0<length(system("which dvips",TRUE,TRUE))) FTL.ok<-TRUE
+     }
+   if(FTL.ok){
+     tkadd(mbRevweb.menu, "separator")
+     tkadd(mbRevweb.menu, "command", command=FormatTeXLines,
+               label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
+   }
+
    ##erstelle Menüeintrag für Funktionstasten-Puffer##
    ## tkadd(mbRevweb.menu, "separator")
    ## tkadd(mbRevweb.menu,"command", command=LoadRwtools,
@@ -5207,11 +5392,41 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   tkpack(workbar ,side="right",fill="y")
   tkpack(tworkwin,fill="both",expand="yes")
   tkinsert(tworkwin,"0.0",paste("% New Report:",date(),"\n"))
-  ### CLIPBOARD-Funktion PASTE a la windows
-  tkevent.add("<<Paste>>",   "<Control_L><v>")
-  tkbind(tworkwin,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
-
-
+  ### CLIPBOARD-Funktion PASTE a la windows / clipboard
+  if(substring(version$os,1,7)=="darwin8" ){
+    # mac-PASTE, ctrl-v
+    mac.paste<-function(...){
+       try({.Tcl("clipboard append hello")
+              .Tcl("clipboard clear")
+              news<-base::scan(file=pipe("pbpaste","r"),what="",
+                                           sep="\n",blank.lines.skip=FALSE)
+              tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+    }
+    ### tkevent.add("<<Paste>>", "<Control_L><v>")
+    tkbind(tworkwin,"<Control_L><v>",mac.paste)
+    # mac-COPY
+    mac.copy<-function(...){  ## Ctrl-C
+       news<-""
+       try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+       if(news=="empty") return()
+       try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+              base::cat(news,file=get("tmp.file.name",env=revive.sys)
+)
+              system(paste("pbcopy < ",get("tmp.file.name",env=revive.sys)
+))
+              .Tcl("clipboard append hello")
+              .Tcl("clipboard clear")})
+    } 
+    ##tkevent.add("<<Copy>>",  "<Control_L><c><KeyRelease>")
+    ##tkbind(tworkwin,"<<Copy>>",mac.copy) 
+    tkbind(tworkwin,"<Control_L><c>",mac.copy) 
+    # mac-extract
+    tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")
+    tkbind(tworkwin,"<<extract>>",mac.copy) 
+  }else{
+    tkevent.add("<<Paste>>",   "<Control_L><v>")
+    tkbind(tworkwin,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+  }
   toutwin<-tktext(foutwin,height=8,background="#fc8f16a23", font=outfont.sys) #fff080
   outbar<-tkscrollbar(foutwin)
   tkconfigure(toutwin,yscrollcommand=function(...) tkset(outbar,...))
@@ -5261,6 +5476,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       "set type 0\n",
       "for {set i 1} {$i < $anzzeilen} {incr i} {",
        "set zeile [$w get $i.0 $i.end]",
+       "set iv [ expr $i-1 ]",
        "if {$type==1}                           {\n set type 2\n}",
        "if {[regexp \"^@\"             $zeile]} {\n set type 0\n}",
        "if {[regexp \"^<<.*>>=\"     $zeile]} {\n set type 1\n}",
@@ -5268,7 +5484,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
        "if {[regexp \"^output-start\"  $zeile]}  {\n set type 3\n}",
        "if {[regexp \"^\\\\\\\\begin\\{verbatim\\}\" $zeile]} {\n set type 3\n}",
        "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
-       "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
+       # "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
+       "if {$type==2} {\n uplevel $w tag add code    $iv.end $i.end \n}",
        "if {$type==3} {\n uplevel $w tag add output  $i.0 $i.end \n}",
        "if {$type==4} {\n uplevel $w tag add tex     $i.0 $i.end",
                                                    "; set type 0 \n}",
@@ -5466,13 +5683,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       tkinsert(twin,"insert",zeichen)
                       if((version$os=="Win32" || version$os=="mingw32")
 )tkdelete(twin,"insert-1chars")
+                      if(substring(version$os,1,7)=="darwin8")tkdelete(twin,"insert-1chars")
                     }
                   }
                   f.umlaut<-function(zeichen){
                     function(){
                       return()
-                      if(zeichen=="\337" & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
-                      tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
+                      #char337<-eval(parse(text='"\\337"'))
+                      #if(zeichen==char337 & tclvalue(tkget(twin,"insert-1chars","insert"))=="\\") return()
+                      #tkinsert(twin,"insert",zeichen); tkdelete(twin,"insert-2chars")
                     }
                   }
                   tkbind(twin,"<<LKeckig>>", f.sonderzeichen("["))
@@ -5483,6 +5702,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                   tkbind(twin,"<<Klammera>>",f.sonderzeichen("@"))
                   tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                   tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
+                  renewhighlighting<-function(){
+                    tworkwin<-get("tworkwin",env=revive.sys)
+                    melde("ak texthervor",1)
+                    tcl("markclear",tworkwin)
+                    tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                    tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                    tcl("marklinetypes",tworkwin)
+                    melde("ak texthervor",2)
+
+                  }
+                  # tkbind(twin,"<<Klammeraffe>>",renewhighlighting)
+                  tkbind(twin,"<Return>",renewhighlighting)
 
   ##definiere Wirkung von [[Strg Pagedown]] im Reportfenster## ab 1.02 abgeschaltet
   proc<-c(  # 060704
@@ -5641,6 +5872,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                     if(!is.null(bildname)&&nchar(bildname)>0){
                       n<-nchar(bildname<-gsub(" ","",bildname))
                       bildname<-sub(".ps$","",bildname)
+                      
                     # Postscript:
                       psname <-paste(bildname,".ps", sep="")
                       news<-paste("@\n \\begin{center}","\\includegraphics[",
@@ -5780,6 +6012,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       }else{
                         try.res<-try({dev.copy(bitmap,type="jpeg",jpgname);dev.off()})
                       }
+                    # gif:
+                      if(substring(version$os,1,7)=="darwin8" ){
+                        gifname<-sub("jpg$","gif",jpgname) 
+                        try.res<-try({system(paste("convert",jpgname,gifname))})
+                      }
                       if(is.function(try.res)){
                         ok <- "OK"
                       } else {
@@ -5795,7 +6032,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       } else { ok<-T }
 
 
-                      if(!ok) cat("Error: *jpg file not generated by dev.copy!!!\n")
+                      if(!ok) cat("Error: jpg of gif file not generated by dev.copy!!!\n")
                       melde(paste("p", psname), "cmd.msg")
                     }
 

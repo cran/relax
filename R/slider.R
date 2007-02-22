@@ -13,7 +13,7 @@ slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
     return(obj.value)
   }
   if(missing(title)) title<-"slider control widget"
-  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+0")
+  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+15")
   if(missing(sl.names)) sl.names<-NULL
   if(missing(sl.functions)) sl.functions<-function(...){}
   for(i in seq(sl.names)){

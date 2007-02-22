@@ -7,13 +7,15 @@
   of weaving. As a result a html-file is generated.
 }
 \usage{
-weaveRhtml(in.file,out.file)
+weaveRhtml(in.file,out.file,replace.german.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if this argument is missing the extension of the
-  input file is turned to \code{.html} }
+   input file is turned to \code{.html} }
+  \item{replace.german.umlaute}{ if TRUE german umlaute will be replaced by 
+   html sequences}
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -25,6 +27,16 @@ weaveRhtml(in.file,out.file)
   Within the code chunk you are allowed to use other code chunks by referencing
   them by name ( for example by: \code{<<name of code chunk>>} ).
   In this way you can separate a big job in smaller ones.
+
+  Rweb speciality: A code chunk with a code chunk name containing  \code{"Rweb"} 
+  as the first four characters will be translated to a text input field and
+  a submit button \code{compute via Rweb}. 
+  By pressing this button the code of the text field will be
+  sent for evaluation to Rweb \code{http://rweb.stat.umn.edu/Rweb/} 
+  and the results appears in a new browser window. 
+  This link to Rweb has been inspirited by web pages like 
+  \url{http://www.stat.umn.edu/geyer/3011/examp/reg.html} written
+  by Charlie Geyer \url{http://www.stat.umn.edu/~charlie}.
 
   Technical remarks:
   To format small pieces of code in text chunks you have to put them in
