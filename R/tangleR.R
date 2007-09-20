@@ -88,13 +88,17 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
   }
 
   if(exists("DEBUG")) cat("bearbeite Sektion-Nr./Name\n")
+  roots<-unique(roots)
   for(r in seq(along=roots)){
     if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
-    row.no<-c((code.a[root.no[r]]+1),code.z[root.no[r]])
-    if(row.no[1]<=row.no[2]){
-      code.stack<-code.ch[row.no[1]:row.no[2]]
+    if(any(ch.no <-def.names==roots[r])){
+      ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
       code.out<-c(code.out,paste("#",root.no[r],":",sep=""),
                            paste("##",roots[r],":##",sep=""))
+      for(i in ch.no){
+         if((code.a[i]+1)<=code.z[i]) rows<-c(rows, (code.a[i]+1):code.z[i])
+      }
+      code.stack<-code.ch[rows]
       repeat{
        if(0==length(code.stack))break
        if("C"==substring(code.stack[1],1,1)){
@@ -106,7 +110,7 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
          if(any(found<-def.names==def.line)){
            code.stack<-code.stack[-1]
            found<-rev(seq(along=def.names)[found])
-           for(no in found)
+           for(no in found){
              row.no<-c((code.a[no]+1),code.z[no])
              if(row.no[1]<=row.no[2]){
                code.stack<-c(paste("C#"  ,no,":"  ,sep=""      ),
@@ -116,6 +120,7 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
                            paste("C#:" ,no      ,sep=""      ),
                            code.stack)
                }
+            }
          } else code.stack <-code.stack[-1] # ignore not defined chunks!
          # 051219 
        }
@@ -139,4 +144,5 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
 
 
 }
+print("OK")
 

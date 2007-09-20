@@ -16,6 +16,8 @@ psheight.sys<-"10cm"
 psdesignheight.sys<-6
 # width parameter for postscript device
 psdesignwidth.sys<-6
+# size parameter for jpeg device in inch
+jpgdesignsize.sys<-4
 # height of relax window ( e.g.: "500" or "1200" ) 
 relaxwindow.height.sys<-"700"
 # width of relax window ( e.g.: "500" or "1200" ) 
@@ -23,7 +25,7 @@ relaxwindow.width.sys<-"700"
 # use of "tab"-key for name completion
 name.complete.sys<-TRUE
 # replace german umlaute
-replace.german.umlaute.sys<-TRUE
+replace.umlaute.sys<-TRUE
 #############################################
 ## special settings for windows
 # how to call LaTeX

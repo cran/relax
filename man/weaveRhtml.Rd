@@ -7,14 +7,14 @@
   of weaving. As a result a html-file is generated.
 }
 \usage{
-weaveRhtml(in.file,out.file,replace.german.umlaute=TRUE)
+weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if this argument is missing the extension of the
    input file is turned to \code{.html} }
-  \item{replace.german.umlaute}{ if TRUE german umlaute will be replaced by 
+  \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
    html sequences}
 }
 \details{

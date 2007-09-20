@@ -1,6 +1,6 @@
-weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
+weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517, 070307
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830
   require(tcltk)
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
@@ -23,7 +23,7 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   }
   # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
   input<-readLines(in.file) # 2.1.0
-  try(if(replace.german.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
+  try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
       # LATIN1-Dok :
       input<-iconv(input,"LATIN1","")
   })
@@ -52,7 +52,8 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   a<-a[order(a[,1]),,drop=F]
   b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
   a<-rep(0,length.input); a[b[,1]]<-b[,2]
-  a<-cumsum(a); a[code.start.index]<-0; a[empty.index]<-0
+  a<-cumsum(a); a[code.start.index]<-0 
+  ## a[empty.index]<-0 ?? this was not a good idea 070709
   code.index<-which(a>0)
   code.index<-code.index[is.na(match(code.index,use.index))]
 
@@ -64,24 +65,40 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   line.typ[code.start.index]<-"HEADER"
   line.typ[code.index]<-"CODE"
 
+  is.code.line<-text.start.indicator<-rep(0,length.input)
+  text.start.indicator[1]<-1; text.start.indicator[text.start.index]<-1
+  text.start.indicator<-cumsum(text.start.indicator)
+  is.code.line[code.start.index]<-0-text.start.indicator[code.start.index]
+  is.code.line<-cummin(is.code.line)
+  is.code.line<-(text.start.indicator+is.code.line) < 1
+  is.code.line[code.start.index]<-FALSE
+  TSI<<-text.start.index
+  CSI<<-code.start.index
+  UI<<-use.index
+
+
 
   ## input[text.start.index]<-""
-  input[text.start.index]<-"\\textchunkcommands"
+  input[text.start.index]<-paste(
+                        "\\ifodd\\value{IsInCodeChunk}",
+                        "\\setcounter{IsInCodeChunk}{0}",
+                        "\\vspace{-\\parskip}\\par\\hspace*{-\\parindent}",
+                        "\\textchunkcommands\\fi",
+                        sep="")
 
   code.chunk.names<-code.start.lines<-sub(pat.chunk.header,"\\1",input[code.start.index])
   use.lines<-input[use.index]
   code.lines<-input[code.index]
 
   no<-1:length(code.start.index)
-  def.ref.no<-match(gsub("\\ ","",code.start.lines), gsub("\\ ","",code.start.lines))
-  code.start.lines<-paste(
-        # "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}", "\\makebox[0mm]{",no,"}\\hspace*{3em}", # old: margin.no by number
-        "\\makemarginno ", # new: margin.no by counter
+  def.ref.no<-match(gsub("\\ ","",code.start.lines), 
+                               gsub("\\ ","",code.start.lines))
+  code.start.lines<-paste("\\makemarginno ", 
         "$\\langle${\\it ",code.start.lines,"}\\ $",def.ref.no,
-        "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$\\newline",sep="")
+        "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$",sep="")
   input[code.start.index]<-code.start.lines
 
-  use.lines<-input[use.index]
+  use.lines<-input[use.index]; is.use.lines.within.code<-is.code.line[use.index]
   leerzeichen.vor.use<-paste("\\verb|",
                                              sub("[^ ](.*)$"," ",use.lines),
                                              "|",sep="") ## plus 1 Leerzeichen 
@@ -96,23 +113,27 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
     cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
     ref.no<-match(uli[cand],code.chunk.names)
     uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
-  #  formating code within use references 
+  #  formating code within use references, in code chunk a little different
     if(length(uli)!=length(cand)){
-      if(!UTF){ 
-        uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
-      }else{
-        uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+      if(is.use.lines.within.code[i]){
+        if(!UTF){ 
+          uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
+        }else{
+          uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+        }
       }
     }
     use.lines[i]<-paste(uli,collapse="")
   }
-  input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline\\rule{0mm}{0mm}%",sep="")
+  input[use.index]<-ifelse(is.use.lines.within.code,
+                paste("\\rule{0mm}{0mm}\\newline",leerzeichen.vor.use,use.lines,"%",sep=""),
+                paste(leerzeichen.vor.use,use.lines,sep=""))
 
   if(!UTF){
-    input[code.index]<-paste("\\verb",char267," ",code.lines," ",char267,
-                                            "\\newline\\rule{0mm}{0mm}%",sep="")
+    input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb",char267," ",code.lines," ",char267,"%",sep="")
   }else{
-    input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline\\rule{0mm}{0mm}%") #060516
+    input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb\140",code.lines,
+       "\140%") #060516 070706
   }
 
   typ<-"TEXT"
@@ -290,9 +311,9 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
   }
 
 
+   
 
-
-  if(replace.german.umlaute){
+  if(replace.umlaute){
    if(!UTF){
    # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
       pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
@@ -320,14 +341,33 @@ weaveR<-function(in.file,out.file,replace.german.umlaute=TRUE){
 
   input[1]<-paste(
        "\\newcounter{Rchunkno}",
+       "\\newcounter{IsInCodeChunk}\\setcounter{IsInCodeChunk}{1}",
        "\\newcommand{\\codechunkcommands}{\\relax}",
        "\\newcommand{\\textchunkcommands}{\\relax}",
-       "\\newcommand{\\makemarginno}{\\codechunkcommands\\stepcounter{Rchunkno}",
-       ##  "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
-       "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}\\makebox[0mm]{",
-       "\\arabic{Rchunkno}",
-       "}\\hspace*{3em}}",
+       "\\newcommand{\\makemarginno}",
+            "{\\par\\vspace{-0.5\\parskip}\\codechunkcommands",
+            "\\stepcounter{Rchunkno}",
+            "\\setcounter{IsInCodeChunk}{1}",
+            "\\noindent\\hspace*{-3em}",
+            "\\makebox[0mm]{\\arabic{Rchunkno}}\\hspace*{3em}}",
        input[1],sep="")
+
+  if(show.code==FALSE){
+     input[code.index] <-"."
+     input[use.index] <-":"
+     an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
+     if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
+     input[an]<-paste(input[an],"${}^*$ --- only the TEXT of the paper ---\\par")
+  }
+  if(show.text==FALSE){
+     an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
+     en<-grep("\\\\end(.*)\\{document\\}",input)[1]
+     text.index<-which(line.typ=="TEXT")
+     text.index<-text.index[an<text.index&text.index<en]
+     input[text.index] <-"."
+     if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
+     input[an]<-paste(input[an],"${}^*$ --- only the CODE of the paper ---\\par")
+  }
   if(missing(out.file)||in.file==out.file){
     out.file<-sub("\\.([A-Za-z])*$","",in.file)
   }

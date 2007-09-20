@@ -43,7 +43,12 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
    after the header line.}
 
    \item{EvalRCode:}{\code{EvalRCode} evaluates the code (the cursor is pointing at)
-   and the results appear in the output field just as in \code{R}.}
+   and the results appear in the output field just as in \code{R};
+   warnings will be converted in errors and will stop the evaluation.}
+
+   \item{WarnEval:}{\code{WarnEval} evaluates the code  (the cursor is pointing at)
+   and the results appear in the output field just as in \code{R};
+   however warnings will not stop the evaluation of the code.}
 
    \item{RemoveOut:}{\code{RemoveOut} clears the output field.}
 
@@ -53,6 +58,9 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
    \item{SavePlot:}{\code{SavePlot} copies the graphics device; it creates a \code{postscript}
          as well as a \code{jpeg} file and inserts the LaTeX includegraphics reference
          in the report field as a new text chunk.}
+
+   \item{Find:}{\code{Find} finds some text string in the working text and highlights 
+         matches found.}
 
    \item{TrashOutput:}{\code{TrashOutput} removes inserted \code{R} output from the upper field
    (the cursor is pointing at). }
