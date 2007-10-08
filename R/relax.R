@@ -4375,8 +4375,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
 
     if(ok){
-      try.res <- try(system(paste(editor.sys, get("tmp.file.name",env=revive.sys)
-)))
+      ##  try.res <- try(system(paste(editor.sys, ..tmp..)))
+      cmd<-paste(editor.sys, get("tmp.file.name",env=revive.sys)
+)
+      if((version$os=="Win32" || version$os=="mingw32")
+){
+        try.res<-try(shell(cmd,wait=TRUE))
+      }else{
+        try.res<-try(system(cmd))
+      }
       if(is.function(try.res)){
         ok <- "OK"
       } else {
@@ -5572,7 +5579,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.08 - 070920"
+  relax.version.sys<- "relax 1.081 - 071008"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -5723,7 +5730,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+15")
   tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
-                        "relax 1.08 - 070920"))
+                        "relax 1.081 - 071008"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))

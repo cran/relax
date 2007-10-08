@@ -1,6 +1,6 @@
 Package: relax
-Version: 1.08
-Date: 2007-09-20
+Version: 1.081
+Date: 2007-10-08
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -27,4 +27,4 @@ License: This package was written by Hans Peter Wolf.
    This software is licensed under the GPL (version 2 or newer) terms.
     It is free software and comes with ABSOLUTELY NO WARRANTY.
 URL: http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html
-Packaged: Mon Sep 24 10:47:14 2007; pwolf
+Packaged: Mon Oct  8 14:59:15 2007; pwolf

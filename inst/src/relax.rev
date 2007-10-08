@@ -4,9 +4,10 @@
 % a) Datum/Version in RELAX-Chunk: "Version von [[relax]]" 
 % b) Nr in RELAX-Chunk: "define-DESCRIPTION", 
 % c) aktualisiere RELAX-Chunk: "define-dorx"
-% d) Nr in Datei "install.dir/dorx"
-% e) $HOME/R/work/install.dir>  ./dorx   starten
-% f) cp install.dir/relax_1.08.*  $HOME/www/public_html/software/relax/R-2.4.0
+% d) Nr in Datei "install.dir/dorx":     
+%            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
+% e) $HOME/R/work/install.dir/dorx   starten
+% f) cp install.dir/relax_1.08.*  $HOME/www/public_html/software/relax/R-2.5.0
 % g) upload to cran
 %     ftp ftp://cran.R-project.org/incoming/
 %     ftp> put relax_1.08.tar.gz
@@ -100,9 +101,10 @@
 \author{H. P. Wolf}\date{[[pwd:pwolf/work/relax/relax.rev]], Druck: \today} \maketitle
 
 @
-%% ============================================================== %% neue Versionen: ändere auch "dorx" in "install.dir" sowie Chunk unten: define-DESCRIPTION
+%% ============================================================== %% neue Versionen: ändere auch "
+" in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.08 - 070920"
+"relax 1.081 - 071008"
 @
 <<relax>>=
 "relax"
@@ -5033,7 +5035,13 @@ EditReport<-function(){
   try.res <-try(cat(worktext,file=<<tmp>>,sep="\n"))
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(ok){
-    try.res <- try(system(paste(editor.sys, <<tmp>>)))
+    ##  try.res <- try(system(paste(editor.sys, ..tmp..)))
+    cmd<-paste(editor.sys, <<tmp>>)
+    if(<<das OS ist Windows>>){
+      try.res<-try(shell(cmd,wait=TRUE))
+    }else{
+      try.res<-try(system(cmd))
+    }
     <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
     if(ok){
     try.res<-worktext<-try(myscan(<<tmp>>,"",sep="\n",blank.lines.skip=FALSE))
@@ -7284,8 +7292,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.08
-Date: 2007-09-20
+Version: 1.081
+Date: 2007-10-08
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -7749,14 +7757,14 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.08.tar.gz
+R CMD INSTALL --library=lib relax_1.081.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
-cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.08.zip relax/*
-mv relax_1.08.zip ..
+cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.081.zip relax/*
+mv relax_1.081.zip ..
 
 cd ..
-## cp relax_1.08.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.4.0/
-cp relax_1.08.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.4.0/relax-mac1.zip
+cp relax_1.081.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.081.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 
