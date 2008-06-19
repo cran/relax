@@ -13,7 +13,7 @@
 %\usepackage[T1]{fontenc}
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
-\date{20.09.2006, 10.11.2006, 30.8.2007}
+\date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007}
 \begin{document}
 \maketitle
 \raggedright
@@ -306,17 +306,27 @@ for(r in seq(along=roots)){
   if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
   if(any(ch.no <-def.names==roots[r])){
     ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
-    code.out<-c(code.out,paste("#",root.no[r],":",sep=""),
-                         paste("##",roots[r],":##",sep=""))
+    code.out<-c(code.out,
+          # # # paste("#",root.no[r],":",sep=""), new 071114
+                paste("##",roots[r],":##",sep=""))
     for(i in ch.no){
-       if((code.a[i]+1)<=code.z[i]) rows<-c(rows, (code.a[i]+1):code.z[i])
+       if((code.a[i]+1)<=code.z[i]){ 
+         # # # rows<-c(rows, (code.a[i]+1):code.z[i]) # new:
+            h<-code.a[i]+1
+            rows<-c(rows, h:code.z[i])
+            code.ch[h]<-paste("C#",i,":NeWlInE",code.ch[h],sep="")
+            h<-code.z[i]
+            code.ch[h]<-paste(code.ch[h] ,"NeWlInEC#:",i,sep="")
+       }
     }
     code.stack<-code.ch[rows]
+    code.stack<-unlist(strsplit(code.stack,"NeWlInE")) # new   
     repeat{
      <<transferiere Codezeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>
     }
-    code.out<-c(code.out,paste("##:",roots[r],"##",sep=""),
-                         paste("#:",root.no[r],sep=""))
+    code.out<-c(code.out,paste("##:",roots[r],"##",sep="")
+               # # #    ,paste("#:",root.no[r],sep="")
+               )
   }
 }
 
@@ -535,7 +545,7 @@ Versuche zum UTF-Problem:
 [[is.utf<-"\"<c3>\""==deparse("\xc3")]]
 [[is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""]]
 <<old>>=
-lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
 UTF<-(1==length(grep("UTF",lcctype))) 
 is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
 UTF<- UTF | is.utf
@@ -654,11 +664,12 @@ if(show.code==FALSE){
    input[an]<-paste(input[an],"${}^*$ --- only the TEXT of the paper ---\\par")
 }
 if(show.text==FALSE){
+   input<-sub("^%.*","%",input)
    an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
    en<-grep("\\\\end(.*)\\{document\\}",input)[1]
    text.index<-which(line.typ=="TEXT")
    text.index<-text.index[an<text.index&text.index<en]
-   input[text.index] <-"."
+   input[c(text.index, verb.index)] <-"."
    if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
    input[an]<-paste(input[an],"${}^*$ --- only the CODE of the paper ---\\par")
 }
@@ -728,8 +739,8 @@ a<-rep(0,length.input)
 a[text.start.index]<- -1; a[code.start.index]<-2
 a<-cbind(c(text.start.index,code.start.index),
   c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
-a<-a[order(a[,1]),,drop=F]
-b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
+a<-a[order(a[,1]),,drop=FALSE]
+b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
 a<-rep(0,length.input); a[b[,1]]<-b[,2]
 a<-cumsum(a); a[code.start.index]<-0 
 ## a[empty.index]<-0 ?? this was not a good idea 070709
@@ -753,9 +764,7 @@ is.code.line[code.start.index]<-0-text.start.indicator[code.start.index]
 is.code.line<-cummin(is.code.line)
 is.code.line<-(text.start.indicator+is.code.line) < 1
 is.code.line[code.start.index]<-FALSE
-TSI<<-text.start.index
-CSI<<-code.start.index
-UI<<-use.index
+## TSI<<-text.start.index; CSI<<-code.start.index; UI<<-use.index
 
 
 @
@@ -952,10 +961,11 @@ lines.to.check<-unlist(lapply(lines.to.check,function(x){
       cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
       cand<-gsub("\\[\\[","DoEckOpenKl-esc",cand)
       cand<-gsub("\\]\\]","DoEckCloseKl-esc",cand)
-      cand<-gsub("\\\\","\\\\char'134 ",cand)
+      cand<-gsub("\\\\","BaCkSlAsH",cand)
       cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
-      cand<-gsub("\\~","\\\\char'176 ",cand)
-      cand<-gsub("\\^","\\\\char'136 ",cand)
+      cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
+      cand<-gsub("\\~","{\\\\char'176}",cand)
+      cand<-gsub("\\^","{\\\\char'136}",cand)
       cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
       cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
       x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
@@ -991,12 +1001,15 @@ if(0<length(ind.cand)) {
       br.close<-which(cand.sum==0)
       if(is.na(br.close<-br.close[br.open<br.close][1])) break
       if((br.open+1)<=(br.close-1)){
-        h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
-        h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+        h<-x[(br.open+1):(br.close-1)]; 
+        h<-gsub("\\\\","BaCkSlAsH",h);
+        h<-gsub("([#$&_%{}])","\\\\\\1",h)
+        h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
+        h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
         h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
         h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
         h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
-      x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
+      x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
       }
       x[br.open]<-"{\\tt "; x[br.close]<-"}"
       x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
@@ -1122,7 +1135,7 @@ kopiert. Die Funktion besitzt folgenden Aufbau:
 <<define-weaveRhtml>>=
 weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830
+  # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830 / 071016
   <<initialisiere [[weaveRhtml]]>>
   <<lese Datei ein [[weaveRhtml]]>>
   <<entferne Kommentarzeichen [[weaveRhtml]]>>
@@ -1160,7 +1173,7 @@ if(<<DEBUG-Flag gesetzt>>){
 }
 @
 <<old>>=
-lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
 UTF<-(1==length(grep("UTF",lcctype))) 
 is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
 UTF<- UTF | is.utf
@@ -1276,21 +1289,6 @@ benutzt.
 zu finden sind, dieses wird gebraucht für kurzzeitige Schriftenwechsel.
 [[transform.structure.command]] entstanden aus [[transform.command]].
 <<initialisiere [[weaveRhtml]]>>=
-get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
-## print("get.argument")
-  command<-paste("\\\\",command,sep="")
-  if(0==length(grep(command,txt))) return(default)
-  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
-  arg<-lapply(txt,function(x){ 
-       n<-nchar(x); if(n<3) return(x)
-       x<-substring(x,1:n,1:n)
-       h<-which(x==kla)[1]; if(is.na(h)) h<-1
-       if(dist)x<-x[h:length(x)]
-       k<-which(cumsum((x==kla)-(x==kle))==0)[1]
-       paste(x[2:(k-1)],collapse="")
-  })
-  arg
-}
 get.argument<-function(command,txt,default="",kla="{",kle="}",
     dist=TRUE,not.found.info="no parameter"){
   ## print("get.argument")
@@ -1375,6 +1373,24 @@ transform.structure.command<-function(command,txt,atag="<i>",etag="</i>",
   unlist(strsplit(c(txt[1],tx),"\n"))
 }
 
+@
+<<some old function>>=
+get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
+## print("get.argument")
+  command<-paste("\\\\",command,sep="")
+  if(0==length(grep(command,txt))) return(default)
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
+  arg<-lapply(txt,function(x){ 
+       n<-nchar(x); if(n<3) return(x)
+       x<-substring(x,1:n,1:n)
+       h<-which(x==kla)[1]; if(is.na(h)) h<-1
+       if(dist)x<-x[h:length(x)]
+       k<-which(cumsum((x==kla)-(x==kle))==0)[1]
+       paste(x[2:(k-1)],collapse="")
+  })
+  arg
+}
+
 
 @
 <<formatiere Überschriften [[weaveRhtml]]>>=
@@ -1395,7 +1411,7 @@ sec.typ<-rbind(cbind(c(0,sec.no),1),cbind(c(0,subsec.no),2),
                         cbind(c(0,subsubsec.no),3),cbind(c(0,parsec.no),4))
 sec.typ<-sec.typ[sec.typ[,1]!=0,,drop=FALSE]; contents<-" "
 if(length(sec.typ>2)){
-  ind<-order(sec.typ[,1]); sec.typ<-sec.typ[ind,]
+  ind<-order(sec.typ[,1]); sec.typ<-sec.typ[ind,,drop=FALSE]
   links<-c(sec.links,subsec.links,subsubsec.links,parsec.links)[ind]
   # append a column with *section numbers
   sec.typ<-cbind(sec.typ,"0")
@@ -1426,7 +1442,7 @@ if(length(sec.typ>2)){
   contents<-paste(sec.typ[,3],links)
 }
 
-@
+@ 
 Dieser Chunk beschreibt die Umsetzung von Gliederungsbefehlen wie 
 section, subsection, ...
 <<formatiere Strukturkommandos [[weaveRhtml]]>>=
@@ -1659,8 +1675,8 @@ a<-rep(0,length.input)
 a[text.start.index]<- -1; a[code.start.index]<-2
 a<-cbind(c(text.start.index,code.start.index),
   c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
-a<-a[order(a[,1]),,drop=F]
-b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
+a<-a[order(a[,1]),,drop=FALSE]
+b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
 a<-rep(0,length.input); a[b[,1]]<-b[,2]
 a<-cumsum(a); a[code.start.index]<-0; a[empty.index]<-0
 code.index<-which(a>0)

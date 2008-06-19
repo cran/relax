@@ -49,8 +49,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
   a[text.start.index]<- -1; a[code.start.index]<-2
   a<-cbind(c(text.start.index,code.start.index),
     c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
-  a<-a[order(a[,1]),,drop=F]
-  b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
+  a<-a[order(a[,1]),,drop=FALSE]
+  b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
   a<-rep(0,length.input); a[b[,1]]<-b[,2]
   a<-cumsum(a); a[code.start.index]<-0 
   ## a[empty.index]<-0 ?? this was not a good idea 070709
@@ -72,9 +72,7 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
   is.code.line<-cummin(is.code.line)
   is.code.line<-(text.start.indicator+is.code.line) < 1
   is.code.line[code.start.index]<-FALSE
-  TSI<<-text.start.index
-  CSI<<-code.start.index
-  UI<<-use.index
+  ## TSI<<-text.start.index; CSI<<-code.start.index; UI<<-use.index
 
 
 
@@ -149,10 +147,11 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
           cand<-gsub("\\[\\[","DoEckOpenKl-esc",cand)
           cand<-gsub("\\]\\]","DoEckCloseKl-esc",cand)
-          cand<-gsub("\\\\","\\\\char'134 ",cand)
+          cand<-gsub("\\\\","BaCkSlAsH",cand)
           cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
-          cand<-gsub("\\~","\\\\char'176 ",cand)
-          cand<-gsub("\\^","\\\\char'136 ",cand)
+          cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
+          cand<-gsub("\\~","{\\\\char'176}",cand)
+          cand<-gsub("\\^","{\\\\char'136}",cand)
           cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
           cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
@@ -176,12 +175,15 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           br.close<-which(cand.sum==0)
           if(is.na(br.close<-br.close[br.open<br.close][1])) break
           if((br.open+1)<=(br.close-1)){
-            h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
-            h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-x[(br.open+1):(br.close-1)]; 
+            h<-gsub("\\\\","BaCkSlAsH",h);
+            h<-gsub("([#$&_%{}])","\\\\\\1",h)
+            h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
+            h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
-          x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
+          x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
           x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
@@ -207,10 +209,11 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
           cand<-gsub("\\[\\[","DoEckOpenKl-esc",cand)
           cand<-gsub("\\]\\]","DoEckCloseKl-esc",cand)
-          cand<-gsub("\\\\","\\\\char'134 ",cand)
+          cand<-gsub("\\\\","BaCkSlAsH",cand)
           cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
-          cand<-gsub("\\~","\\\\char'176 ",cand)
-          cand<-gsub("\\^","\\\\char'136 ",cand)
+          cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
+          cand<-gsub("\\~","{\\\\char'176}",cand)
+          cand<-gsub("\\^","{\\\\char'136}",cand)
           cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
           cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
@@ -234,12 +237,15 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           br.close<-which(cand.sum==0)
           if(is.na(br.close<-br.close[br.open<br.close][1])) break
           if((br.open+1)<=(br.close-1)){
-            h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
-            h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-x[(br.open+1):(br.close-1)]; 
+            h<-gsub("\\\\","BaCkSlAsH",h);
+            h<-gsub("([#$&_%{}])","\\\\\\1",h)
+            h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
+            h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
-          x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
+          x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
           x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
@@ -265,10 +271,11 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
           cand<-gsub("\\[\\[","DoEckOpenKl-esc",cand)
           cand<-gsub("\\]\\]","DoEckCloseKl-esc",cand)
-          cand<-gsub("\\\\","\\\\char'134 ",cand)
+          cand<-gsub("\\\\","BaCkSlAsH",cand)
           cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
-          cand<-gsub("\\~","\\\\char'176 ",cand)
-          cand<-gsub("\\^","\\\\char'136 ",cand)
+          cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
+          cand<-gsub("\\~","{\\\\char'176}",cand)
+          cand<-gsub("\\^","{\\\\char'136}",cand)
           cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
           cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
@@ -292,12 +299,15 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
           br.close<-which(cand.sum==0)
           if(is.na(br.close<-br.close[br.open<br.close][1])) break
           if((br.open+1)<=(br.close-1)){
-            h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
-            h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+            h<-x[(br.open+1):(br.close-1)]; 
+            h<-gsub("\\\\","BaCkSlAsH",h);
+            h<-gsub("([#$&_%{}])","\\\\\\1",h)
+            h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
+            h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
             h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
             h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
-          x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
+          x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
           x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
@@ -360,11 +370,12 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=
      input[an]<-paste(input[an],"${}^*$ --- only the TEXT of the paper ---\\par")
   }
   if(show.text==FALSE){
+     input<-sub("^%.*","%",input)
      an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
      en<-grep("\\\\end(.*)\\{document\\}",input)[1]
      text.index<-which(line.typ=="TEXT")
      text.index<-text.index[an<text.index&text.index<en]
-     input[text.index] <-"."
+     input[c(text.index, verb.index)] <-"."
      if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
      input[an]<-paste(input[an],"${}^*$ --- only the CODE of the paper ---\\par")
   }

@@ -93,12 +93,21 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
     if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
     if(any(ch.no <-def.names==roots[r])){
       ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
-      code.out<-c(code.out,paste("#",root.no[r],":",sep=""),
-                           paste("##",roots[r],":##",sep=""))
+      code.out<-c(code.out,
+            # # # paste("#",root.no[r],":",sep=""), new 071114
+                  paste("##",roots[r],":##",sep=""))
       for(i in ch.no){
-         if((code.a[i]+1)<=code.z[i]) rows<-c(rows, (code.a[i]+1):code.z[i])
+         if((code.a[i]+1)<=code.z[i]){ 
+           # # # rows<-c(rows, (code.a[i]+1):code.z[i]) # new:
+              h<-code.a[i]+1
+              rows<-c(rows, h:code.z[i])
+              code.ch[h]<-paste("C#",i,":NeWlInE",code.ch[h],sep="")
+              h<-code.z[i]
+              code.ch[h]<-paste(code.ch[h] ,"NeWlInEC#:",i,sep="")
+         }
       }
       code.stack<-code.ch[rows]
+      code.stack<-unlist(strsplit(code.stack,"NeWlInE")) # new   
       repeat{
        if(0==length(code.stack))break
        if("C"==substring(code.stack[1],1,1)){
@@ -126,8 +135,9 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
        }
 
       }
-      code.out<-c(code.out,paste("##:",roots[r],"##",sep=""),
-                           paste("#:",root.no[r],sep=""))
+      code.out<-c(code.out,paste("##:",roots[r],"##",sep="")
+                 # # #    ,paste("#:",root.no[r],sep="")
+                 )
     }
   }
 

@@ -105,7 +105,7 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
    --
 }
 \references{\url{http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html}}
-\author{2005 Hans Peter Wolf}
+\author{Hans Peter Wolf}
 \note{}
 
 \seealso{  }

@@ -4,7 +4,7 @@
 #      cat(".First.lib erledigt!\n")
 #}
 relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
- # Copyright (C) 2005 Hans Peter Wolf
+ # Copyright (C) 2005--2008 Hans Peter Wolf
   options(warn=1)
  #      options(warning.expression={cat("WARNING: Warning-Info see Console window")})
   relax.path<-.path.package("relax"
@@ -103,6 +103,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   psdesignheight.sys<-6
   # width parameter for postscript device
   psdesignwidth.sys<-6
+  # rotation of PS graphics
+  pshorizontal.sys<-FALSE
   # size parameter for jpeg device in inch
   jpgdesignsize.sys<-4
   # height of relax window ( e.g.: "500" or "1200" ) 
@@ -124,8 +126,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   # text editor
   text.editor.windows<-"notepad"
   # browser
+  browser.windows<-" "
   # browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
   pdfview.windows<-"acroread"
+  # ghostscript-program e.g.: ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32"
+  ghostscript<-" "
   #############################################
   ## special settings for linux
   path.tcltk.package.img<-"/usr/local/lib"
@@ -171,7 +176,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   if((version$os=="Win32" || version$os=="mingw32")
 ) {
     browser.sys<-"start "
-    if(exists("browser.windows")) browser.sys <- browser.windows
+    if(exists("browser.windows")&&nchar(browser.windows)>0&&0<length(grep("[a-zA-Z]",browser.windows))) 
+      browser.sys <- browser.windows
   }
   if(substring(version$os,1,5)=="linux"
 ) {
@@ -201,9 +207,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   } 
   if(substring(version$os,1,5)=="linux"
 ){
-    Img.ok<-F
+    Img.ok<-FALSE
     if(file.exists(path.tcltk.package.img)){ # pwolf-lokal
-            addTclPath(path.tcltk.package.img); Img.ok<-T
+            addTclPath(path.tcltk.package.img); Img.ok<-TRUE
     }
     if(Img.ok) try(tclRequire("Img"))
 
@@ -607,14 +613,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
             if(!is.character(ok)) { ok <- "OK" }
           }
           if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-            ok<-F
+            ok<-FALSE
             cat(error.msg<-unclass(try.res),"\n")
             if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                cat("A warning message stopped the evaluation!",
                      "If you want to\nevaluate the code anyway",
                      "evaluate code by:\n>WarnEval<")
             cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-          } else { ok<-T }
+          } else { ok<-TRUE }
 
 
           if(ok) worktext<-try.res else NULL
@@ -732,6 +738,62 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 )
   melde("cat saved",3)
 
+  str<-function(object,...){
+    if("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
+ ){
+       if(is.data.frame(object)) 
+          cat(paste("'data.frame':", 
+              paste("Obs.:",dim(object)[1],"Vars.:",dim(object)[2])))
+       a<-deparse(getS3method("str","default"))
+       a<-sub("cat[(]",paste("base::cat(file=\"",get("tmp.file.name",env=revive.sys)
+,"\",",sep=""),a) # ))
+       mystr<-eval(parse(text=a)); mystr(object,...)
+       news<-scan(file=get("tmp.file.name",env=revive.sys)
+,what="",sep="\n")
+       news<-sub("chr .data.frame.","",news)
+       news<-paste("\n", # date(),
+                   paste(news,collapse="\n"),"",sep="\n")
+       if(exists("running.function") && running.function=="relax"
+){
+              if(!exists("toutwin"))
+                toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+              pos.to.insert<-"end"
+              news<-paste(gsub("\n+","\n",news),collapse="\n")
+              try(tkinsert(toutwin,pos.to.insert,news))
+              tksee(toutwin,"end - 0 lines")
+              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+
+
+       }else{
+              if(!exists("tworkwin"))
+                tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
+
+              pos.to.insert<-"end"
+              if(0<length(grep("output-start",news))){
+                tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
+                ltail<-length(tail)
+                if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
+                   any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
+                   news<-sub(".*output-start\n","",news)
+                   news<-sub("output-end","",news)
+                   h<-seq(along=h)[h][1]
+                   pos.to.insert<-paste("end -",h,"lines")
+                }
+              }
+              try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
+              tksee(tworkwin,"end - 0 lines")
+              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+
+       }
+
+    } else { utils::str(object,...) }
+    invisible(NULL)
+  }
+  assign("str",str,pos=which(paste("package","relax"
+,sep=":")==search())
+)
+  melde("str saved",3)
+
   WinToTcl.read<-function(x){
     try(if(is.UTF&&replace.umlaute.sys && any(is.na(iconv(x,"","LATIN1")))){  
       # Latin1 document loaded->translate to utf-8
@@ -818,9 +880,20 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         code.z    <- grep("^@",worktext)
         code.z    <- unlist(sapply(code.a ,function(x,y) y[y>x][1], code.z))
         if(any(h<-is.na(code.z))) code.z<-code.z[!h]
-        code.n    <- length(worktext)
-        change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
-        code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ################
+        # code.n    <- length(worktext)
+        # change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
+        # code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ## 080311
+        ind<-rep(0,length(worktext)); copy<-0
+        for(i in seq(ind)){
+          if(i %in% code.z) copy<-0
+          if(i %in% code.a) copy<-1
+          ind[i]<-copy
+        }
+        code.ch   <- worktext[ind==1]
+        ## cat("input-text, Anfaenge, Code.chunks"); print(worktext); print(code.a); print(code.ch)
+
         code.n    <- length(code.ch)
 
         code.ch<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",code.ch))
@@ -859,11 +932,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
         ch.no<-length(grep("^<<(.*)>>=",worktext[1:line]))
+
         rows      <-c((code.a[ch.no]+1),code.z[ch.no])
         if(all(!is.na(rows))&&rows[1]<=rows[2]){
           rows<-rows[1]:rows[2]
           code.stack<-code.ch[rows]
+          max.depth.refinements<-500; i<-1
           repeat{
+             if((i<-i+1)>max.depth.refinements){ 
+                 cat("ERROR: maximal number of expandations (",max.depth.refinements,
+                     ") exceeded\n --- perhaps a unintended recursion ???")
+                 return()
+             }
              if(0==length(code.stack))break
              typ<-substring(code.stack[1],1,1)
              if("C"==typ||"E"==typ){
@@ -913,7 +993,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                 cat("ERROR: file",filename,"for expansion of code chunk not found!!!\n")
                 ext.file<-"Error"
               }else{
-                ext.file<-try(myscan(file=filename),what="",sep="\n")
+                ext.file<-try(myscan(file=filename,what="",sep="\n"))
               }
               if("Error"==substring(unlist(ext.file)[1],1,5)){
                 found <-FALSE; next
@@ -978,14 +1058,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
       if(ok){
@@ -1159,11 +1239,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     ende<-ende[ende>start][1]
     h<-worktext[start+1:ende-1]
     h<-c("\\documentclass{article}\\begin{document}",h,"\\end{document}")
-    cat(h,file=tmptmp.tex,sep="\n")
+    cat(h,file="tmptmp.tex",sep="\n")
     if(version$os=="linux-gnu") system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
-    ##lege Bild unter [[bildname]] ab>>
+    ##lege Bild unter [[bildname]] ab##
     ##zeige Bilder im Textfenster an##
-    show.single.plot(tworkwin,line,jpgname) 
+    ##show.single.plot(tworkwin,line,jpgname) 
     melde("InsertTeX",2)
   }
 
@@ -1260,7 +1340,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   fRemoveOut<-function(){
     melde("fRemoveOut",1)
-    worktext<-paste("")
+    worktext<-""
     if(length(worktext)>1) worktext<-paste(worktext,collapse="\n")
     tkdelete(toutwin,"0.0","end")
     try(tkinsert(toutwin,"0.0",paste(worktext,collapse="\n")))
@@ -1283,7 +1363,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
     news<-tclvalue(tkget(toutwin,"0.0","end"))
     if(1<nchar(news)){
-      news<-paste("\n@","output-start",news,"output-end\n",sep="\n")
+      if(length(grep("egin[{]table[}]",news))>0 &&
+         length(grep("generated.*xtable.*package",news))>0){
+          news<-sub("(\n%.*begin[{]table[}])","\noutput-end\n\\1",news)       
+          news<-sub("(.end[{]table[}])","\\1\noutput-start",news)       
+          news<-paste("\n@",paste("output-start",news,sep=""),"output-end\n", sep="\n")
+          news<-sub("output-start\n+output-end","",news)
+      }else{    
+        news<-paste("\n@","output-start",news,"output-end\n",sep="\n")
+      }
       news<-gsub("\n+","\n",news)
       ##hole ggf. [[tworkwin]]>>
       line <-floor(as.numeric(tkindex(tworkwin,"insert")))
@@ -1351,7 +1439,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       psname <-paste(bildname,".ps", sep="")
       news<-paste("@\n \\begin{center}","\\includegraphics[",
                            "height=",psheight.sys,"]{",psname,"}\\end{center}\n",sep="")
-      try.res<-try({dev.copy(postscript,psname,horizontal=F,
+      try.res<-try({dev.copy(postscript,psname,horizontal=pshorizontal.sys,
                            width=psdesignwidth.sys,height=psdesignheight.sys);dev.off()})
       if(is.function(try.res)){
         ok <- "OK"
@@ -1362,14 +1450,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
       if(!ok) cat("Error: *ps file not generated by dev.copy!!!\n")
@@ -1398,14 +1486,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
       if(!ok) cat("Error: jpg of gif file not generated by dev.copy!!!\n")
@@ -1486,14 +1574,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     # update pic list
@@ -1583,14 +1671,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
            if(!is.character(ok)) { ok <- "OK" }
          }
          if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-           ok<-F
+           ok<-FALSE
            cat(error.msg<-unclass(try.res),"\n")
            if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
               cat("A warning message stopped the evaluation!",
                     "If you want to\nevaluate the code anyway",
                     "evaluate code by:\n>WarnEval<")
            cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-         } else { ok<-T }
+         } else { ok<-TRUE }
 
 
          if(try.res=="ok") image.nos[i]<-tclvalue(.Tcl("set imageno"))
@@ -1639,7 +1727,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     if((version$os=="Win32" || version$os=="mingw32")
 ){
-      if(exists("ghostscript")) gsexe<-ghostscript else return()
+      if(exists("ghostscript")&&0<nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript))) 
+        gsexe<-ghostscript else return()
     }
     type<-"jpeg"; width<-height<-13; res<-30
     cmd <- paste(gsexe, " -dNOPAUSE -dBATCH -q -sDEVICE=", type,
@@ -1738,9 +1827,20 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         code.z    <- grep("^@",worktext)
         code.z    <- unlist(sapply(code.a ,function(x,y) y[y>x][1], code.z))
         if(any(h<-is.na(code.z))) code.z<-code.z[!h]
-        code.n    <- length(worktext)
-        change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
-        code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ################
+        # code.n    <- length(worktext)
+        # change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
+        # code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ## 080311
+        ind<-rep(0,length(worktext)); copy<-0
+        for(i in seq(ind)){
+          if(i %in% code.z) copy<-0
+          if(i %in% code.a) copy<-1
+          ind[i]<-copy
+        }
+        code.ch   <- worktext[ind==1]
+        ## cat("input-text, Anfaenge, Code.chunks"); print(worktext); print(code.a); print(code.ch)
+
         code.n    <- length(code.ch)
 
         code.ch<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",code.ch))
@@ -1779,11 +1879,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
         ch.no<-length(grep("^<<(.*)>>=",worktext[1:line]))
+
         rows      <-c((code.a[ch.no]+1),code.z[ch.no])
         if(all(!is.na(rows))&&rows[1]<=rows[2]){
           rows<-rows[1]:rows[2]
           code.stack<-code.ch[rows]
+          max.depth.refinements<-500; i<-1
           repeat{
+             if((i<-i+1)>max.depth.refinements){ 
+                 cat("ERROR: maximal number of expandations (",max.depth.refinements,
+                     ") exceeded\n --- perhaps a unintended recursion ???")
+                 return()
+             }
              if(0==length(code.stack))break
              typ<-substring(code.stack[1],1,1)
              if("C"==typ||"E"==typ){
@@ -1833,7 +1940,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                 cat("ERROR: file",filename,"for expansion of code chunk not found!!!\n")
                 ext.file<-"Error"
               }else{
-                ext.file<-try(myscan(file=filename),what="",sep="\n")
+                ext.file<-try(myscan(file=filename,what="",sep="\n"))
               }
               if("Error"==substring(unlist(ext.file)[1],1,5)){
                 found <-FALSE; next
@@ -1898,14 +2005,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
       if(ok){
@@ -2120,6 +2227,32 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     )
     melde("SetPSDesignHeight",2)
   }
+
+  SetPSRotation<-function(){
+    melde("SetPSRotation",1)
+    choices<-c("vertical / standard","horizontal") 
+    activate<-1+pshorizontal.sys
+    menuwidget <- tkmenu(TopW); set.tclvalue("tvchoice","0")
+    for(i in choices) tkadd(menuwidget,"radiobutton",label=i,variable="tvchoice")
+    tkpost(menuwidget,"0","0"); tkactivate(menuwidget,activate)
+    tkbind(menuwidget,"<Escape>",function(){
+           tkdestroy(menuwidget);set.tclvalue("tvchoice","0")})
+    if( (! (version$os=="Win32" || version$os=="mingw32")
+) ) tkwait.variable("tvchoice")
+
+    choice <- tclvalue("tvchoice")
+    choice <- if(choice!="0") choice<-which(choice==choices) else 0
+
+    if(choice!=0){
+        pshorizontal.sys<-2==choice
+        assign("pshorizontal.sys",pshorizontal.sys,env=revive.sys)
+        melde(paste(
+             '> assign("pshorizontal.sys","',pshorizontal.sys,'",env=revive.sys)'
+             ,sep=""),"cmd.msg")
+    }
+    melde("SetPSRotation",2)
+  }
+
   SetJPGSize<-function(){
     melde("SetJPGSize",1)
     frage<-"jpg design size (3..8)?"; set.tclvalue("tvinfo",jpgdesignsize.sys)
@@ -2175,7 +2308,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       tfont.sys<-sub("be-.+-Me",paste("be-",font,"-Me",sep=""),tfont.sys)
       tkconfigure(tworkwin,font=tfont.sys)
       assign("tfont.sys",tfont.sys,env=revive.sys)
-      if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
+      ## if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
     }
     melde(paste("> font type changed"))
     melde("SetFontType",2)
@@ -2341,7 +2474,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           h<--1+charmatch(such,substring(h,1:nchar(h))); if(is.na(h)) h<-0 # 060605
           h<-paste(line,".",h,sep="")
           tkmark.set(tworkwin, "insert", h); tkfocus(tworkwin)
-          tworkwin<-get("tworkwin",env=revive.sys)
+          # tworkwin<-get("tworkwin",env=revive.sys)
           tktag.configure(tworkwin,"found",background="#000999fff",relief="raised")
           tcl("findmatches",tworkwin,such)
         } else set.tclvalue("tvmess",paste("Warning: search string >",tclvalue("tvinfo"),"< not found!!!"))
@@ -2459,6 +2592,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     cat("Remark: processing without saving of",workname.sys,"\n")
     try(tangleR(workname.sys))
+    cat(workname.sys,"generated\n")
     melde("TangleReport",2)
    }
    
@@ -2517,20 +2651,40 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if((version$os=="Win32" || version$os=="mingw32")
 ){
         latex<-paste(latex.command.windows," ",filename,sep="")
-        ok<-try(shell(latex,wait=T))
-        if(ok!=0){
-          cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
-          cmd <-paste(editor.sys, sub("tex$","log",filename))
-          try(shell(cmd,wait=FALSE))
-        }
+        ok<-try(shell(latex,wait=TRUE))
+  #     if(ok!=0){
+  #        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+  #        cmd <-paste(editor.sys, sub("tex$","log",filename))
+  #        try(shell(cmd,wait=FALSE))
+  #     }
     }else{ 
         latex<-paste(latex.command.linux," ",filename,sep="")
         ok<-try(system(latex))
-        if(ok!=0){ 
-          cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
-          cmd <-paste(editor.sys, sub("tex$","log",filename))
-          try(system(paste(cmd," &")))
-        }
+  #     if(ok!=0){ 
+  #        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+  #        cmd <-paste(editor.sys, sub("tex$","log",filename))
+  #        try(system(paste(cmd," &")))
+  #     }
+    }
+    if(ok!=0){ 
+          fname<-sub("tex$","log",filename); txt<-readLines(fname)
+          ind<-c(grep("(^[!])",txt)[1],grep("^[?].q",txt)[1])
+          ind<-ind[!is.na(ind)]
+          if(0==length(ind)) ind<-length(txt)-10
+          ind<-(-8+min(ind)):(-1+max(ind)); txt<-txt[ind]
+          line<-grep("(^l[.][0-9])",txt,value=TRUE)
+          line<-line[!is.na(line)]
+          if(0<length(line)){
+            line<-paste("......\n-> find error line by pressing <Ctrl/Strg> <G>  + line number:",
+                        sub("..([0-9]*).*","\\1",line))
+          }else{
+            line<-"-> Wizardry -> ShowLogFile "
+          }
+          txt<-c(
+                  "!!!ERROR in LaTeX process !!!\n-- for details look at the log file\n",
+                  " \nExtract of LaTeX log file:\n......",txt,line
+               )
+          cat(txt,sep="\n")
     }
     cat("latex process finished")
     melde("LatexReport",2)
@@ -2548,7 +2702,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ){
         try(shell(cmd,wait=FALSE))
     }else{
-        try(system(paste(cmd," &")))
+      if( substring(version$os,1,7)=="darwin8" ){
+        cmd<-paste(view.command.mac,filename)
+      } 
+      try(system(paste(cmd," &")))
     }
     melde("ShowLogFile",2)
    }
@@ -2568,7 +2725,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if((version$os=="Win32" || version$os=="mingw32")
 ){
         view<-paste(view.command.windows," ",filename,sep="")
-        try(shell(view,wait=F))
+        try(shell(view,wait=FALSE))
     }else{
         if(substring(version$os,1,5)=="linux"
 ) 
@@ -2593,7 +2750,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if((version$os=="Win32" || version$os=="mingw32")
 ){
         dvipdf<-paste(dvipdf.command.windows," ",filename,sep="")
-        try(shell(dvipdf,wait=F))
+        try(shell(dvipdf,wait=FALSE))
     }else{
         dvipdf<-paste(dvipdf.command.linux,"  ",filename," &",sep="")
         try(system(dvipdf))
@@ -2643,14 +2800,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
 
@@ -2707,14 +2864,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
 
@@ -2795,14 +2952,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
 
@@ -2861,8 +3018,196 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       } # end of function
     )
    } # end of SWEAVEB
-
   } # end of wizard-if
+
+  ConstructDemoFunction<-function(){
+    melde("ConstructDemoFunction",1)
+    if(!file.exists(workname.sys)){
+      cat(paste("Error: File",workname.sys,"not found!!!"));return()
+    }
+    cat("Remark: processing without saving of",workname.sys,"\n")
+    try(tangleR(workname.sys))
+    workname<-sub(".rev$",".R",workname.sys)
+    cat(workname,"generated\n")
+    txt<-scan(workname,"",sep="\n")
+    fh<-function(file,no=1,start=TRUE){
+      # initial code of demo function
+      require("tcltk"); where<-environment()
+    }
+
+    fh<-deparse(fh); fh<-fh[-length(fh)]
+    ft<-function(){
+      # end of code of demo function
+      ## activate start chunk
+      if(start==TRUE){
+        no.0<-"0"
+        no.start.0<-grep(paste("^#",no.0,":$",sep=""),chunks)
+        no.end.0<-grep(paste("^#:",no.0,"$",sep=""),chunks)
+        code.0<-chunks[no.start.0:no.end.0]
+        eval(parse(text=code.0),envir=where)
+      }
+      ## activate chunk no
+      # eval(parse(text=code),envir=where)
+      secno<-tclVar("1") # 0
+      show.next.number<-function(...){
+       no<-as.character(as.numeric(tclvalue(secno))+1)
+       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+            is.nan(no.end)||is.nan(no.start)){
+            cat("# versuchte Chunk-Nummer falsch\n"); return()
+       }
+       ### cat("# aktueller chunk:",no,"\n")
+       code<-paste(chunks[no.start:no.end],collapse="\n")
+       if(0<length(code)) {
+        tkdelete(ttext,"0.0","end")  
+        tkinsert(ttext,"0.0",code)
+        tclvalue(secno)<-as.character(no)
+        }
+      }
+      show.back.number<-function(...){
+       no<-as.character(as.numeric(tclvalue(secno))-1)
+       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+            is.nan(no.end)||is.nan(no.start)){
+            cat("# versuchte Chunk-Nummer falsch\n"); return()
+       }
+       ### cat("# aktueller chunk:",no,"\n")
+       code<-paste(chunks[no.start:no.end],collapse="\n")
+       if(0<length(code)) {
+        tkdelete(ttext,"0.0","end")  
+        tkinsert(ttext,"0.0",code)
+        tclvalue(secno)<-as.character(no)
+       }
+      }
+      show.number<-function(...){
+       no<-as.character(as.numeric(tclvalue(secno)))
+       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+            is.nan(no.end)||is.nan(no.start)){
+            cat("# versuchte Chunk-Nummer falsch\n"); return()
+       }
+       ### cat("# aktueller chunk:",no,"\n")
+       code<-paste(chunks[no.start:no.end],collapse="\n")
+       if(0<length(code)) {
+        tkdelete(ttext,"0.0","end")  
+        tkinsert(ttext,"0.0",code)
+        tclvalue(secno)<-as.character(no)
+       }
+      }
+      eval.code<-function(...){
+        code<-tclvalue(tkget(ttext,"0.0","end"))
+        code.orig<-code<-unlist(strsplit(code,"\n"))
+        code<-code[!substring(code,1,1)=="#"]
+        code<-unlist(strsplit(code,";"))
+        if(length(code)==0){ cat("ok\n"); return() }
+        result<-try(eval(parse(text=code),envir=where))
+        code.orig<-sub("#([0-9]+):","##wnt-Code-Chunk:\\1-begin#",code.orig)
+        code.orig<-sub("#:([0-9]+)","##wnt-Code-Chunk:\\1-end#",code.orig)
+        h<-get("allcodechunks",envir=where)
+        h<-c(h,paste("<","<*>",">=",sep=""),code.orig,"\n@\n")
+        assign("allcodechunks",h,envir=where)
+        code<-sub("^ *","",code)
+        code<-code[nchar(code)>0]
+        lexpr<-rev(code)[1]; lexpr<-substring(lexpr,1,4)
+        if(length(code)==0||is.null(lexpr)||is.na(lexpr)) return()
+        plot.res<-c("plot","boxp","par(","abli","pie(","hist","axis","show",
+               "lsfi","pair","ylab","help",
+               "qqli","qqno","qqpl","rug(","lege","segm","text","xlab", 
+               "poin","line","titl","eda(","imag","vgl.","curv")
+        if(any(plot.res==lexpr)){
+           cat("Plot erstellt\n"); return()
+        }
+        if(is.null(result)||is.na(result)||lexpr=="prin"||lexpr=="cat("){
+          cat("ok\n"); return() }
+        if(is.list(result)&& length(names(result))> 0 && 
+                                   names(result)[1]=="ID") return()
+        ## if(is.list(result)&& TRUE) return()
+        no<-as.character(as.numeric(tclvalue(secno)))
+        cat("Result of code chunk",no,":\n") 
+       if(class(result)=="try-error"){
+         class(result)<-"character"
+         cat(result,"\n")
+       }else{
+        print(result)
+       }
+       cat("ok\n")
+       }
+      exit.function<-function(){
+         tkdestroy(top)
+         filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
+                                               title="Do you want to save the activated R statements?")
+         if(!is.character(filename)) filename<-tclvalue(filename)
+         if(filename==""){
+           cat("Demo function stopped without saving\n")
+           return()
+         }
+         if(0==length(grep("rev$",filename))) filename<-paste(filename,".rev",sep="")
+         h<-get("allcodechunks",envir=where)
+         try(cat(h,sep="\n",file=filename))
+         cat(paste("Remark: activated statements saved in\n   ",filename,"\n"))
+         return()
+      }
+      allcodechunks<-paste(
+              "@\nReport of activated R-chunks from: ",date(),
+              "\n(demo function constructed by relax (c) Peter Wolf 2007)\n\n  ", sep="")
+      no<-0
+      no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+      no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+      if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+           is.nan(no.end)||is.nan(no.start)){
+           cat("# versuchte Chunk-Nummer falsch\n"); return()
+      }
+      ### cat("# aktueller chunk:",no,"\n")
+      code<-paste(chunks[no.start:no.end],collapse="\n")
+      h<-paste(rep("#",60),collapse="")
+      code<-sub("#0:",h,code); code<-sub("#:0",h,code)
+      allcodechunks<-c(allcodechunks,"\n@\n<<start>>=",code,"\n@")
+      assign("allcodechunks",allcodechunks,envir=where)
+      top<-tktoplevel()
+      ttext<-tktext(top,height=19,background="#f7fffF",
+                    font="-Adobe-courier-Medium-R-Normal--18-180-*")
+      tf<-tkframe(top) 
+      tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2007")
+      tkpack(tf,ttext,side="bottom")
+      tkevent.add("<<Paste>>",   "<Control_L><v>")
+      tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+
+      bexit<-tkbutton(tf,text="EXIT",width=9)
+      beval<-tkbutton(tf,text="ACTIVATE",width=9)
+      bnext<-tkbutton(tf,text="NEXT",width=9)
+      bback<-tkbutton(tf,text="BACK",width=9)
+      lno  <-tkentry(tf,textvariable=secno,width=9)
+      linfo<-tklabel(tf,text="chunk number:")
+      tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
+      tkconfigure(bexit,command=exit.function)
+      tkconfigure(bnext,command=show.next.number)
+      tkconfigure(bback,command=show.back.number)
+      tkconfigure(beval,command=eval.code)
+      # tkbind(lno,"<Return>",show.number)
+      tkbind(lno,"<KeyRelease>",show.number)
+      tclvalue(secno)<-as.character(no)
+      show.number()
+      ### tkwait.window(top)
+    }
+
+    ft<-deparse(ft)[-(1:2)]
+    ft<-sub("WoRkNaMe",workname,ft)
+    fname<-gsub("[^A-Za-z]","",sub(".R$",".demo",workname))
+    txt<-gsub("\\\\","\\\\\\\\",txt)
+    txt<-gsub("\"","\\\\\"",txt)
+    txt<-paste(',"',txt,'"',sep=""); txt[1]<-substring(txt[1],2)
+    txt<-c(paste(fname,"<-"),fh,"chunks<-c(",txt,")",ft
+           ,paste("cat(\"Demo will be started by > ",fname,"()\\n\")",sep="")
+           ,paste(fname,"()\n",sep="")
+        )
+    workname<-sub(".R$",".demo.R",workname)
+    cat(txt,file=workname,sep="\n")
+    cat("Demo in file ",workname," saved, load demo by source(\"",workname,"\") \n",sep="")
+    melde("ConstructDemoFunction",2)
+   }
 
   FindReportChunk<-function(){
     melde("FindReportChunk",1)
@@ -3015,9 +3360,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                  "The windows version uses some ingredients",
                 # "of the noweb system",
                 # " (Norman Ramsey -- http://www.eecs.harvard.edu/~nr/noweb/intro.html),",
-                 "of the Img package of Jan Nijtmans (http://www.xs4all.nl/~nijtmans/img.html)",
-                # "and gawk (http://www.gnu.org/software/gawk/gawk.html)",
-                 "-- notice the copyright declarations of this software.","","",
+                 "of the Img package of Jan Nijtmans (see: http://members.chello.nl/~j.nijtmans/img.html",
+                 "and http://members.chello.nl/~j.nijtmans/img.html",
+                 "the package is found in http://sourceforge.net/projects/tkimg).",
+                # "and gawk (http://www.gnu.org/software/gawk/gawk.html).",
+                 "The license terms concerning the img package are found in the source", 
+                 "file of the package, see: relax/src/tkimg1.3.tar.gz.","",
                  "---------------------------------------------------------","",""
                  )
     try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
@@ -3071,7 +3419,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                   "Crtl-N:  move cursor to the next line",
                   "Crtl-Pos1:  move cursor to the beginning of text",
                   "Crtl-End:  move cursor to the end of text",
-                  "Crtl-P:  move cursor one line back",
+                 # "Crtl-P:  move cursor one line back",
                   "Crtl-I:  insert tab",
                   "Crtl-T:  exchange characters",
                   "Crtl-D:  delete character right of cursor",
@@ -3184,7 +3532,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     if((version$os=="Win32" || version$os=="mingw32")
 ){
-         if(!exists("ghostscript")) return()
+      if(!(exists("ghostscript")&&0<nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript)))) 
+         return()
          if(!file.exists(paste(ghostscript,".exe",sep=""))){
             cat("ERROR: sorry, ghostscript not found!!!\n"); return()
          }
@@ -3199,6 +3548,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
          try(shell("del tmptmp.tex tmptmp.aux tmptmp.log tmptmp.ppm tmptmp.crp tmptmp.dvi tmptmp.ps"))
     }
     # passe workttext an, integriere Bild
+    insertline<-texend+3
     news<-paste("\n%<!--latex-end-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
     line<-paste(texend,".0",sep="")
     if(!exists("tworkwin"))
@@ -3240,8 +3590,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     melde("inserted characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-    ##zeige Bilder im Textfenster an##
-    show.single.plot(tworkwin,line,jpgname) 
+    ##zeige Bild im Textfenster an##
+    createandshow.single.plot(tworkwin,insertline,jpgname)
+    ## old: show.single.plot(tworkwin,line,jpgname) 
     melde("FormatTeXLines",2)
   }
 
@@ -3282,9 +3633,20 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         code.z    <- grep("^@",worktext)
         code.z    <- unlist(sapply(code.a ,function(x,y) y[y>x][1], code.z))
         if(any(h<-is.na(code.z))) code.z<-code.z[!h]
-        code.n    <- length(worktext)
-        change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
-        code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ################
+        # code.n    <- length(worktext)
+        # change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
+        # code.ch   <- worktext[1==(cumsum(change)%%2)]
+        ## 080311
+        ind<-rep(0,length(worktext)); copy<-0
+        for(i in seq(ind)){
+          if(i %in% code.z) copy<-0
+          if(i %in% code.a) copy<-1
+          ind[i]<-copy
+        }
+        code.ch   <- worktext[ind==1]
+        ## cat("input-text, Anfaenge, Code.chunks"); print(worktext); print(code.a); print(code.ch)
+
         code.n    <- length(code.ch)
 
         code.ch<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",code.ch))
@@ -3323,11 +3685,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
         ch.no<-length(grep("^<<(.*)>>=",worktext[1:line]))
+
         rows      <-c((code.a[ch.no]+1),code.z[ch.no])
         if(all(!is.na(rows))&&rows[1]<=rows[2]){
           rows<-rows[1]:rows[2]
           code.stack<-code.ch[rows]
+          max.depth.refinements<-500; i<-1
           repeat{
+             if((i<-i+1)>max.depth.refinements){ 
+                 cat("ERROR: maximal number of expandations (",max.depth.refinements,
+                     ") exceeded\n --- perhaps a unintended recursion ???")
+                 return()
+             }
              if(0==length(code.stack))break
              typ<-substring(code.stack[1],1,1)
              if("C"==typ||"E"==typ){
@@ -3377,7 +3746,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                 cat("ERROR: file",filename,"for expansion of code chunk not found!!!\n")
                 ext.file<-"Error"
               }else{
-                ext.file<-try(myscan(file=filename),what="",sep="\n")
+                ext.file<-try(myscan(file=filename,what="",sep="\n"))
               }
               if("Error"==substring(unlist(ext.file)[1],1,5)){
                 found <-FALSE; next
@@ -3498,14 +3867,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -3516,8 +3885,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     melde("SetWorkPath",2)
   }
 
-  SaveEnvironment<-function(){
-    melde("SaveEnvironment",1)
+  DumpEnvironment<-function(){
+    melde("DumpEnvironment",1)
     filename<-tkgetSaveFile(filetypes="{{Paper Files} {.relax-env}}",
                             title="name of ENVIRONMENT DUMP file?", initialdir=getwd(),
                             defaultextension=".relax-env", 
@@ -3525,7 +3894,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(!is.character(filename)) filename<-tclvalue(filename)
     if(filename=="") return("cancel")
 
-    objlist<-ls(env=revive.env); objlist<-objlist[objlist!="revive.sys"]
+    noenv<-TRUE # ignore environments 
+    objlist<-ls(env=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-objlist[substring(objlist,1,6)!="revive"]
+    if(length(objlist)==0){
+      cat("WARNING: no objects found for saving!!!\n")
+      return()
+    }
     cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
       
 
@@ -3542,14 +3918,64 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
+
+
+    if(ok){
+      cat(paste("Objects of environment saved in file:",filename,"!\n"))
+    } else {
+      cat("ERROR: saving of environment objects failed!!!\n")
+    }
+    melde("DumpEnvironment",2)
+  }
+  SaveEnvironment<-function(){
+    melde("SaveEnvironment",1)
+    filename<-tkgetSaveFile(filetypes="{{Paper Files} {.bin-relax-env}}",
+                            title="name of BINARY SAVE file?", initialdir=getwd(),
+                            defaultextension=".bin-relax-env", 
+                            initialfile=sub("rev$","bin-relax-env",workname.sys))
+    if(!is.character(filename)) filename<-tclvalue(filename)
+    if(filename=="") return("cancel")
+
+    noenv<-FALSE # do not ignore environments 
+    objlist<-ls(env=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-objlist[substring(objlist,1,6)!="revive"]
+    if(length(objlist)==0){
+      cat("WARNING: no objects found for saving!!!\n")
+      return()
+    }
+    cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
+      
+
+    assign("list.of.env.obj",objlist,env=revive.env)
+    try.res<-try(eval(parse(text=
+                    paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
+    try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+    if(is.function(try.res)){
+      ok <- "OK"
+    } else {
+      if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
+      ok<-try.res[1]
+      if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
+      if(!is.character(ok)) { ok <- "OK" }
+    }
+    if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
+      ok<-FALSE
+      cat(error.msg<-unclass(try.res),"\n")
+      if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
+         cat("A warning message stopped the evaluation!",
+               "If you want to\nevaluate the code anyway",
+               "evaluate code by:\n>WarnEval<")
+      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -3561,17 +3987,23 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   }
   LoadEnvironment<-function(){
     melde("LoadEnvironment",1)
-    filename<-tkgetOpenFile(filetypes="{{Paper Files} {.relax-env}}",
-                            title="Select .relax-env file to be loaded!",
+    initialfile<-sub("rev$","bin-relax-env",workname.sys)
+    if(!file.exists(initialfile)) initialfile<-sub("rev$","relax-env",workname.sys)
+    filename<-tkgetOpenFile(filetypes="{{Paper Files} {.relax-env .bin-relax-env}}",
+                            title="Select *relax-env file to be loaded!",
                             defaultextension=".relax-env",
-                            initialfile=sub("rev$","relax-env",workname.sys),
+                            initialfile=initialfile,
                             initialdir=getwd())
     if(!is.character(filename)) filename<-tclvalue(filename)
     if(filename=="") return("cancel")
 
-    obj<-scan(filename,""); ind<-grep("<-",obj)-1   
-    obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
-    try.res<-try(eval(parse(text=obj),env=revive.env))
+    if(0<length(grep("bin-relax-env$",filename))){
+      try.res<-try(load(filename,env=revive.env))
+    } else {
+      obj<-scan(filename,""); ind<-grep("<-",obj)-1   
+      obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
+      try.res<-try(eval(parse(text=obj),env=revive.env))
+    }
     if(is.function(try.res)){
       ok <- "OK"
     } else {
@@ -3581,19 +4013,26 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
       cat(paste("Objects of file:",filename,"\nloaded into environment!\n"))
-      objlist<-ls(env=revive.env); objlist<-objlist[objlist!="revive.sys"]
+      noenv<-FALSE # do not ignore environments 
+      objlist<-ls(env=revive.env) 
+      if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+      objlist<-objlist[substring(objlist,1,6)!="revive"]
+      if(length(objlist)==0){
+        cat("WARNING: no objects found for saving!!!\n")
+        return()
+      }
       cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
         
 
@@ -3604,7 +4043,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   }
   CleanEnvironment<-function(){
     melde("CleanEnvironment",1)
-    objlist<-ls(env=revive.env); objlist<-objlist[objlist!="revive.sys"]
+    noenv<-FALSE # do not ignore environments 
+    objlist<-ls(env=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-objlist[substring(objlist,1,6)!="revive"]
+    if(length(objlist)==0){
+      cat("WARNING: no objects found for saving!!!\n")
+      return()
+    }
     cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
       
 
@@ -3623,6 +4069,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     melde("CleanEnvironment",2)
   }
+
   SaveReport<-function(){
     melde("SaveReport",1)
     filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
@@ -3659,14 +4106,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
 
@@ -3745,14 +4192,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
 
@@ -3828,7 +4275,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     worktext<-c(worktext,"@\n\\end{document}")
     ## remove noweb items
     code.ch<-c("@",worktext,"@")
-    code.chunk.start<-paste("<","<.*>",">=",sep="")
+    code.chunk.start<-paste("^<","<.*>",">=",sep="")
     code.a<- grep(code.chunk.start,code.ch)
     if(0<length(code.a)){
       code.z<-grep("^@",code.ch)
@@ -3859,16 +4306,26 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
+    # und ein script.R-file
+    a<-worktext; ind<-grep("^[+>]",a)
+    if(0!=length(ind)){
+      a<-a[ind]; ind<-grep("^[>]",a); no<-seq(ind)
+      a[ind]<-paste("#",no,": >\n ",substring(a[ind],2),sep="")
+      ind<-grep("^[+]",a)
+      if(0!=length(ind)) a[ind]<-paste("", substring(a[ind],2))
+      filename<-sub(".txt$",".R",filename)
+      try.res <- try(cat(a,file=filename,sep="\n"))
+    }
 
     if(ok){
       filename<-paste(sub(".txt$","",filename),".rev",sep="")
@@ -3909,6 +4366,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     melde("SaveAsTextFile",2)
     return("ok")
   }
+
   # ermittle neue Zeilen:
   SaveDiffReport<-function(){
     melde("SaveDiffReport",1)
@@ -3942,14 +4400,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(!ok) return()
@@ -3958,7 +4416,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ," | grep \"^[0-9]\" > ",get("tmp.file.name",env=revive.sys)
 ))
     difflines<-scan(get("tmp.file.name",env=revive.sys)
-,"",blank.lines.skip=F,sep="\n")
+,"",blank.lines.skip=FALSE,sep="\n")
     difflines<-sub("^([0-9]*)[a-z]","",difflines)
     difflines<-sub(",",":",difflines)
     difflines<-paste("c(",paste(difflines,collapse=","),")")
@@ -3968,10 +4426,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       worktext<-c("@",worktext,"@")
       difflines<-difflines+1
       chunkbegins<-grep("(^@)|(^<<(.*)>=)", worktext)
-      chunk.log<-rep(F,length(chunkbegins))
+      chunk.log<-rep(FALSE,length(chunkbegins))
       ch.new<- 0<hist(difflines,plot=FALSE,
                       breaks=c(chunkbegins,length(worktext)+1)-0.5)$counts
-      ch.new<- ch.new | c(ch.new[-1],F) | c(F,ch.new[-length(ch.new)])
+      ch.new<- ch.new | c(ch.new[-1],FALSE) | c(FALSE,ch.new[-length(ch.new)])
       ch.new<-seq(ch.new)[ch.new]
       # extrahiere Chunks:
       lines<-paste(chunkbegins[ch.new],":",
@@ -4007,14 +4465,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -4030,7 +4488,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
       try.res<-WinToTcl.read(try.res)
           ## Eintrag mit Entfernung des bisherigen Inhalts:
-          ## worktext<-paste(try.res, collapse="\n"); <<schreibe [[worktext]] ins Arbeitsfenster>>
+          ## worktext<-paste(try.res, collapse="\n")
+          ## <<schreibe [[worktext]] ins Arbeitsfenster>>
       news<-c("",try.res)
       if(!exists("tworkwin"))
         tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -4121,14 +4580,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -4246,14 +4705,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -4364,14 +4823,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       if(!is.character(ok)) { ok <- "OK" }
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-      ok<-F
+      ok<-FALSE
       cat(error.msg<-unclass(try.res),"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-    } else { ok<-T }
+    } else { ok<-TRUE }
 
 
     if(ok){
@@ -4393,14 +4852,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         if(!is.character(ok)) { ok <- "OK" }
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-        ok<-F
+        ok<-FALSE
         cat(error.msg<-unclass(try.res),"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-      } else { ok<-T }
+      } else { ok<-TRUE }
 
 
       if(ok){
@@ -4415,14 +4874,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           if(!is.character(ok)) { ok <- "OK" }
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-          ok<-F
+          ok<-FALSE
           cat(error.msg<-unclass(try.res),"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
           cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-        } else { ok<-T }
+        } else { ok<-TRUE }
 
 
         if(ok){
@@ -4767,7 +5226,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   generate.1.data<-function(){
    (function(){
-    DS<-c("sample(99)","sample(99,replace=T)","rnorm(99,mean=0,sd=1)","rexp(99)")
+    DS<-c("sample(99)","sample(99,replace=TRUE)","rnorm(99,mean=0,sd=1)","rexp(99)")
     listboxmenu<-function(choices,title="items",addexit=TRUE){
         if(addexit) choices<-c(choices,"EXIT")
         lbmTop<-tktoplevel();tkwm.geometry(lbmTop,"+0+15")
@@ -5108,7 +5567,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   }
   removenafrommatxy<-function(){
     (function(){
-      cmd<-"xy<-xy[!apply(is.na(xy),1,any),,drop=F]"
+      cmd<-"xy<-xy[!apply(is.na(xy),1,any),,drop=FALSE]"
       if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
 
 
@@ -5297,17 +5756,17 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   get.dim.1.stats<-function(){
     (function(){
-      methoden  <-c("median of x"                     ="median(x,rm.na=T)"
-                    ,"mean of x"                              ="mean(x,rm.na=T)"
-                    ,"standard deviation of x"         ="sd(x,rm.na=T)"
-                    ,"variance of x"                          ="var(x,rm.na=T)"
-                    ,"maximum of x"                   ="max(x,rm.na=T)"
-                    ,"minimum of x"                           ="min(x,rm.na=T)"
+      methoden  <-c("median of x"                     ="median(x,rm.na=TRUE)"
+                    ,"mean of x"                              ="mean(x,rm.na=TRUE)"
+                    ,"standard deviation of x"         ="sd(x,rm.na=TRUE)"
+                    ,"variance of x"                          ="var(x,rm.na=TRUE)"
+                    ,"maximum of x"                   ="max(x,rm.na=TRUE)"
+                    ,"minimum of x"                           ="min(x,rm.na=TRUE)"
                     ,"quantiles of x, prob: p"        ="quantile(x,p)"
-                    ,"range of x"                             ="range(x,rm.na=T)"
-                    ,"inter quartile range of x"              ="IQR(x,rm.na=T)"
-                    ,"5 number summary of x"          ="five.num(x,rm.na=T)"
-                    ,"summary statistics of x"        ="summary(x,rm.na=T)"
+                    ,"range of x"                             ="range(x,rm.na=TRUE)"
+                    ,"inter quartile range of x"              ="IQR(x,rm.na=TRUE)"
+                    ,"5 number summary of x"          ="five.num(x,rm.na=TRUE)"
+                    ,"summary statistics of x"        ="summary(x,rm.na=TRUE)"
                     ,"sorted data of x"               ="sort(x)"
                     ,"ranks of x"                                     ="rank(x)"
                     ,"sum of x"               ="sum(x)"
@@ -5394,8 +5853,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
       methoden  <-c("1 dim plot of x"="plot(x)"
        ,"boxplot of x"              ="boxplot(x)"
        ,"jitterplot of x"              ="plot(jitter(x))"
-       ,"histogram of x"              ="hist(x,prob=T)"
-       ,"histogram of x, breaks at br"           ="hist(x,breaks=br,prob=T)"
+       ,"histogram of x"              ="hist(x,prob=TRUE)"
+       ,"histogram of x, breaks at br"           ="hist(x,breaks=br,prob=TRUE)"
        ,"plot of density trace of x, width w"="plot(density(x,width=w),type=\"l\")"
        ,"barplot of x"              ="barplot(x)"
        ,"barplot of relative frequencies of x"              ="plot(table(x)/length(x))"
@@ -5579,7 +6038,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.081 - 071008"
+  relax.version.sys<- "relax 1.083 - 080619"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -5713,7 +6172,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   } 
          ##definiere Testknopf-Ereignis>>
   implement.but<-
-  function(but,frame,mess=" ",side="right",relief="raised",short.cut=T,bwf=1){
+  function(but,frame,mess=" ",side="right",relief="raised",short.cut=TRUE,bwf=1,job=""){ ## 071115
     if(is.character(frame)) frame<-eval(parse(text=frame))
     b<-tkbutton(frame, text=but, relief=relief, pady="-3"
 ,
@@ -5723,6 +6182,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     if(short.cut) tkconfigure(b,underline=0)
     tkbind(b,"<Enter>",function()set.tclvalue("tvmess",mess))
     tkbind(b,"<Leave>",function(){ set.tclvalue("tvmess","relax") })
+    tkbind(b,"<Button-1><ButtonRelease>",job) ## 071115
     tkpack(b, side=side)
     assign(but, b, envir=revive.sys)
   }
@@ -5730,7 +6190,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+15")
   tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
-                        "relax 1.081 - 071008"))
+                        "relax 1.083 - 080619"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -5749,6 +6209,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                      set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
              }
   )
+
 
   fhead   <- tkframe(TopW, relief="raised", bd="1")
   finfo     <- tkframe(TopW)
@@ -5830,7 +6291,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   tkpack(mbFile,mbEdit,mbOptions,side="left")
   if(but.Wizardry)tkpack(mbRevweb,side="left")
-  implement.but("Help.R", "fhead", "show online documentation of R object")
+  implement.but("Help.R", "fhead", "show online documentation of R object",job=fHelp.R)
 
   mbFile.menu<-tkmenu(mbFile,font="-Adobe-helvetica-Medium-R-Normal--12-140-*" # ,foreground="#124800"
 )
@@ -5878,6 +6339,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         label="SetPSWidth:   define width of ps-graphics")
   tkadd(mbOptions.menu,"command", command=SetPSDesignHeight,
         label="SetPSHeight:  define height of ps-graphics")
+  tkadd(mbOptions.menu,"command", command=SetPSRotation,
+        label="SetPSRotation:  define non normal PS rotation")
   tkadd(mbOptions.menu,"command", command=SetJPGSize,
         label="SetJPGSize:  define size of jpeg-graphics")
   tkadd(mbOptions.menu, "separator")
@@ -5911,6 +6374,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         label="WeaveReportNoText:   weave source file, hide text")
    tkadd(mbRevweb.menu,"command", command=TangleReport,
         label="TangleReport:   tangle source file")
+   tkadd(mbRevweb.menu,"command", command=ConstructDemoFunction,
+        label="ConstructDemoFunction:   construct demo showing code chunks")
    tkadd(mbRevweb.menu, "separator")
    tkadd(mbRevweb.menu,"command", command=SWEAVE,
         label="SWEAVE:   save, Sweave and LaTeX file")
@@ -5934,7 +6399,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
    if(FTL.ok){
      tkadd(mbRevweb.menu, "separator")
      tkadd(mbRevweb.menu, "command", command=FormatTeXLines,
-               label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
+           label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
    }
 
    ##erstelle Menüeintrag für Funktionstasten-Puffer##
@@ -5958,16 +6423,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
         label="ViewReport.html:   view html representation of report")
   tkadd(mbFile.menu,"separator")
   tkadd(mbFile.menu,"command", command=LoadEnvironment,
-        label="LoadEnvironment:   load objects from dump file into environment")
+        label="LoadEnvironment:   load objects from dump file into relax environment")
+  tkadd(mbFile.menu,"command", command=DumpEnvironment,
+        label="DumpEnvironment:   save objects of relax environment as dump file")
   tkadd(mbFile.menu,"command", command=SaveEnvironment,
-        label="SaveEnvironment:   save objects of environment as dump file")
+        label="SaveEnvironment:   save objects of relax environment in binary file")
   tkadd(mbFile.menu,"command", command=CleanEnvironment,
         label="CleanEnvironment:   delete objects of environment")
   tkadd(mbFile.menu,"separator")
   tkadd(mbFile.menu,"command", command=OpenTextFile,
-        label="OpenTextFile:  open not rev-file, translate console style and >>APPEND<< it to text field")
+        label="OpenTextFile:  open not-rev-file, translate console style and >>APPEND<< it to text field")
   tkadd(mbFile.menu,"command", command=SaveAsTextFile,
-        label="SaveAsTextFile:   dump report in console style, not as rev-file")
+        label="SaveAsTextFile:   dump report in console style, and as .script.R-file, but not as a rev-file")
   tkadd(mbFile.menu,"separator")
 
   if(but.Wizardry){
@@ -6000,10 +6467,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   melde("frame head defined",3)
 
-  implement.but("TrashROutput", "fworkcmds", "remove output the mouse is pointing at from report" )
-  implement.but("WarnEval",   "fworkcmds", "evaluate code chunk of cursor even if warnings occur" )
-  implement.but("EvalRCode",   "fworkcmds", "evaluate code and stop in case of warnings" )
-  implement.but("PlanRCode",    "fworkcmds", "insert new code chunk" )
+  implement.but("TrashROutput", "fworkcmds", "remove output the mouse is pointing at from report",job=fTrashROutput) ## 071115
+  implement.but("WarnEval",   "fworkcmds", "evaluate code chunk of cursor even if warnings occur",job=fWarnEval)
+  implement.but("EvalRCode",   "fworkcmds", "evaluate code and stop in case of warnings",job=fEvalRCode)
+  implement.but("PlanRCode",    "fworkcmds", "insert new code chunk",job=fPlanRCode)
 
   tkpack(tklabel(fworkcmds, text=" Report:",
          pady="-3"
@@ -6015,15 +6482,17 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       pady="-3"
 , relief="ridge")
   tkpack(lworkname.sys, side="left")
+  llineno.sys<-tklabel(fworkcmds, text=":",width="4")
+  tkpack(llineno.sys, side="left")
 
-  implement.but("Down",   "fworkcmds", "jump forwards",side="left",bwf=0.40 )
-  implement.but("Up",   "fworkcmds", "jump backwards",side="left",bwf=0.40 )
+  implement.but("Down",   "fworkcmds", "jump forwards",side="left",bwf=0.40,job=fDown)
+  implement.but("Up",   "fworkcmds", "jump backwards",side="left",bwf=0.40,job=fUp)
 
-  implement.but("RemoveOut",foutcmds,"remove output from output field")
-  implement.but("FindText",foutcmds,"find some text string in report field")
+  implement.but("RemoveOut",foutcmds,"remove output from output field",job=fRemoveOut) ## 071115
+  implement.but("FindText",foutcmds,"find some text string in report field",job=fFindText)
   implement.but("SavePlot",foutcmds,
-            "save plot as jpeg and postscript file and insert it into report field")
-  implement.but("Insert",foutcmds,"insert output into report")
+            "save plot as jpeg and postscript file and insert it into report field",job=fSavePlot)
+  implement.but("Insert",foutcmds,"insert output into report",job=fInsert)
 
   tkpack(tklabel(foutcmds, text=" Result(s):",pady="-3"
 ,
@@ -6032,8 +6501,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
           #ipady=7, 
           side="left")
 
+
            ##implementiere Testknopf##
-  tworkwin<-tktext(fworkwin, background="#c81e6ff23", font=tfont.sys) #cff#d0f0ff
+  tworkwin<-tktext(fworkwin, background="#f0fffF", font=tfont.sys) #cff#d0f0ff#c81e6ff23
   try(tkconfigure(tworkwin, undo=1)) # 050704
   workbar<-tkscrollbar(fworkwin)
   tkconfigure(tworkwin,yscrollcommand=function(...) tkset(workbar,...))
@@ -6050,6 +6520,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
               news<-base::scan(file=pipe("pbpaste","r"),what="",
                                            sep="\n",blank.lines.skip=FALSE)
               tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+              tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
     }
     ### tkevent.add("<<Paste>>", "<Control_L><v>")
     tkbind(tworkwin,"<Control_L><v>",mac.paste)
@@ -6065,18 +6536,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ))
               .Tcl("clipboard append hello")
               .Tcl("clipboard clear")})
-    } 
-    ##tkevent.add("<<Copy>>",  "<Control_L><c><KeyRelease>")
-    ##tkbind(tworkwin,"<<Copy>>",mac.copy) 
-    tkbind(tworkwin,"<Control_L><c>",mac.copy) 
+    }
+    tkbind(tworkwin,"<Control_L><c>",mac.copy)
     # mac-extract
     tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")
-    tkbind(tworkwin,"<<extract>>",mac.copy) 
+    tkbind(tworkwin,"<<extract>>",mac.copy)
   }else{
     tkevent.add("<<Paste>>",   "<Control_L><v>")
     tkbind(tworkwin,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
   }
-  toutwin<-tktext(foutwin,height=8,background="#fc8f16a23", font=outfont.sys) #fff080
+  toutwin<-tktext(foutwin,height=8,background="#ffffcc", font=outfont.sys) #fff080 #fc8f16a23
   outbar<-tkscrollbar(foutwin)
   tkconfigure(toutwin,yscrollcommand=function(...) tkset(outbar,...))
   tkconfigure(outbar,        command=function(...) tkyview(toutwin,...))
@@ -6107,7 +6576,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                    borderwidth="2")
    tktag.configure(tworkwin,"code",  foreground="#d21", font=outfont.sys) # ddd222222
    tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
-   tktag.configure(tworkwin,"emph",  background="#999999999")
+   tktag.configure(tworkwin,"emph", background="#999999999")
    proc<-paste(
     "proc emphline {w mustera musterz} {",
       "scan [$w index end] %d anzzeilen", "set emphline 0\n",
@@ -6132,9 +6601,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
        "if {[regexp \"^\\\\\\\\s(u|e)\" $zeile]} {\n set type 4\n}",
        "if {[regexp \"^output-start\"  $zeile]}  {\n set type 3\n}",
        "if {[regexp \"^\\\\\\\\begin\\{verbatim\\}\" $zeile]} {\n set type 3\n}",
-       "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
        # "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
        "if {$type==2} {\n uplevel $w tag add code    $iv.end $i.end \n}",
+       # "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
+       "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end ",
+                                                   "; set type 2 \n}",
+       ### "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n ; ",
+       ###                      " \n uplevel $w tag add code $i.end $i.end \n ; ",
+       ###                                            "; set type 2 \n } ",
        "if {$type==3} {\n uplevel $w tag add output  $i.0 $i.end \n}",
        "if {$type==4} {\n uplevel $w tag add tex     $i.0 $i.end",
                                                    "; set type 0 \n}",
@@ -6218,7 +6692,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                                  h<-slider(obj.name="tree.center"); xtrcenter<-h[1]; ytrcenter<-h[2]
                                  h<-slider(obj.name="chair.center"); xchcenter<-h[1]; ychcenter<-h[2]
                                  a<-par(family="mono")
-                                 plot(-2:2,-2:2,type="n",axes=F,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
+                                 plot(-2:2,-2:2,type="n",axes=FALSE,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
                                  polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA)
                                  polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)
                                  text(0.5,-.5,"relax",cex=4)
@@ -6233,7 +6707,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                                  set.tree<-function(...){
                                    # cat("click on desired position in graphics device!!!\n")
                                    # xy<-unlist(locator(n=1)); xy<-c(xy$x,xy$y)
-                                   xy<-c(runif(1,-1,1),runif(1,-1.5,0))
+                                   xy<-c(runif(1,-1,1),runif(1,-1.5,1.0))
                                    slider(obj.name="tree.center",obj.value=xy)
                                    redo()
                                  }
@@ -6278,6 +6752,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
+        if(nchar(such)==0) {
+          tcl("findclear",tworkwin); tkfocus(tworkwin); return()
+        }
+        repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
+        repl.pat<-paste("([",repl.pat,"])",collapse="")
+        such<-gsub(repl.pat,"\\\\\\1",such)
         if(length(found<-grep(such,worktext))>0){
           line <- floor(as.numeric(tkindex(tworkwin,"insert")))
           line <- if(any(found>line)) found[found>line][1] else found[1]
@@ -6295,37 +6775,31 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   tkbind(TopW, "<<ProcessReport>>", ProcessReport)
 
-  tkconfigure(Help.R,command=fHelp.R)
+  # tkconfigure(Help.R,command=fHelp.R)
   tkbind(TopW, "<<Help.R>>", fHelp.R)
-
-
-  tkconfigure(TrashROutput,command=fTrashROutput)
-  tkbind(TopW, "<<TrashROutput>>", fTrashROutput)
-
-
-  tkconfigure(PlanRCode,command=fPlanRCode)
-  tkbind(TopW, "<<PlanRCode>>", fPlanRCode)
-
-  tkconfigure(Up,command=fUp)
+  # tkconfigure(Up,command=fUp)
   tkbind(TopW, "<<Up>>", fUp)
-
-  tkconfigure(Down,command=fDown)
+  # tkconfigure(Down,command=fDown)
   tkbind(TopW, "<<Down>>", fDown)
 
-  tkconfigure(WarnEval,command=fWarnEval)
-  tkbind(TopW, "<<WarnEval>>", fWarnEval)
-
-
-  tkconfigure(EvalRCode,command=fEvalRCode)
+  # tkconfigure(PlanRCode,command=fPlanRCode)
+  tkbind(TopW, "<<PlanRCode>>", fPlanRCode)
+  # tkconfigure(EvalRCode,command=fEvalRCode) ## 071115
   tkbind(TopW, "<<EvalRCode>>", fEvalRCode)
-  tkconfigure(FindText,command=fFindText)
-  tkbind(TopW, "<<FindText>>", fFindText)
-  tkconfigure(RemoveOut,command=fRemoveOut)
-  tkbind(TopW, "<<RemoveOut>>", fRemoveOut)
-  tkconfigure(Insert,command=fInsert)
+  # tkconfigure(WarnEval,command=fWarnEval)
+  tkbind(TopW, "<<WarnEval>>", fWarnEval)
+  # tkconfigure(TrashROutput,command=fTrashROutput)
+  tkbind(TopW, "<<TrashROutput>>", fTrashROutput)
+
+  # tkconfigure(Insert,command=fInsert)
   tkbind(TopW, "<<Insert>>", fInsert)
-  tkconfigure(SavePlot,command=fSavePlot)
+  # tkconfigure(SavePlot,command=fSavePlot)
   tkbind(TopW, "<<SavePlot>>", fSavePlot)
+  # tkconfigure(FindText,command=fFindText)
+  tkbind(TopW, "<<FindText>>", fFindText)
+  # tkconfigure(RemoveOut,command=fRemoveOut) ## 071115
+  tkbind(TopW, "<<RemoveOut>>", fRemoveOut)
+
   #tkconfigure(CopyToEnd,command=CopyToEnd)
   #tkbind(TopW, "<<CopyToEnd>>", CopyToEnd)
 
@@ -6415,8 +6889,21 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     }
     ## if(exists("second")) print(second)  ##; print(open)
     if(open==0) tcl("showbracketsclear",tworkwin)
+    ### Zeilennummeraktualisieren: 
+    line <-floor(as.numeric(tkindex(tworkwin,"insert")))
+
+    tkconfigure(llineno.sys,text=paste(":",line))
+
   }
-  tkbind(tworkwin,"<KeyRelease>", MarkSecondBracket)
+  tkbind(tworkwin,"<KeyRelease>",MarkSecondBracket)
+  ### Zeilennummeraktualisieren falls Mouse-Op: 
+  tkbind(tworkwin,"<ButtonRelease>",function(){
+      tworkwin<-get("tworkwin",revive.sys)
+      line <-floor(as.numeric(tkindex(tworkwin,"insert")))
+
+      tkconfigure(llineno.sys,text=paste(":",line))
+    }
+  )
 
    tkbind(tworkwin,"<Tab><KeyRelease>", function() {
     #  tworkwin<-get("tworkwin",env=revive.sys)
@@ -6541,7 +7028,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       psname <-paste(bildname,".ps", sep="")
                       news<-paste("@\n \\begin{center}","\\includegraphics[",
                                            "height=",psheight.sys,"]{",psname,"}\\end{center}\n",sep="")
-                      try.res<-try({dev.copy(postscript,psname,horizontal=F,
+                      try.res<-try({dev.copy(postscript,psname,horizontal=pshorizontal.sys,
                                            width=psdesignwidth.sys,height=psdesignheight.sys);dev.off()})
                       if(is.function(try.res)){
                         ok <- "OK"
@@ -6552,14 +7039,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                         if(!is.character(ok)) { ok <- "OK" }
                       }
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-                        ok<-F
+                        ok<-FALSE
                         cat(error.msg<-unclass(try.res),"\n")
                         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                            cat("A warning message stopped the evaluation!",
                                  "If you want to\nevaluate the code anyway",
                                  "evaluate code by:\n>WarnEval<")
                         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-                      } else { ok<-T }
+                      } else { ok<-TRUE }
 
 
                       if(!ok) cat("Error: *ps file not generated by dev.copy!!!\n")
@@ -6588,14 +7075,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                         if(!is.character(ok)) { ok <- "OK" }
                       }
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-                        ok<-F
+                        ok<-FALSE
                         cat(error.msg<-unclass(try.res),"\n")
                         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                            cat("A warning message stopped the evaluation!",
                                  "If you want to\nevaluate the code anyway",
                                  "evaluate code by:\n>WarnEval<")
                         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-                      } else { ok<-T }
+                      } else { ok<-TRUE }
 
 
                       if(!ok) cat("Error: jpg of gif file not generated by dev.copy!!!\n")
@@ -6644,7 +7131,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                       cat("ERROR:",choice,"not found!!!\n")
                       ok<-FALSE
                     }else{
-                      try.res<-try(myscan(choice,"",sep="\n"))
+                      filename<-choice
+                      try.res<-try(myscan(filename,"",sep="\n",blank.lines.skip=FALSE))
                       if(is.function(try.res)){
                         ok <- "OK"
                       } else {
@@ -6654,44 +7142,96 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                         if(!is.character(ok)) { ok <- "OK" }
                       }
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-                        ok<-F
+                        ok<-FALSE
                         cat(error.msg<-unclass(try.res),"\n")
                         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                            cat("A warning message stopped the evaluation!",
                                  "If you want to\nevaluate the code anyway",
                                  "evaluate code by:\n>WarnEval<")
                         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-                      } else { ok<-T }
+                      } else { ok<-TRUE }
 
 
                     }
                     if(ok){
-                      worktext<-paste(try.res, collapse="\n")
-                      if(length(worktext)>1) worktext<-paste(worktext,collapse="\n")
-                      tkdelete(tworkwin,"0.0","end")
-                      try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
-                      tksee(tworkwin,"end")
-                      melde("ak texthervor",1)
-                      tcl("markclear",tworkwin)
-                      tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
-                      tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
-                      tcl("marklinetypes",tworkwin)
-                      melde("ak texthervor",2)
+                        workname.sys<-sub(paste(".*",.Platform$file.sep,sep=""),"",filename)
+                        lworkname.sys<-get("lworkname.sys",envir=revive.sys)
+                        tkconfigure(lworkname.sys,text=workname.sys)
+                        assign("workname.sys",workname.sys,envir=revive.sys)
 
-                      if(!no.plots) { exclude.plots(tworkwin); show.plots.again(tworkwin) }
+                        try.res<-WinToTcl.read(try.res)
+                          ## Eintrag mit Entfernung des bisherigen Inhalts:
+                          ## worktext<-paste(try.res, collapse="\n")
+                          ## <<schreibe [[worktext]] ins Arbeitsfenster>>
+                        news<-c("",try.res)
+                        if(!exists("tworkwin"))
+                          tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
+
+                        pos.to.insert<-"end"
+                        if(0<length(grep("output-start",news))){
+                          tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
+                          ltail<-length(tail)
+                          if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
+                             any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
+                             news<-sub(".*output-start\n","",news)
+                             news<-sub("output-end","",news)
+                             h<-seq(along=h)[h][1]
+                             pos.to.insert<-paste("end -",h,"lines")
+                          }
+                        }
+                        try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
+                        tksee(tworkwin,"end - 0 lines")
+                        melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+
+                        if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
+                        tworkwin<-get("tworkwin",envir=revive.sys)
+                        worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
+                        if(nchar(worktext)<10000){
+                          worktext<-strsplit(worktext,"\n")[[1]]
+                        }else{
+                          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+)
+                          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+,"",sep="\n",blank.lines.skip=FALSE)
+                        }
+
+                        line <-floor(as.numeric(tkindex(tworkwin,"insert")))
+
+                        code.start<-grep("^<<(.*)>>=",worktext)
+                        try(if(0<length(code.start)){ 
+                               worktext[code.start]<-sub("^<<(.*)>>=(.*)","<<\\1>>=",worktext[code.start])
+                               worktext[code.start]<-paste(worktext[code.start]," (",1:length(code.start),")",sep="")
+                        })
+                        if(length(worktext)>1) worktext<-paste(worktext,collapse="\n")
+                        tkdelete(tworkwin,"0.0","end")
+                        try(tkinsert(tworkwin,"0.0",paste(worktext,collapse="\n")))
+                        tksee(tworkwin,"end")
+                        melde("ak texthervor",1)
+                        tcl("markclear",tworkwin)
+                        tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                        tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                        tcl("marklinetypes",tworkwin)
+                        melde("ak texthervor",2)
+
+                        if(!no.plots) { exclude.plots(tworkwin); show.plots.again(tworkwin) }
 
 
-                      filename<-choice
-                      assign("workname.sys",filename,env=revive.sys)
-                      workname.sys<-sub(paste(".*",.Platform$file.sep,sep=""),"",filename)
-                      lworkname.sys<-get("lworkname.sys",envir=revive.sys)
-                      tkconfigure(lworkname.sys,text=workname.sys)
-                      assign("workname.sys",workname.sys,envir=revive.sys)
+                        tkmark.set(tworkwin, "insert", paste(line,"0",sep="."))
+                        tksee(tworkwin,paste(line,"0",sep="."))
+                        tkfocus(tworkwin)
 
-                      melde(paste("r", filename), "cmd.msg")
-                      if(!no.plots) { exclude.plots(tworkwin); createandshow.all.plots(tworkwin) }
+                        RunStart()
+                        melde("ak texthervor",1)
+                        tcl("markclear",tworkwin)
+                        tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
+                        tktag.configure(tworkwin,"code",  foreground="#ddd222222", font=outfont.sys)
+                        tcl("marklinetypes",tworkwin)
+                        melde("ak texthervor",2)
 
-                      Execute.cmds()
+                        if(!no.plots) { exclude.plots(tworkwin); createandshow.all.plots(tworkwin) }
+
+                        melde(paste("r", filename), "cmd.msg")
+                        Execute.cmds()
                     } else { cat("ERROR: file not found!!!\n") }
                    }
           )
@@ -6706,6 +7246,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   ##definiere Bindung zur Warnungsabarbeitung##
   melde("initialization of RELAX finished",3)
   if(!missing(file.name)){
+     file.name<-as.character(substitute(file.name)) ## 071115
      file.name<-gsub("\\\\","/",file.name)
      if(0<length(grep("/",file.name))){
        path<-sub("^(.*)/(.*)","\\1",file.name)
@@ -6717,20 +7258,22 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
      print(file.name)
      workname.sys<-file.name
      assign("cmds",paste("r",file.name),env=revive.env)
-     Execute.cmds(); RunStart()
+     Execute.cmds()
   }
   if(0<length(cmds) && cmds[1]!="") {
     assign("cmds",cmds,env=revive.env)
     Execute.cmds()
   }
 
+  ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
+  cat( "relax 1.083 - 080619" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{
     cat("initialisation of relax completed!\nrestart relax by: relax()\n")
   }
-  tkwait.variable("tvexit")
+#  tkwait.variable("tvexit")  # version 1.082
   return()
 }
 

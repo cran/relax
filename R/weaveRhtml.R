@@ -1,6 +1,6 @@
 weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830
+  # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830 / 071016
   require(tcltk)
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
@@ -11,21 +11,6 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   UTF<-0<length(grep("utf",UTF))
   if(exists("DEBUG")){ 
      if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n") 
-  }
-  get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
-  ## print("get.argument")
-    command<-paste("\\\\",command,sep="")
-    if(0==length(grep(command,txt))) return(default)
-    txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
-    arg<-lapply(txt,function(x){ 
-         n<-nchar(x); if(n<3) return(x)
-         x<-substring(x,1:n,1:n)
-         h<-which(x==kla)[1]; if(is.na(h)) h<-1
-         if(dist)x<-x[h:length(x)]
-         k<-which(cumsum((x==kla)-(x==kle))==0)[1]
-         paste(x[2:(k-1)],collapse="")
-    })
-    arg
   }
   get.argument<-function(command,txt,default="",kla="{",kle="}",
       dist=TRUE,not.found.info="no parameter"){
@@ -111,7 +96,6 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
     unlist(strsplit(c(txt[1],tx),"\n"))
   }
 
-
   if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
   if(!file.exists(in.file)){
     cat(paste("ERROR:",in.file,"not found!!??\n"))
@@ -156,8 +140,8 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   a[text.start.index]<- -1; a[code.start.index]<-2
   a<-cbind(c(text.start.index,code.start.index),
     c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
-  a<-a[order(a[,1]),,drop=F]
-  b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
+  a<-a[order(a[,1]),,drop=FALSE]
+  b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
   a<-rep(0,length.input); a[b[,1]]<-b[,2]
   a<-cumsum(a); a[code.start.index]<-0; a[empty.index]<-0
   code.index<-which(a>0)
@@ -550,7 +534,7 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
                           cbind(c(0,subsubsec.no),3),cbind(c(0,parsec.no),4))
   sec.typ<-sec.typ[sec.typ[,1]!=0,,drop=FALSE]; contents<-" "
   if(length(sec.typ>2)){
-    ind<-order(sec.typ[,1]); sec.typ<-sec.typ[ind,]
+    ind<-order(sec.typ[,1]); sec.typ<-sec.typ[ind,,drop=FALSE]
     links<-c(sec.links,subsec.links,subsubsec.links,parsec.links)[ind]
     # append a column with *section numbers
     sec.typ<-cbind(sec.typ,"0")

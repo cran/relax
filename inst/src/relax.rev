@@ -1,16 +1,18 @@
 % SavePlot:  Neuerstellung: show.single.plot,  Aktualisieren unter Edit eintragen, sonst  
-%                                                                    Aufrufparameter beachten
-% to do for new relax-version: 
+%                                              Aufrufparameter beachten
+% to do: Leerzeile als Trennzeichen nach CODE?
+% done: xtable bei output, sliderfns neu, log-Ausschnitt ins gelbe Fenster?
+% steps to create a new relax-version: 
 % a) Datum/Version in RELAX-Chunk: "Version von [[relax]]" 
 % b) Nr in RELAX-Chunk: "define-DESCRIPTION", 
 % c) aktualisiere RELAX-Chunk: "define-dorx"
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) cp install.dir/relax_1.08.*  $HOME/www/public_html/software/relax/R-2.5.0
+% f) [[ cp install.dir/relax_1.083.*  $HOME/www/public_html/software/relax/R-2.5.0 ]]
 % g) upload to cran
 %     ftp ftp://cran.R-project.org/incoming/
-%     ftp> put relax_1.08.tar.gz
+%     ftp> put relax_1.083.tar.gz
 %     ftp> bye
 % Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel??
 % Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel
@@ -50,7 +52,7 @@
 % echo "library(relax,,,'lib'); relax()" | R --vanilla
 %
 % Paketverteilung fuer Rechner:
-%38:        cd /usr/lib/R/library/relax;cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
+%38:        cd /usr/lib/R/library/relax; cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
 %20/21:   cd /usr/lib/R/library/relax;cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
 %102:      cd /usr/lib/R/library/relax;cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
 %
@@ -104,7 +106,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.081 - 071008"
+"relax 1.083 - 080619"
 @
 <<relax>>=
 "relax"
@@ -113,7 +115,7 @@
 \tableofcontents
 
 @
-\paragraph{Vorweg}
+\paragraph{General Remarks}
 The windows version uses some ingredients of
 \begin{itemize}
 \item[noweb] [[ / noweb.sty]]: system of Norman Ramsey
@@ -124,12 +126,17 @@ You may use and distribute noweb for any purpose, for free. You may modify noweb
 provided you retain the copyright notice, but the result may not be called noweb without my written consent.
 You may do anything you like with programs created with noweb. You may even sell noweb itself, for example,
 as part of a CD-ROM distribution, provided that what you sell is the true, complete, and unmodified noweb.)}
-\item[img:] of Jan Nijtmans --- [[http://www.xs4all.nl/~nijtmans/img.html]]%
+\item[img:] of Jan Nijtmans --- 
+    [[http://members.chello.nl/~j.nijtmans/img.html]] or
+    [[http://tkimg.sourceforge.net/, the package is found on]],
+    [[http://sourceforge.net/projects/tkimg]].%
 \footnote{Copyright (c) 1995-2003 Jan Nijtmans [[<nijtmans@users.sourceforge.com>]]\\
   see: [[http://sourceforge.net/docman/display_doc.php?docid=6025&group_id=1]],\\
   [[http://www.opensource.org/docs/definition.php]],\\
   [[http://aspn.activestate.com/ASPN/docs/ActiveTcl/img/doc/img.html]]\\
   [[http://aspn.activestate.com/ASPN/docs/ActiveTcl/at.license.html]]}
+The license terms concerning the img package are found in the source file of the package, see:
+[[relax/src/tkimg1.3.tar.gz]].
 \item[gawk:] --- [[http://www.gnu.org/software/gawk/gawk.html]] (nur in älteren Versionen verwendet.)%
 \footnote{
     gawk is GNU: This program is free software; you can redistribute it and/or modify
@@ -817,6 +824,7 @@ tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
            }
 )
 
+
 @
 In dieses Top-Level-Fenster werden verschiedene Frames eingebracht,
 die im weiteren Verlauf mit Ober\-flächen\-ele\-menten gefüllt werden.
@@ -904,16 +912,24 @@ short cut durch die
 Das Ergebnis --- die Variable mit der Verbindung zu einem Knopf ---
 muß in der Umgebung [[revive.sys]] abgelegt werden, damit jederzeit
 ein Zugriff möglich ist.
+
+Unter Linux gab es plötzlich Probleme mit der Reaktion der Knöpfe.
+Deshalb wurde am 07115 umgestellt darauf, dass nicht per [[configure]]
+die Funktionalität der Knöpfe festgelegt wird, sondern durch
+das Event: [[<Button-1><ButtonRelease>]]. Der Job wird über ein 
+weiteres Argument von [[implement.but]] übermittelt.
+
 @
 <<definiere [[Implement.but]]>>=
 implement.but<-
-function(but,frame,mess=" ",side="right",relief="raised",short.cut=T,bwf=1){
+function(but,frame,mess=" ",side="right",relief="raised",short.cut=TRUE,bwf=1,job=""){ ## 071115
   if(is.character(frame)) frame<-eval(parse(text=frame))
   b<-tkbutton(frame, text=but, relief=relief, pady=<<negativer y-Platz>>,
   	      width=floor(<<Knopfbreite>>*bwf), font=<<Font für Knöpfe>>)
   if(short.cut) tkconfigure(b,underline=0)
   tkbind(b,"<Enter>",function()set.tclvalue("tvmess",mess))
   tkbind(b,"<Leave>",<<relax-zeige-Funktion>>)
+  tkbind(b,"<Button-1><ButtonRelease>",job) ## 071115
   tkpack(b, side=side)
   assign(but, b, envir=revive.sys)
 }
@@ -1157,7 +1173,7 @@ Zum Schluß können die neuen Elemente in den Frame gepackt werden.
 <<definiere Kopf-Frame>>=
 tkpack(mbFile,mbEdit,mbOptions,side="left")
 if(but.Wizardry)tkpack(mbRevweb,side="left")
-implement.but("Help.R", "fhead", "show online documentation of R object")
+implement.but("Help.R", "fhead", "show online documentation of R object",job=fHelp.R)
 
 @
 \paragraph{Datei- und andere dateinahe Operationen.}
@@ -1240,6 +1256,8 @@ tkadd(mbOptions.menu,"command", command=SetPSDesignWidth,
       label="SetPSWidth:   define width of ps-graphics")
 tkadd(mbOptions.menu,"command", command=SetPSDesignHeight,
       label="SetPSHeight:  define height of ps-graphics")
+tkadd(mbOptions.menu,"command", command=SetPSRotation,
+      label="SetPSRotation:  define non normal PS rotation")
 tkadd(mbOptions.menu,"command", command=SetJPGSize,
       label="SetJPGSize:  define size of jpeg-graphics")
 tkadd(mbOptions.menu, "separator")
@@ -1283,6 +1301,8 @@ if(but.Wizardry){
       label="WeaveReportNoText:   weave source file, hide text")
  tkadd(mbRevweb.menu,"command", command=TangleReport,
       label="TangleReport:   tangle source file")
+ tkadd(mbRevweb.menu,"command", command=ConstructDemoFunction,
+      label="ConstructDemoFunction:   construct demo showing code chunks")
  tkadd(mbRevweb.menu, "separator")
  tkadd(mbRevweb.menu,"command", command=SWEAVE,
       label="SWEAVE:   save, Sweave and LaTeX file")
@@ -1313,7 +1333,7 @@ if(<<das OS ist Linux>>){
 if(FTL.ok){
   tkadd(mbRevweb.menu, "separator")
   tkadd(mbRevweb.menu, "command", command=FormatTeXLines,
-            label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
+        label="FormatTeXLines:   format text chunk by LaTeX and insert  jpeg-file")
 }
 
 @
@@ -1396,7 +1416,7 @@ redo<-function(...){
   h<-slider(obj.name="tree.center"); xtrcenter<-h[1]; ytrcenter<-h[2]
   h<-slider(obj.name="chair.center"); xchcenter<-h[1]; ychcenter<-h[2]
   a<-par(family="mono")
-  plot(-2:2,-2:2,type="n",axes=F,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
+  plot(-2:2,-2:2,type="n",axes=FALSE,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
   polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA)
   polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)
   text(0.5,-.5,"relax",cex=4)
@@ -1411,7 +1431,7 @@ redo<-function(...){
   set.tree<-function(...){
     # cat("click on desired position in graphics device!!!\n")
     # xy<-unlist(locator(n=1)); xy<-c(xy$x,xy$y)
-    xy<-c(runif(1,-1,1),runif(1,-1.5,0))
+    xy<-c(runif(1,-1,1),runif(1,-1.5,1.0))
     slider(obj.name="tree.center",obj.value=xy)
     redo()
   }
@@ -1468,10 +1488,10 @@ Die Variable [[workname.sys]] speichert den Reportnamen,
 [[lworkname.sys]] den Namen des Labelfeldes, in dem der Name angezeigt wird.
 
 <<definiere Report-Aktionsframe>>=
-implement.but("TrashROutput", "fworkcmds", "remove output the mouse is pointing at from report" )
-implement.but("WarnEval",   "fworkcmds", "evaluate code chunk of cursor even if warnings occur" )
-implement.but("EvalRCode",   "fworkcmds", "evaluate code and stop in case of warnings" )
-implement.but("PlanRCode",    "fworkcmds", "insert new code chunk" )
+implement.but("TrashROutput", "fworkcmds", "remove output the mouse is pointing at from report",job=fTrashROutput) ## 071115
+implement.but("WarnEval",   "fworkcmds", "evaluate code chunk of cursor even if warnings occur",job=fWarnEval)
+implement.but("EvalRCode",   "fworkcmds", "evaluate code and stop in case of warnings",job=fEvalRCode)
+implement.but("PlanRCode",    "fworkcmds", "insert new code chunk",job=fPlanRCode)
 
 tkpack(tklabel(fworkcmds, text=" Report:",
        pady=<<negativer y-Platz>>,font=<<Font für Knöpfe>>),
@@ -1480,20 +1500,23 @@ tkpack(tklabel(fworkcmds, text=" Report:",
 lworkname.sys<-tklabel(fworkcmds, text=workname.sys,
                     pady=<<negativer y-Platz>>, relief="ridge")
 tkpack(lworkname.sys, side="left")
+llineno.sys<-tklabel(fworkcmds, text=":",width="4")
+tkpack(llineno.sys, side="left")
 
-implement.but("Down",   "fworkcmds", "jump forwards",side="left",bwf=0.40 )
-implement.but("Up",   "fworkcmds", "jump backwards",side="left",bwf=0.40 )
+implement.but("Down",   "fworkcmds", "jump forwards",side="left",bwf=0.40,job=fDown)
+implement.but("Up",   "fworkcmds", "jump backwards",side="left",bwf=0.40,job=fUp)
 
-implement.but("RemoveOut",foutcmds,"remove output from output field")
-implement.but("FindText",foutcmds,"find some text string in report field")
+implement.but("RemoveOut",foutcmds,"remove output from output field",job=fRemoveOut) ## 071115
+implement.but("FindText",foutcmds,"find some text string in report field",job=fFindText)
 implement.but("SavePlot",foutcmds,
-          "save plot as jpeg and postscript file and insert it into report field")
-implement.but("Insert",foutcmds,"insert output into report")
+          "save plot as jpeg and postscript file and insert it into report field",job=fSavePlot)
+implement.but("Insert",foutcmds,"insert output into report",job=fInsert)
 
 tkpack(tklabel(foutcmds, text=" Result(s):",pady=<<negativer y-Platz>>,
 	font=<<Font für Knöpfe>>), 
 	#ipady=7, 
 	side="left")
+
 
 
 @
@@ -1508,16 +1531,27 @@ jetzt das Arbeitsfenster über Mausaktionen verändert werden kann.
 Das Report-Fenster paßt sich in der Breite und der Höhe automatisch an.
 Weiterhin wird für Windows-Freunde PASTE über [[Ctrl-v]] realisiert.
 % Control-V, Control_V, Control-C, Control_C, Ctrl-C, ctrl-c
+
 Für Apple-Apfel-v wird die Zwischenablage von Apple gelesen
 und an der Stelle der Schreibmarke eingefügt.
 Für Apfel-c wird nach einer kurzen Zeitverzögerung 
-das Clipboard von tcl/tk gelesen 
-und der Apple-Zwischenablage übergeben,
+das Clipboard von tcl/tk gelesen und der Apple-Zwischenablage übergeben,
 Für Apfel-x wird die identische Funktion aufgerufen,
-da das Aisschneiden selbst schon durch tcl/tk
+da das Ausschneiden selbst schon durch tcl/tk
 realisiert wird.
+Leider kommen die Events Apfel-c [[<Meta_L><c>]] und Apfel-v [[<Meta_L><v>]]im
+Tcl/Tk-Fenster nicht durch. Darum geht nicht:
+[[  tkbind(tworkwin,"<Meta_L><v>",mac.paste) ]]
+und man muss sich mit Ctrl-C bzw. Ctrl-V begnügen.
+
+Textplatzierung im Fenster durch eine relative Angabe (z.B. 0.5 = 50\% / Mitte) durch:
+[[tclvalue(tkyview(tworkwin,"moveto","0.5"))]]
+
+Text eine Seite hochscrollen zum Ausgleich beim Mac:
+[[tclvalue(tkyview(tworkwin,"scroll","-1","pages"))]] 
+
 <<definiere Report-Text-Frame>>=
-tworkwin<-tktext(fworkwin, background="#c81e6ff23", font=tfont.sys) #cff#d0f0ff
+tworkwin<-tktext(fworkwin, background="#f0fffF", font=tfont.sys) #cff#d0f0ff#c81e6ff23
 try(tkconfigure(tworkwin, undo=1)) # 050704
 workbar<-tkscrollbar(fworkwin)
 tkconfigure(tworkwin,yscrollcommand=function(...) tkset(workbar,...))
@@ -1534,6 +1568,7 @@ if(<<OS ist Mac-Mini-Tiger>> ){
             news<-base::scan(file=pipe("pbpaste","r"),what="",
                                          sep="\n",blank.lines.skip=FALSE)
             tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+            tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
   }
   ### tkevent.add("@<<Paste>>", "<Control_L><v>")
   tkbind(tworkwin,"<Control_L><v>",mac.paste)
@@ -1547,18 +1582,48 @@ if(<<OS ist Mac-Mini-Tiger>> ){
             system(paste("pbcopy < ",<<tmp>>))
             .Tcl("clipboard append hello")
             .Tcl("clipboard clear")})
-  } 
-  ##tkevent.add("@<<Copy>>",  "<Control_L><c><KeyRelease>")
-  ##tkbind(tworkwin,"@<<Copy>>",mac.copy) 
-  tkbind(tworkwin,"<Control_L><c>",mac.copy) 
+  }
+  tkbind(tworkwin,"<Control_L><c>",mac.copy)
   # mac-extract
   tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")
-  tkbind(tworkwin,"@<<extract>>",mac.copy) 
+  tkbind(tworkwin,"@<<extract>>",mac.copy)
 }else{
   tkevent.add("@<<Paste>>",   "<Control_L><v>")
   tkbind(tworkwin,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
 }
 @
+Fehlerversion
+<<old and unused>>=
+  # mac-PASTE, ctrl-v
+  mac.paste<-function(...){
+     try({.Tcl("clipboard append hello")
+          .Tcl("clipboard clear")
+          news<-base::scan(file=pipe("pbpaste","r"),what="",
+                           sep="\n",blank.lines.skip=FALSE)
+          tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+          tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
+  }
+  ### tkevent.add("@<<Paste>>", "<Control_L><v>")
+  tkbind(tworkwin,"<Control_L><v>",mac.paste)
+  # mac-COPY
+  mac.copy<-function(...){  ## Ctrl-C
+     news<-""
+     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+     if(news=="empty") return()
+     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+          base::cat(news,file=<<tmp>>)
+          system(paste("pbcopy < ",<<tmp>>))
+          .Tcl("clipboard append hello")
+          .Tcl("clipboard clear")})
+  } 
+  tkbind(tworkwin,"<Control_L><c>",mac.copy) 
+  ###tkevent.add("@<<Copy>>",  "<Control_L><c><KeyRelease>")
+  ###tkbind(tworkwin,"@<<Copy>>",mac.copy) 
+  # mac-extract
+  ###tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")
+  ### tkbind(tworkwin,"@<<extract>>",mac.copy) 
+  tkbind(tworkwin,"<Control_L><x>",mac.copy) 
+
 @
 Im Netz gefundene Strategie zur Feststellung, ob CLIPBOARD leer ist.
 \begin{verbatim}
@@ -1608,7 +1673,7 @@ Text-Widget. Die Konstruktion ist identisch zu der des Report-Frame.
 Dem üblen Gummi-Effekt unter manchen Windows-Versionen,
 wird auch in diesem Chunk zu Leibe gerückt.
 <<definiere Report-Text-Frame>>=
-toutwin<-tktext(foutwin,height=8,background="#fc8f16a23", font=outfont.sys) #fff080
+toutwin<-tktext(foutwin,height=8,background="#ffffcc", font=outfont.sys) #fff080 #fc8f16a23
 outbar<-tkscrollbar(foutwin)
 tkconfigure(toutwin,yscrollcommand=function(...) tkset(outbar,...))
 tkconfigure(outbar,        command=function(...) tkyview(toutwin,...))
@@ -1704,7 +1769,7 @@ function(tworkwin){
                  borderwidth="2")
  tktag.configure(tworkwin,"code",  foreground="#d21", font=outfont.sys) # ddd222222
  tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
- tktag.configure(tworkwin,"emph",  background="#999999999")
+ tktag.configure(tworkwin,"emph", background="#999999999")
  proc<-paste(
   "proc emphline {w mustera musterz} {",
     "scan [$w index end] %d anzzeilen", "set emphline 0\n",
@@ -1729,9 +1794,14 @@ function(tworkwin){
      "if {[regexp \"^\\\\\\\\s(u|e)\" $zeile]} {\n set type 4\n}",
      "if {[regexp \"^output-start\"  $zeile]}  {\n set type 3\n}",
      "if {[regexp \"^\\\\\\\\begin\\{verbatim\\}\" $zeile]} {\n set type 3\n}",
-     "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
      # "if {$type==2} {\n uplevel $w tag add code    $i.0 $i.end \n}",
      "if {$type==2} {\n uplevel $w tag add code    $iv.end $i.end \n}",
+     # "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n}",
+     "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end ",
+                                                 "; set type 2 \n}",
+     ### "if {$type==1} {\n uplevel $w tag add tld     $i.0 $i.end \n ; ",
+     ###                      " \n uplevel $w tag add code $i.end $i.end \n ; ",
+     ###                                            "; set type 2 \n } ",
      "if {$type==3} {\n uplevel $w tag add output  $i.0 $i.end \n}",
      "if {$type==4} {\n uplevel $w tag add tex     $i.0 $i.end",
                                                  "; set type 0 \n}",
@@ -1750,6 +1820,8 @@ function(tworkwin){
 )(tworkwin)
 
 @
+%w<-get("tworkwin",revive.sys)
+%tkinsert(w,"1.end-2char", "hallo")
 Zunächst werden die alten Setzungen entfernt. Dann wird für alle
 Fälle der Output-Font neu gesetzt, denn für den Output wurde er
 im Rahmen der Tag-Festlegung vereinbart.
@@ -1950,6 +2022,9 @@ tkpack("forget",einfo.tmp,linfo.tmp)
 
 @
 [[SetPlotHeight]] sieht entsprechend aus.
+Weiter werden im Folgenden noch die Funktionen
+zur Rotation von PS-Graphiken und zur JPEG-Größensetzung
+formuliert.
 <<definiere Kopf-Zeilen-Funktionen>>=
 SetPlotHeight<-function(){
   melde("SetPlotHeight",1)
@@ -1981,6 +2056,22 @@ SetPSDesignHeight<-function(){
   )
   melde("SetPSDesignHeight",2)
 }
+
+SetPSRotation<-function(){
+  melde("SetPSRotation",1)
+  choices<-c("vertical / standard","horizontal") 
+  activate<-1+pshorizontal.sys
+  <<zeige Menü von [[choices]], Vorschlag:[[activate]], liefere [[choice]] ab>>
+  if(choice!=0){
+      pshorizontal.sys<-2==choice
+      assign("pshorizontal.sys",pshorizontal.sys,env=revive.sys)
+      melde(paste(
+           '> assign("pshorizontal.sys","',pshorizontal.sys,'",env=revive.sys)'
+           ,sep=""),"cmd.msg")
+  }
+  melde("SetPSRotation",2)
+}
+
 SetJPGSize<-function(){
   melde("SetJPGSize",1)
   frage<-"jpg design size (3..8)?"; set.tclvalue("tvinfo",jpgdesignsize.sys)
@@ -2026,7 +2117,7 @@ SetFontType<-function(){
     tfont.sys<-sub("be-.+-Me",paste("be-",font,"-Me",sep=""),tfont.sys)
     tkconfigure(tworkwin,font=tfont.sys)
     assign("tfont.sys",tfont.sys,env=revive.sys)
-    if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
+    ## if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
   }
   melde(paste("> font type changed"))
   melde("SetFontType",2)
@@ -2173,7 +2264,7 @@ FindReportText<-function(){
         h<--1+charmatch(such,substring(h,1:nchar(h))); if(is.na(h)) h<-0 # 060605
         h<-paste(line,".",h,sep="")
         tkmark.set(tworkwin, "insert", h); tkfocus(tworkwin)
-	tworkwin<-get("tworkwin",env=revive.sys)
+	# tworkwin<-get("tworkwin",env=revive.sys)
         tktag.configure(tworkwin,"found",background="#000999fff",relief="raised")
         tcl("findmatches",tworkwin,such)
       } else set.tclvalue("tvmess",paste("Warning: search string >",tclvalue("tvinfo"),"< not found!!!"))
@@ -2211,6 +2302,12 @@ tkbind(TopW,"<F3>", function(){  # 050628
       if(!exists("string.sys",env=revive.sys)) return()
       such<-get("string.sys",env=revive.sys)
       <<lese Arbeitsfenster auf [[worktext]] ein>>
+      if(nchar(such)==0) {
+        tcl("findclear",tworkwin); tkfocus(tworkwin); return()
+      }
+      repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
+      repl.pat<-paste("([",repl.pat,"])",collapse="")
+      such<-gsub(repl.pat,"\\\\\\1",such)
       if(length(found<-grep(such,worktext))>0){
         line <- floor(as.numeric(tkindex(tworkwin,"insert")))
         line <- if(any(found>line)) found[found>line][1] else found[1]
@@ -2307,6 +2404,7 @@ if(but.Wizardry){
   }
   cat("Remark: processing without saving of",workname.sys,"\n")
   try(tangleR(workname.sys))
+  cat(workname.sys,"generated\n")
   melde("TangleReport",2)
  }
  
@@ -2335,20 +2433,40 @@ if(but.Wizardry){
   # 060116: show logfile
   if(<<das OS ist Windows>>){
       latex<-paste(latex.command.windows," ",filename,sep="")
-      ok<-try(shell(latex,wait=T))
-      if(ok!=0){
-        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
-        cmd <-paste(editor.sys, sub("tex$","log",filename))
-        try(shell(cmd,wait=FALSE))
-      }
+      ok<-try(shell(latex,wait=TRUE))
+#     if(ok!=0){
+#        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+#        cmd <-paste(editor.sys, sub("tex$","log",filename))
+#        try(shell(cmd,wait=FALSE))
+#     }
   }else{ 
       latex<-paste(latex.command.linux," ",filename,sep="")
       ok<-try(system(latex))
-      if(ok!=0){ 
-        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
-        cmd <-paste(editor.sys, sub("tex$","log",filename))
-        try(system(paste(cmd," &")))
-      }
+#     if(ok!=0){ 
+#        cat("!!!ERROR in LaTeX process !!!\n-- for details look at log file\n") 
+#        cmd <-paste(editor.sys, sub("tex$","log",filename))
+#        try(system(paste(cmd," &")))
+#     }
+  }
+  if(ok!=0){ 
+        fname<-sub("tex$","log",filename); txt<-readLines(fname)
+        ind<-c(grep("(^[!])",txt)[1],grep("^[?].q",txt)[1])
+        ind<-ind[!is.na(ind)]
+        if(0==length(ind)) ind<-length(txt)-10
+        ind<-(-8+min(ind)):(-1+max(ind)); txt<-txt[ind]
+        line<-grep("(^l[.][0-9])",txt,value=TRUE)
+        line<-line[!is.na(line)]
+        if(0<length(line)){
+          line<-paste("......\n-> find error line by pressing <Ctrl/Strg> <G>  + line number:",
+                      sub("..([0-9]*).*","\\1",line))
+        }else{
+          line<-"-> Wizardry -> ShowLogFile "
+        }
+        txt<-c(
+                "!!!ERROR in LaTeX process !!!\n-- for details look at the log file\n",
+                " \nExtract of LaTeX log file:\n......",txt,line
+             )
+        cat(txt,sep="\n")
   }
   cat("latex process finished")
   melde("LatexReport",2)
@@ -2365,7 +2483,10 @@ if(but.Wizardry){
   if(<<das OS ist Windows>>){
       try(shell(cmd,wait=FALSE))
   }else{
-      try(system(paste(cmd," &")))
+    if( <<OS ist Mac-Mini-Tiger>> ){
+      cmd<-paste(view.command.mac,filename)
+    } 
+    try(system(paste(cmd," &")))
   }
   melde("ShowLogFile",2)
  }
@@ -2384,7 +2505,7 @@ if(but.Wizardry){
   }
   if(<<das OS ist Windows>>){
       view<-paste(view.command.windows," ",filename,sep="")
-      try(shell(view,wait=F))
+      try(shell(view,wait=FALSE))
   }else{
       if(<<das OS ist Linux>>) 
         view<-paste(view.command.linux,"  ",filename," &",sep="")
@@ -2407,7 +2528,7 @@ if(but.Wizardry){
   }
   if(<<das OS ist Windows>>){
       dvipdf<-paste(dvipdf.command.windows," ",filename,sep="")
-      try(shell(dvipdf,wait=F))
+      try(shell(dvipdf,wait=FALSE))
   }else{
       dvipdf<-paste(dvipdf.command.linux,"  ",filename," &",sep="")
       try(system(dvipdf))
@@ -2519,8 +2640,207 @@ if(<<das OS ist Windows>>){
     } # end of function
   )
  } # end of SWEAVEB
-
 } # end of wizard-if
+
+ConstructDemoFunction<-function(){
+  melde("ConstructDemoFunction",1)
+  if(!file.exists(workname.sys)){
+    cat(paste("Error: File",workname.sys,"not found!!!"));return()
+  }
+  cat("Remark: processing without saving of",workname.sys,"\n")
+  try(tangleR(workname.sys))
+  workname<-sub(".rev$",".R",workname.sys)
+  cat(workname,"generated\n")
+  txt<-scan(workname,"",sep="\n")
+  <<DemoFunctionHead>>
+  fh<-deparse(fh); fh<-fh[-length(fh)]
+  <<DemoFunctionTail>>
+  ft<-deparse(ft)[-(1:2)]
+  ft<-sub("WoRkNaMe",workname,ft)
+  fname<-gsub("[^A-Za-z]","",sub(".R$",".demo",workname))
+  txt<-gsub("\\\\","\\\\\\\\",txt)
+  txt<-gsub("\"","\\\\\"",txt)
+  txt<-paste(',"',txt,'"',sep=""); txt[1]<-substring(txt[1],2)
+  txt<-c(paste(fname,"<-"),fh,"chunks<-c(",txt,")",ft
+         ,paste("cat(\"Demo will be started by > ",fname,"()\\n\")",sep="")
+         ,paste(fname,"()\n",sep="")
+      )
+  workname<-sub(".R$",".demo.R",workname)
+  cat(txt,file=workname,sep="\n")
+  cat("Demo in file ",workname," saved, load demo by source(\"",workname,"\") \n",sep="")
+  melde("ConstructDemoFunction",2)
+ }
+
+@
+<<unused>>=
+fname<-"ErgebnisSpeicherung.log"
+txt<-readLines(fname)
+ind<-grep("(^[!])|(^[?].q)|(^l[.][0-9])",txt)
+ind<-(-8+min(ind)):(-1+max(ind))
+txt<-txt[ind]
+line<-grep("(^l[.][0-9])",txt,value=TRUE)
+if(0<length(line)){
+  line<-paste("...\n-> find error line by pressing <Ctrl/Strg> + line number:",
+              sub("..([0-9]*).*","\\1",line))
+}else{
+ line<-"-> Wizardry -> ShowLogFile "
+}
+txt<-c("LaTeX-Error-Message from log file:\n...",txt,line)
+cat(txt,sep="\n")
+
+@
+Die Demo-Funktion ist im Rahmen des Buches
+Wolf, Naeve, Tiemann: Crash-Kurs Statistik: aktiv mit R
+entwickelt worden.
+<<DemoFunctionHead>>=
+fh<-function(file,no=1,start=TRUE){
+  # initial code of demo function
+  require("tcltk"); where<-environment()
+}
+
+@
+<<DemoFunctionTail>>=
+ft<-function(){
+  # end of code of demo function
+  ## activate start chunk
+  if(start==TRUE){
+    no.0<-"0"
+    no.start.0<-grep(paste("^#",no.0,":$",sep=""),chunks)
+    no.end.0<-grep(paste("^#:",no.0,"$",sep=""),chunks)
+    code.0<-chunks[no.start.0:no.end.0]
+    eval(parse(text=code.0),envir=where)
+  }
+  ## activate chunk no
+  # eval(parse(text=code),envir=where)
+  secno<-tclVar("1") # 0
+  show.next.number<-function(...){
+   no<-as.character(as.numeric(tclvalue(secno))+1)
+   <<hole chunk Nummer>>
+   if(0<length(code)) {
+    tkdelete(ttext,"0.0","end")  
+    tkinsert(ttext,"0.0",code)
+    tclvalue(secno)<-as.character(no)
+    }
+  }
+  show.back.number<-function(...){
+   no<-as.character(as.numeric(tclvalue(secno))-1)
+   <<hole chunk Nummer>>
+   if(0<length(code)) {
+    tkdelete(ttext,"0.0","end")  
+    tkinsert(ttext,"0.0",code)
+    tclvalue(secno)<-as.character(no)
+   }
+  }
+  show.number<-function(...){
+   no<-as.character(as.numeric(tclvalue(secno)))
+   <<hole chunk Nummer>>
+   if(0<length(code)) {
+    tkdelete(ttext,"0.0","end")  
+    tkinsert(ttext,"0.0",code)
+    tclvalue(secno)<-as.character(no)
+   }
+  }
+  eval.code<-function(...){
+    code<-tclvalue(tkget(ttext,"0.0","end"))
+    code.orig<-code<-unlist(strsplit(code,"\n"))
+    code<-code[!substring(code,1,1)=="#"]
+    code<-unlist(strsplit(code,";"))
+    if(length(code)==0){ cat("ok\n"); return() }
+    result<-try(eval(parse(text=code),envir=where))
+    code.orig<-sub("#([0-9]+):","##wnt-Code-Chunk:\\1-begin#",code.orig)
+    code.orig<-sub("#:([0-9]+)","##wnt-Code-Chunk:\\1-end#",code.orig)
+    h<-get("allcodechunks",envir=where)
+    h<-c(h,paste("<","<*>",">=",sep=""),code.orig,"\n@\n")
+    assign("allcodechunks",h,envir=where)
+    code<-sub("^ *","",code)
+    code<-code[nchar(code)>0]
+    lexpr<-rev(code)[1]; lexpr<-substring(lexpr,1,4)
+    if(length(code)==0||is.null(lexpr)||is.na(lexpr)) return()
+    plot.res<-c("plot","boxp","par(","abli","pie(","hist","axis","show",
+           "lsfi","pair","ylab","help",
+           "qqli","qqno","qqpl","rug(","lege","segm","text","xlab", 
+           "poin","line","titl","eda(","imag","vgl.","curv")
+    if(any(plot.res==lexpr)){
+       cat("Plot erstellt\n"); return()
+    }
+    if(is.null(result)||is.na(result)||lexpr=="prin"||lexpr=="cat("){
+      cat("ok\n"); return() }
+    if(is.list(result)&& length(names(result))> 0 && 
+                               names(result)[1]=="ID") return()
+    ## if(is.list(result)&& TRUE) return()
+    no<-as.character(as.numeric(tclvalue(secno)))
+    cat("Result of code chunk",no,":\n") 
+   if(class(result)=="try-error"){
+     class(result)<-"character"
+     cat(result,"\n")
+   }else{
+    print(result)
+   }
+   cat("ok\n")
+   }
+  exit.function<-function(){
+     tkdestroy(top)
+     filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
+                                           title="Do you want to save the activated R statements?")
+     if(!is.character(filename)) filename<-tclvalue(filename)
+     if(filename==""){
+       cat("Demo function stopped without saving\n")
+       return()
+     }
+     if(0==length(grep("rev$",filename))) filename<-paste(filename,".rev",sep="")
+     h<-get("allcodechunks",envir=where)
+     try(cat(h,sep="\n",file=filename))
+     cat(paste("Remark: activated statements saved in\n   ",filename,"\n"))
+     return()
+  }
+  allcodechunks<-paste(
+          "@\nReport of activated R-chunks from: ",date(),
+          "\n(demo function constructed by relax (c) Peter Wolf 2007)\n\n  ", sep="")
+  no<-0
+  <<hole chunk Nummer>>
+  h<-paste(rep("#",60),collapse="")
+  code<-sub("#0:",h,code); code<-sub("#:0",h,code)
+  allcodechunks<-c(allcodechunks,"\n@\n@<<start@>>=",code,"\n@")
+  assign("allcodechunks",allcodechunks,envir=where)
+  top<-tktoplevel()
+  ttext<-tktext(top,height=19,background="#f7fffF",
+                font="-Adobe-courier-Medium-R-Normal--18-180-*")
+  tf<-tkframe(top) 
+  tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2007")
+  tkpack(tf,ttext,side="bottom")
+  tkevent.add("@<<Paste>>",   "<Control_L><v>")
+  tkbind(ttext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+
+  bexit<-tkbutton(tf,text="EXIT",width=9)
+  beval<-tkbutton(tf,text="ACTIVATE",width=9)
+  bnext<-tkbutton(tf,text="NEXT",width=9)
+  bback<-tkbutton(tf,text="BACK",width=9)
+  lno  <-tkentry(tf,textvariable=secno,width=9)
+  linfo<-tklabel(tf,text="chunk number:")
+  tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
+  tkconfigure(bexit,command=exit.function)
+  tkconfigure(bnext,command=show.next.number)
+  tkconfigure(bback,command=show.back.number)
+  tkconfigure(beval,command=eval.code)
+  # tkbind(lno,"<Return>",show.number)
+  tkbind(lno,"<KeyRelease>",show.number)
+  tclvalue(secno)<-as.character(no)
+  show.number()
+  ### tkwait.window(top)
+}
+
+@
+<<hole chunk Nummer>>=
+no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+     is.nan(no.end)||is.nan(no.start)){
+     cat("# versuchte Chunk-Nummer falsch\n"); return()
+}
+### cat("# aktueller chunk:",no,"\n")
+code<-paste(chunks[no.start:no.end],collapse="\n")
+@
+ENDE VON demo....
 
 @
 <<implementiere Eigenschaften der allgemeinen Knöpfe>>=
@@ -2528,15 +2848,17 @@ tkbind(TopW, "@<<ProcessReport>>", ProcessReport)
 
 @
 Hier ist ein Vorschlag für einen Kopf eines LaTeX-Dokumentes:
+% entfernt:
+%  --- for noweb users
+% \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
 <<LaTeX-head>>=
 %  --- begin of preamble
 \documentclass{article}
-%  --- packages
-\usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
-%  --- for noweb users
-% \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
+%  --- packages  \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+\usepackage{graphicx}
 %  --- fonts 
-\usepackage[scaled=.95]{helvet}\usepackage[T1]{fontenc}
+% \usepackage[scaled=.95]{helvet}
+\usepackage[T1]{fontenc}
 %  --- commands to control the layout of text and code chunks 
 \parskip1ex
 \parindent0mm
@@ -2573,16 +2895,16 @@ Die alte rtrevweb-Lösung mittels noweb:
     vol<-strsplit(binpath,":")[[1]]
     vol<-if(1==length(vol)) "c:" else vol[1]
 
-    tmpfile<-scan(revname,what="",sep="\n",blank.lines.skip=T)
+    tmpfile<-scan(revname,what="",sep="\n",blank.lines.skip=TRUE)
     cat(tmpfile,file=paste(binpath,"work.rev",sep="/"),sep="\n")
     if(!file.exists(paste(binpath,"/rtrevweb.bat",sep=""))){
       cat("Error: rtrevweb.bat not found!!!"); return()
     }
-    try(system(paste(binpath,"/rtrevweb ",binpath," ",vol,sep=""),T))
+    try(system(paste(binpath,"/rtrevweb ",binpath," ",vol,sep=""),TRUE))
     tmpfile<-scan(paste(binpath,"work.sch",sep="/"),what="",sep="\n")
     cat(tmpfile,file=paste(name,"sch",sep="."),sep="\n")
     tmpfile<-scan(paste(binpath,"work.tex",sep="/"),
-                  what="",sep="\n",blank.lines.skip=T)
+                  what="",sep="\n",blank.lines.skip=TRUE)
     cat(tmpfile,file=paste(name,"tex",sep="."),sep="\n")
     tmpfile<-scan(paste(binpath,"work.htm",sep="/"),what="",sep="\n")
     cat(tmpfile,file=paste(name,"htm",sep="."),sep="\n")
@@ -2736,9 +3058,12 @@ ShowAboutRelax<-function(){
                "The windows version uses some ingredients",
 	      # "of the noweb system",
 	      # " (Norman Ramsey -- http://www.eecs.harvard.edu/~nr/noweb/intro.html),",
-	       "of the Img package of Jan Nijtmans (http://www.xs4all.nl/~nijtmans/img.html)",
-	      # "and gawk (http://www.gnu.org/software/gawk/gawk.html)",
-	       "-- notice the copyright declarations of this software.","","",
+	       "of the Img package of Jan Nijtmans (see: http://members.chello.nl/~j.nijtmans/img.html",
+               "and http://members.chello.nl/~j.nijtmans/img.html",
+               "the package is found in http://sourceforge.net/projects/tkimg).",
+	      # "and gawk (http://www.gnu.org/software/gawk/gawk.html).",
+               "The license terms concerning the img package are found in the source", 
+               "file of the package, see: relax/src/tkimg1.3.tar.gz.","",
 	       "---------------------------------------------------------","",""
                )
   try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
@@ -2792,7 +3117,7 @@ ShowShortCuts<-function(){
                 "Crtl-N:  move cursor to the next line",
                 "Crtl-Pos1:  move cursor to the beginning of text",
                 "Crtl-End:  move cursor to the end of text",
-                "Crtl-P:  move cursor one line back",
+               # "Crtl-P:  move cursor one line back",
 		"Crtl-I:  insert tab",
 		"Crtl-T:  exchange characters",
                 "Crtl-D:  delete character right of cursor",
@@ -2917,7 +3242,7 @@ if(!is.null(bildname)&&nchar(bildname)>0){
   psname <-paste(bildname,".ps", sep="")
   news<-paste("@\n \\begin{center}","\\includegraphics[",
                        "height=",psheight.sys,"]{",psname,"}\\end{center}\n",sep="")
-  try.res<-try({dev.copy(postscript,psname,horizontal=F,
+  try.res<-try({dev.copy(postscript,psname,horizontal=pshorizontal.sys,
                        width=psdesignwidth.sys,height=psdesignheight.sys);dev.off()})
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(!ok) cat("Error: *ps file not generated by dev.copy!!!\n")
@@ -3164,7 +3489,8 @@ pstojpg<-function(psname,jpgname){
     }
   }
   if(<<das OS ist Windows>>){
-    if(exists("ghostscript")) gsexe<-ghostscript else return()
+    if(exists("ghostscript")&&0<nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript))) 
+      gsexe<-ghostscript else return()
   }
   type<-"jpeg"; width<-height<-13; res<-30
   cmd <- paste(gsexe, " -dNOPAUSE -dBATCH -q -sDEVICE=", type,
@@ -3210,6 +3536,7 @@ weitere Links zu dem Thema:\\
 \verb+http://prdownloads.sourceforge.net/gallery/+\\
 \verb+netpbm1.1-gallery1.0-win32.tgz?use_mirror=cesnet+\\
 \verb+http://web.mit.edu/windows-graphics/bin/+
+z.Z. unused
 <<definiere Kopf-Zeilen-Funktionen>>=
 FormatTeXLines<-function(){
   melde("FormatTeXLines",1)
@@ -3237,7 +3564,8 @@ FormatTeXLines<-function(){
     system("rm tmptmp.tex tmptmp.aux tmptmp.log tmptmp.dvi tmptmp.ps")
   }
   if(<<das OS ist Windows>>){
-       if(!exists("ghostscript")) return()
+    if(!(exists("ghostscript")&&0<nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript)))) 
+       return()
        if(!file.exists(paste(ghostscript,".exe",sep=""))){
           cat("ERROR: sorry, ghostscript not found!!!\n"); return()
        }
@@ -3252,13 +3580,15 @@ FormatTeXLines<-function(){
        try(shell("del tmptmp.tex tmptmp.aux tmptmp.log tmptmp.ppm tmptmp.crp tmptmp.dvi tmptmp.ps"))
   }
   # passe workttext an, integriere Bild
+  insertline<-texend+3
   news<-paste("\n%<!--latex-end-->\n\n% <p><img src=\"",jpgname,"\">\n",sep="")
   line<-paste(texend,".0",sep="")
   <<schreibe [[news]] hinter [[line]]>>
   line<-paste(texbegin+1,".0",sep=""); news<-"%<!--latex-begin--\n"
   <<schreibe [[news]] hinter [[line]]>>
-  ##zeige Bilder im Textfenster an##
-  show.single.plot(tworkwin,line,jpgname) 
+  ##zeige Bild im Textfenster an##
+  createandshow.single.plot(tworkwin,insertline,jpgname)
+  ## old: show.single.plot(tworkwin,line,jpgname) 
   melde("FormatTeXLines",2)
 }
 
@@ -3275,6 +3605,7 @@ melde("inserted characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 \paragraph{[[InsertTeX]] zur Ersetzung von Abschnitten durch TeX-Formatierungsergebnis.
 Speicherung des Ergebnisses als PS-Datei
 und als [[Jpeg]]-Datei.}
+z.Z. unused
 <<definiere Funktion für Knopf: [[InsertTeX]]>>=
 InsertTeX<-function(){
   melde("InsertTeX",1)
@@ -3290,11 +3621,11 @@ InsertTeX<-function(){
   ende<-ende[ende>start][1]
   h<-worktext[start+1:ende-1]
   h<-c("\\documentclass{article}\\begin{document}",h,"\\end{document}")
-  cat(h,file=tmptmp.tex,sep="\n")
+  cat(h,file="tmptmp.tex",sep="\n")
   if(version$os=="linux-gnu") system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
-  ##lege Bild unter [[bildname]] ab>>
+  ##lege Bild unter [[bildname]] ab##
   ##zeige Bilder im Textfenster an##
-  show.single.plot(tworkwin,line,jpgname) 
+  ##show.single.plot(tworkwin,line,jpgname) 
   melde("InsertTeX",2)
 }
 
@@ -3387,7 +3718,7 @@ fHelp.R<-function(){
  such<-paste(R.home(),"library/base/help",tclvalue("tvinfo"),sep="/")
         if(!file.exists(such))return()
         sys.cmd<-if(<<das OS ist Windows>>) "type" else "cat"
-        out<-try(system(paste(sys.cmd,such),T))
+        out<-try(system(paste(sys.cmd,such),TRUE))
         out<-out[-grep("^_",out)]
         .newl  <- tktoplevel(); tkwm.geometry(.newl,"+0+15")
         tkwm.title(.newl,paste("help text found: >",such,"< -- ",
@@ -3405,10 +3736,6 @@ fHelp.R<-function(){
 Nachdem die Funktion entworfen ist, muß sie noch als [[command]]-Eigenschaft
 des Knopfes vereinbart werden. Außerdem wird in einem Rutsch der short cut
 mit Hilfe des virtuellen Ereignisses [[@<<Help.R>>]] festgelegt.
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(Help.R,command=fHelp.R)
-tkbind(TopW, "@<<Help.R>>", fHelp.R)
-
 
 @
 \subsubsection{An- und Einfügungen an Felder und sonstige Kleinigkeiten}
@@ -3611,12 +3938,6 @@ fTrashROutput<-function(){
 }
 
 @
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(TrashROutput,command=fTrashROutput)
-tkbind(TopW, "@<<TrashROutput>>", fTrashROutput)
-
-
-@
 \subsubsection{Arbeitsfenstersteuerung: [[PlanRCode]]}
 \paragraph{[[PlanRCode]] zur Vorbereitung eines neuen Schrittes.}
 Dieser Knopf schreibt nur ein paar Zeichen ins Reportfenster.
@@ -3647,11 +3968,6 @@ tksee(tworkwin,paste(line,"0",sep="."))
 tkfocus(tworkwin)
 
 @
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(PlanRCode,command=fPlanRCode)
-tkbind(TopW, "@<<PlanRCode>>", fPlanRCode)
-
-@
 \subsubsection{Arbeitsfenstersteuerung: [[Up]]}
 \paragraph{[[Up]] zum Cursor-Zurücksetzen.}
 a<-get("tworkwin",env=revive.sys)
@@ -3669,11 +3985,6 @@ fUp<-function(){
 }
 
 @
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(Up,command=fUp)
-tkbind(TopW, "@<<Up>>", fUp)
-
-@
 \subsubsection{Arbeitsfenstersteuerung: [[Down]]}
 \paragraph{[[Down]] zum Cursor-Vorsetzen.}
 <<definiere Funktion für Knopf: [[Down]]>>=
@@ -3687,11 +3998,6 @@ fDown<-function(){
   tksee(tworkwin,"insert")
   melde("fDown",2)
 }
-
-@
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(Down,command=fDown)
-tkbind(TopW, "@<<Down>>", fDown)
 
 @
 \subsubsection{Arbeitsfenstersteuerung: [[EvalRCode]]}
@@ -3836,12 +4142,6 @@ if(exists("last.warning",envir = .GlobalEnv)){
 }
 
 @
-<<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(WarnEval,command=fWarnEval)
-tkbind(TopW, "@<<WarnEval>>", fWarnEval)
-
-
-@
 Anhängen oder überschreiben, das ist hier die Frage.
 <<sichere letzten Zustand unter [[report-UnDo-bak.rev]]>>=
 <<hole ggf. [[tworkwin]]>>
@@ -3912,15 +4212,14 @@ Ergebnisse aus dem Outputfenster.}
 <<definiere Funktion für Knopf: [[RemoveOut]]>>=
 fRemoveOut<-function(){
   melde("fRemoveOut",1)
-  worktext<-paste("")
+  worktext<-""
   <<schreibe [[worktext]] ins Outputfenster>>
   melde("fRemoveOut",2)
 }
 
 @
-\subsubsection{Arbeitsfenstersteuerung: [[RemoveOut]]}
-\paragraph{[[RemoveOut]] zum Löschung unbrauchbarer
-Ergebnisse aus dem Outputfenster.}
+\subsubsection{Arbeitsfenstersteuerung: [[FindText]]}
+\paragraph{[[FindTextt]] zur Suche nach Zeichenketten.}
 <<definiere Funktion für Knopf: [[FindText]]>>=
 fFindText<-function(){
   melde("fFindText",1)
@@ -3994,13 +4293,23 @@ fEvalRCode<-function(){
 \subsubsection{Arbeitsfenstersteuerung: [[Insert]]}
 \paragraph{[[Insert]] zur Übertragung des Inhalts aus dem
 Output- ins Arbeitsfenster.}
+Falls der Output mit xtable erstellt wurde, werden
+output-start und output-end auskommentiert. 080310
 <<definiere Funktion für Knopf: [[Insert]]>>=
 fInsert<-function(){
   melde("fInsert",1)
   <<lese Arbeitsfenster auf [[worktext]] ein>>
   news<-tclvalue(tkget(toutwin,"0.0","end"))
   if(1<nchar(news)){
-    news<-paste("\n@","output-start",news,"output-end\n",sep="\n")
+    if(length(grep("egin[{]table[}]",news))>0 &&
+       length(grep("generated.*xtable.*package",news))>0){
+        news<-sub("(\n%.*begin[{]table[}])","\noutput-end\n\\1",news)       
+        news<-sub("(.end[{]table[}])","\\1\noutput-start",news)       
+        news<-paste("\n@",paste("output-start",news,sep=""),"output-end\n", sep="\n")
+        news<-sub("output-start\n+output-end","",news)
+    }else{    
+      news<-paste("\n@","output-start",news,"output-end\n",sep="\n")
+    }
     news<-gsub("\n+","\n",news)
     <<schreibe [[news]] hinter aktuellen Chunk>>
     worktext<-""
@@ -4030,16 +4339,31 @@ CopyToEnd<-function(){
 
 @
 <<implementiere Eigenschaften der allgemeinen Knöpfe>>=
-tkconfigure(EvalRCode,command=fEvalRCode)
+# tkconfigure(Help.R,command=fHelp.R)
+tkbind(TopW, "@<<Help.R>>", fHelp.R)
+# tkconfigure(Up,command=fUp)
+tkbind(TopW, "@<<Up>>", fUp)
+# tkconfigure(Down,command=fDown)
+tkbind(TopW, "@<<Down>>", fDown)
+
+# tkconfigure(PlanRCode,command=fPlanRCode)
+tkbind(TopW, "@<<PlanRCode>>", fPlanRCode)
+# tkconfigure(EvalRCode,command=fEvalRCode) ## 071115
 tkbind(TopW, "@<<EvalRCode>>", fEvalRCode)
-tkconfigure(FindText,command=fFindText)
-tkbind(TopW, "@<<FindText>>", fFindText)
-tkconfigure(RemoveOut,command=fRemoveOut)
-tkbind(TopW, "@<<RemoveOut>>", fRemoveOut)
-tkconfigure(Insert,command=fInsert)
+# tkconfigure(WarnEval,command=fWarnEval)
+tkbind(TopW, "@<<WarnEval>>", fWarnEval)
+# tkconfigure(TrashROutput,command=fTrashROutput)
+tkbind(TopW, "@<<TrashROutput>>", fTrashROutput)
+
+# tkconfigure(Insert,command=fInsert)
 tkbind(TopW, "@<<Insert>>", fInsert)
-tkconfigure(SavePlot,command=fSavePlot)
+# tkconfigure(SavePlot,command=fSavePlot)
 tkbind(TopW, "@<<SavePlot>>", fSavePlot)
+# tkconfigure(FindText,command=fFindText)
+tkbind(TopW, "@<<FindText>>", fFindText)
+# tkconfigure(RemoveOut,command=fRemoveOut) ## 071115
+tkbind(TopW, "@<<RemoveOut>>", fRemoveOut)
+
 #tkconfigure(CopyToEnd,command=CopyToEnd)
 #tkbind(TopW, "@<<CopyToEnd>>", CopyToEnd)
 
@@ -4165,8 +4489,37 @@ MarkSecondBracket<-function(){
   }
   ## if(exists("second")) print(second)  ##; print(open)
   if(open==0) tcl("showbracketsclear",tworkwin)
+  ### Zeilennummeraktualisieren: 
+  <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
+  tkconfigure(llineno.sys,text=paste(":",line))
+
 }
-tkbind(tworkwin,"<KeyRelease>", MarkSecondBracket)
+tkbind(tworkwin,"<KeyRelease>",MarkSecondBracket)
+### Zeilennummeraktualisieren falls Mouse-Op: 
+tkbind(tworkwin,"<ButtonRelease>",function(){
+    tworkwin<-get("tworkwin",revive.sys)
+    <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
+    tkconfigure(llineno.sys,text=paste(":",line))
+  }
+)
+
+@
+Testweiser Versuch Zeilennummer anzuzeigen.
+<<xxxdefiniere Logik zum Eintrag der Zeilennummer>>=
+tkbind(tworkwin,"<KeyPress><KeyRelease>",function(){
+    tworkwin<-get("tworkwin",revive.sys)
+    <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
+    tkconfigure(llineno.sys,text=paste(":",line))
+  }
+)
+tkbind(tworkwin,"<ButtonRelease>",function(){
+    tworkwin<-get("tworkwin",revive.sys)
+    <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
+    tkconfigure(llineno.sys,text=paste(":",line))
+  }
+)
+
+
 
 @
 \subsubsection{Automatische Komplettierung von Objektnamen}
@@ -4241,16 +4594,18 @@ tkadd(mbFile.menu,"command", command=ViewReport.html,
       label="ViewReport.html:   view html representation of report")
 tkadd(mbFile.menu,"separator")
 tkadd(mbFile.menu,"command", command=LoadEnvironment,
-      label="LoadEnvironment:   load objects from dump file into environment")
+      label="LoadEnvironment:   load objects from dump file into relax environment")
+tkadd(mbFile.menu,"command", command=DumpEnvironment,
+      label="DumpEnvironment:   save objects of relax environment as dump file")
 tkadd(mbFile.menu,"command", command=SaveEnvironment,
-      label="SaveEnvironment:   save objects of environment as dump file")
+      label="SaveEnvironment:   save objects of relax environment in binary file")
 tkadd(mbFile.menu,"command", command=CleanEnvironment,
       label="CleanEnvironment:   delete objects of environment")
 tkadd(mbFile.menu,"separator")
 tkadd(mbFile.menu,"command", command=OpenTextFile,
-      label="OpenTextFile:  open not rev-file, translate console style and >>APPEND<< it to text field")
+      label="OpenTextFile:  open not-rev-file, translate console style and >>APPEND<< it to text field")
 tkadd(mbFile.menu,"command", command=SaveAsTextFile,
-      label="SaveAsTextFile:   dump report in console style, not as rev-file")
+      label="SaveAsTextFile:   dump report in console style, and as .script.R-file, but not as a rev-file")
 tkadd(mbFile.menu,"separator")
 
 @
@@ -4353,18 +4708,19 @@ zum Absturz. Der Verzeichniswechsel muß in einem solchen Fall
 direkt über [[setwd()]] ausgeführt werden.
 
 @
-\subsubsection{Kopfzeile: [[File]] --- [[SaveEnvironment]], 
+\subsubsection{Kopfzeile: [[File]] --- [[SaveEnvironment]], [[DumpEnvironment]],
 [[LoadEnvironment]]}
 \paragraph{[[SaveEnvironment]] zur Abspeicherung der Objekte der Umgebung.}
-Die zweite Funktion lädt die Objekte wieder in die Umgebung.
+Die dritte Funktion lädt die Objekte wieder in die Umgebung.
 <<definiere Kopf-Zeilen-Funktionen>>=
-SaveEnvironment<-function(){
-  melde("SaveEnvironment",1)
+DumpEnvironment<-function(){
+  melde("DumpEnvironment",1)
   filename<-tkgetSaveFile(filetypes="{{Paper Files} {.relax-env}}",
                           title="name of ENVIRONMENT DUMP file?", initialdir=getwd(),
                           defaultextension=".relax-env", 
                           initialfile=sub("rev$","relax-env",workname.sys))
   <<checke [[filename]], quitte ggf.>>
+  noenv<-TRUE # ignore environments 
   <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
   assign("list.of.env.obj",objlist,env=revive.env)
   try.res<-try(eval(parse(text=
@@ -4376,22 +4732,50 @@ SaveEnvironment<-function(){
   } else {
     cat("ERROR: saving of environment objects failed!!!\n")
   }
+  melde("DumpEnvironment",2)
+}
+SaveEnvironment<-function(){
+  melde("SaveEnvironment",1)
+  filename<-tkgetSaveFile(filetypes="{{Paper Files} {.bin-relax-env}}",
+                          title="name of BINARY SAVE file?", initialdir=getwd(),
+                          defaultextension=".bin-relax-env", 
+                          initialfile=sub("rev$","bin-relax-env",workname.sys))
+  <<checke [[filename]], quitte ggf.>>
+  noenv<-FALSE # do not ignore environments 
+  <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
+  assign("list.of.env.obj",objlist,env=revive.env)
+  try.res<-try(eval(parse(text=
+                  paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
+  try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+  <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+  if(ok){
+    cat(paste("Objects of environment saved in file:",filename,"!\n"))
+  } else {
+    cat("ERROR: saving of environment objects failed!!!\n")
+  }
   melde("SaveEnvironment",2)
 }
 LoadEnvironment<-function(){
   melde("LoadEnvironment",1)
-  filename<-tkgetOpenFile(filetypes="{{Paper Files} {.relax-env}}",
-                          title="Select .relax-env file to be loaded!",
+  initialfile<-sub("rev$","bin-relax-env",workname.sys)
+  if(!file.exists(initialfile)) initialfile<-sub("rev$","relax-env",workname.sys)
+  filename<-tkgetOpenFile(filetypes="{{Paper Files} {.relax-env .bin-relax-env}}",
+                          title="Select *relax-env file to be loaded!",
                           defaultextension=".relax-env",
-                          initialfile=sub("rev$","relax-env",workname.sys),
+                          initialfile=initialfile,
                           initialdir=getwd())
   <<checke [[filename]], quitte ggf.>>
-  obj<-scan(filename,""); ind<-grep("<-",obj)-1   
-  obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
-  try.res<-try(eval(parse(text=obj),env=revive.env))
+  if(0<length(grep("bin-relax-env$",filename))){
+    try.res<-try(load(filename,env=revive.env))
+  } else {
+    obj<-scan(filename,""); ind<-grep("<-",obj)-1   
+    obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
+    try.res<-try(eval(parse(text=obj),env=revive.env))
+  }
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(ok){
     cat(paste("Objects of file:",filename,"\nloaded into environment!\n"))
+    noenv<-FALSE # do not ignore environments 
     <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
   } else {
     cat("ERROR: saving of environment objects failed!!!\n")
@@ -4400,6 +4784,7 @@ LoadEnvironment<-function(){
 }
 CleanEnvironment<-function(){
   melde("CleanEnvironment",1)
+  noenv<-FALSE # do not ignore environments 
   <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
   res<-tkmessageBox(message=
       if(language=="german") 
@@ -4416,9 +4801,16 @@ CleanEnvironment<-function(){
   }
   melde("CleanEnvironment",2)
 }
+
 @
 <<ermittle und zeige Objektliste [[objlist]] von revive.env>>=
-objlist<-ls(env=revive.env); objlist<-objlist[objlist!="revive.sys"]
+objlist<-ls(env=revive.env) 
+if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+objlist<-objlist[substring(objlist,1,6)!="revive"]
+if(length(objlist)==0){
+  cat("WARNING: no objects found for saving!!!\n")
+  return()
+}
 cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
   
 
@@ -4498,6 +4890,7 @@ SaveAsTextFile<-function(){
   melde("SaveAsTextFile",2)
   return("ok")
 }
+
 @
 Erste Zeile wird mit einem [[> ]] versehen, die Folgecodezeilen
 erhalten [[+ ]].
@@ -4509,7 +4902,7 @@ if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
 worktext<-c(worktext,"@\n\\end{document}")
 ## remove noweb items
 code.ch<-c("@",worktext,"@")
-code.chunk.start<-paste("<","<.*>",">=",sep="")
+code.chunk.start<-paste("^<","<.*>",">=",sep="")
 code.a<- grep(code.chunk.start,code.ch)
 if(0<length(code.a)){
   code.z<-grep("^@",code.ch)
@@ -4532,6 +4925,16 @@ worktext<-code.ch[-ind]
 worktext<-TcltoWin.write(worktext)
 try.res <- try(cat(worktext,file=filename,sep="\n"))
 <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+# und ein script.R-file
+a<-worktext; ind<-grep("^[+>]",a)
+if(0!=length(ind)){
+  a<-a[ind]; ind<-grep("^[>]",a); no<-seq(ind)
+  a[ind]<-paste("#",no,": >\n ",substring(a[ind],2),sep="")
+  ind<-grep("^[+]",a)
+  if(0!=length(ind)) a[ind]<-paste("", substring(a[ind],2))
+  filename<-sub(".txt$",".R",filename)
+  try.res <- try(cat(a,file=filename,sep="\n"))
+}
 
 @
 Alte Behandlung der TLD-Zeile:
@@ -4616,14 +5019,14 @@ if(is.function(try.res)){
   if(!is.character(ok)) { ok <- "OK" }
 }
 if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
-  ok<-F
+  ok<-FALSE
   cat(error.msg<-unclass(try.res),"\n")
   if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
      cat("A warning message stopped the evaluation!",
            "If you want to\nevaluate the code anyway",
            "evaluate code by:\n>WarnEval<")
   cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
-} else { ok<-T }
+} else { ok<-TRUE }
 
 
 @
@@ -4657,7 +5060,7 @@ SaveDiffReport<-function(){
   if(!ok) return()
   # stelle Differenzen fest
   system(paste("diff ",workname.sys," ",<<tmp>>," | grep \"^[0-9]\" > ",<<tmp.sink>>))
-  difflines<-scan(<<tmp.sink>>,"",blank.lines.skip=F,sep="\n")
+  difflines<-scan(<<tmp.sink>>,"",blank.lines.skip=FALSE,sep="\n")
   difflines<-sub("^([0-9]*)[a-z]","",difflines)
   difflines<-sub(",",":",difflines)
   difflines<-paste("c(",paste(difflines,collapse=","),")")
@@ -4667,10 +5070,10 @@ SaveDiffReport<-function(){
     worktext<-c("@",worktext,"@")
     difflines<-difflines+1
     chunkbegins<-grep("(^@)|(^@<<(.*)>=)", worktext)
-    chunk.log<-rep(F,length(chunkbegins))
+    chunk.log<-rep(FALSE,length(chunkbegins))
     ch.new<- 0<hist(difflines,plot=FALSE,
                     breaks=c(chunkbegins,length(worktext)+1)-0.5)$counts
-    ch.new<- ch.new | c(ch.new[-1],F) | c(F,ch.new[-length(ch.new)])
+    ch.new<- ch.new | c(ch.new[-1],FALSE) | c(FALSE,ch.new[-length(ch.new)])
     ch.new<-seq(ch.new)[ch.new]
     # extrahiere Chunks:
     lines<-paste(chunkbegins[ch.new],":",
@@ -4707,7 +5110,8 @@ OpenReport<-function(){
     <<aktualisiere Reportname>>
     try.res<-WinToTcl.read(try.res)
         ## Eintrag mit Entfernung des bisherigen Inhalts:
-        ## worktext<-paste(try.res, collapse="\n"); @<<schreibe [[worktext]] ins Arbeitsfenster>>
+        ## worktext<-paste(try.res, collapse="\n")
+        ## @<<schreibe [[worktext]] ins Arbeitsfenster>>
     news<-c("",try.res)
     <<schreibe [[news]] ans Ende des Arbeitstextes>>
     <<lese Arbeitsfenster auf [[worktext]] ein>>
@@ -4967,7 +5371,6 @@ if(is.null(n)||5>n||substring(filename,n-3,n)!=".rev"){
 @
 Ende der Definition von [[SaveAsHtml]].
 
-
 @
 \subsubsection{Kopfzeile: [[File]] --- [[ViewReport.html]]}
 \paragraph{[[ViewReport.html]] zum Anzeigen von formatierten Rohreports.}
@@ -5177,14 +5580,26 @@ Variable die letzten Zeilen eines Code-Chunk anzeigen.
 Aus der Kumulation des logischen Vektor [[change]],
 der die Übergänge hält, lassen sich schnell die Bereiche der
 Text-Chunks ermitteln.
+Klammeraffen werden für alle Fälle vor TLDs eingebaut. 080310
 <<entferne Text-Chunks>>=
 code.a    <- grep("^@<<(.*)>>=",worktext)
 code.z    <- grep("^@",worktext)
 code.z    <- unlist(sapply(code.a ,function(x,y) y[y>x][1], code.z))
 if(any(h<-is.na(code.z))) code.z<-code.z[!h]
-code.n    <- length(worktext)
-change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
-code.ch   <- worktext[1==(cumsum(change)%%2)]
+################
+# code.n    <- length(worktext)
+# change    <- rep(0,code.n); change[c(code.a ,code.z)]<-1
+# code.ch   <- worktext[1==(cumsum(change)%%2)]
+## 080311
+ind<-rep(0,length(worktext)); copy<-0
+for(i in seq(ind)){
+  if(i %in% code.z) copy<-0
+  if(i %in% code.a) copy<-1
+  ind[i]<-copy
+}
+code.ch   <- worktext[ind==1]
+## cat("input-text, Anfaenge, Code.chunks"); print(worktext); print(code.a); print(code.ch)
+
 code.n    <- length(code.ch)
 
 @
@@ -5283,15 +5698,26 @@ Zwischenspeicher [[code.stack]] abgelegt.
 Dann werden normale Code-Zeilen
 auf die Output-Variablen übertragen, und Verfeinerungsverwendungen werden
 auf [[code.stack]] durch ihre Definitionen ersetzt.
+Anfänger zeigen manchmal elementare Probleme auf.
+So ist das Problem ungewollter Rekursionen erstmals
+in einem Kurs aufgefallen. Zu seiner Verhinderung kann
+prakmatisch die Verschachtelungstiefe begrenzt werden.
 <<expandiere aktuellen Code-Chunk>>=
 melde("bearbeite aktuellen Chunk\n",3)
 <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
 ch.no<-length(grep("^@<<(.*)>>=",worktext[1:line]))
+
 rows      <-c((code.a[ch.no]+1),code.z[ch.no])
 if(all(!is.na(rows))&&rows[1]<=rows[2]){
   rows<-rows[1]:rows[2]
   code.stack<-code.ch[rows]
+  max.depth.refinements<-500; i<-1
   repeat{
+     if((i<-i+1)>max.depth.refinements){ 
+         cat("ERROR: maximal number of expandations (",max.depth.refinements,
+             ") exceeded\n --- perhaps a unintended recursion ???")
+         return()
+     }
      <<transferiere Zeilen oder ersetze Verfeinerungen bis Ende erreicht>>
   }
 }
@@ -5386,7 +5812,7 @@ if(is.na(as.numeric(ext.chunk))){
     cat("ERROR: file",filename,"for expansion of code chunk not found!!!\n")
     ext.file<-"Error"
   }else{
-    ext.file<-try(myscan(file=filename),what="",sep="\n")
+    ext.file<-try(myscan(file=filename,what="",sep="\n"))
   }
   if("Error"==substring(unlist(ext.file)[1],1,5)){
     found <-FALSE; next
@@ -5590,18 +6016,25 @@ switch(cmd
             cat("ERROR:",choice,"not found!!!\n")
             ok<-FALSE
           }else{
-            try.res<-try(myscan(choice,"",sep="\n"))
+            filename<-choice
+            try.res<-try(myscan(filename,"",sep="\n",blank.lines.skip=FALSE))
             <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
           }
           if(ok){
-            worktext<-paste(try.res, collapse="\n")
-            <<schreibe [[worktext]] ins Arbeitsfenster>>
-            filename<-choice
-            assign("workname.sys",filename,env=revive.sys)
-            <<aktualisiere Reportname>>
-            melde(paste("r", filename), "cmd.msg")
-            <<kreiiere Bilder neu und zeige sie im Textfenster an>>
-	    Execute.cmds()
+              <<aktualisiere Reportname>>
+              try.res<-WinToTcl.read(try.res)
+                ## Eintrag mit Entfernung des bisherigen Inhalts:
+                ## worktext<-paste(try.res, collapse="\n")
+                ## @<<schreibe [[worktext]] ins Arbeitsfenster>>
+              news<-c("",try.res)
+              <<schreibe [[news]] ans Ende des Arbeitstextes>>
+              <<lese Arbeitsfenster auf [[worktext]] ein>>
+              <<aktualisiere Code-Chunk-Zähler und schreibe [[worktext]]>>
+              RunStart()
+              <<aktualisiere Texthervorhebungen>>
+              <<kreiiere Bilder neu und zeige sie im Textfenster an>>
+	      melde(paste("r", filename), "cmd.msg")
+              Execute.cmds()
 	  } else { cat("ERROR: file not found!!!\n") }
          }
 )
@@ -5947,6 +6380,28 @@ assign("cat",cat,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
 melde("cat saved",3)
 
 @
+Auch [[str]] schreibt direkt auf das Konsolenfenster und muss eingerahmt werden.
+<<definiere Input/Output-Funktionen neu>>=
+str<-function(object,...){
+  if(<<teste, ob [[relax]] aktiv ist>> ){
+     if(is.data.frame(object)) 
+        cat(paste("'data.frame':", 
+            paste("Obs.:",dim(object)[1],"Vars.:",dim(object)[2])))
+     a<-deparse(getS3method("str","default"))
+     a<-sub("cat[(]",paste("base::cat(file=\"",<<tmp>>,"\",",sep=""),a) # ))
+     mystr<-eval(parse(text=a)); mystr(object,...)
+     news<-scan(file=<<tmp>>,what="",sep="\n")
+     news<-sub("chr .data.frame.","",news)
+     news<-paste("\n", # date(),
+                 paste(news,collapse="\n"),"",sep="\n")
+     <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
+  } else { utils::str(object,...) }
+  invisible(NULL)
+}
+assign("str",str,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+melde("str saved",3)
+
+@
 <<stelle Nummer von [[relax]] im Suchpfad fest>>=
 which(paste("package",<<relax>>,sep=":")==search())
 
@@ -6132,7 +6587,7 @@ loadwwwdata<-function(){
 <<definiere Menüfunktionen>>=
 generate.1.data<-function(){
  (function(){
-  DS<-c("sample(99)","sample(99,replace=T)","rnorm(99,mean=0,sd=1)","rexp(99)")
+  DS<-c("sample(99)","sample(99,replace=TRUE)","rnorm(99,mean=0,sd=1)","rexp(99)")
   <<liste [[DS]] in einem Menü auf, wähle Objekt [[choice]]>>
   cmd<-paste("x <-",choice)
   <<schreibe [[cmd]] ins Arbeitsfenster>>
@@ -6275,7 +6730,7 @@ removenafromvecx<-function(){
 }
 removenafrommatxy<-function(){
   (function(){
-    cmd<-"xy<-xy[!apply(is.na(xy),1,any),,drop=F]"
+    cmd<-"xy<-xy[!apply(is.na(xy),1,any),,drop=FALSE]"
     <<definiere ggf.\ myscan>>
     <<schreibe [[cmd]] ins Arbeitsfenster>>
    })()
@@ -6351,17 +6806,17 @@ get.dim.1.plots<-function(){
 
 @
 <<definiere eindimensionale Statistiken>>=
-methoden  <-c("median of x"       		="median(x,rm.na=T)"
-              ,"mean of x"           			="mean(x,rm.na=T)"
-              ,"standard deviation of x"         ="sd(x,rm.na=T)"
-              ,"variance of x"              		="var(x,rm.na=T)"
-              ,"maximum of x"  			="max(x,rm.na=T)"
-	      ,"minimum of x"      			="min(x,rm.na=T)"
+methoden  <-c("median of x"       		="median(x,rm.na=TRUE)"
+              ,"mean of x"           			="mean(x,rm.na=TRUE)"
+              ,"standard deviation of x"         ="sd(x,rm.na=TRUE)"
+              ,"variance of x"              		="var(x,rm.na=TRUE)"
+              ,"maximum of x"  			="max(x,rm.na=TRUE)"
+	      ,"minimum of x"      			="min(x,rm.na=TRUE)"
 	      ,"quantiles of x, prob: p"	="quantile(x,p)"
-	      ,"range of x"      			="range(x,rm.na=T)"
-	      ,"inter quartile range of x"      	="IQR(x,rm.na=T)"
-	      ,"5 number summary of x"      	="five.num(x,rm.na=T)"
-	      ,"summary statistics of x"      	="summary(x,rm.na=T)"
+	      ,"range of x"      			="range(x,rm.na=TRUE)"
+	      ,"inter quartile range of x"      	="IQR(x,rm.na=TRUE)"
+	      ,"5 number summary of x"      	="five.num(x,rm.na=TRUE)"
+	      ,"summary statistics of x"      	="summary(x,rm.na=TRUE)"
 	      ,"sorted data of x"      		="sort(x)"
 	      ,"ranks of x"      				="rank(x)"
 	      ,"sum of x"      		="sum(x)"
@@ -6376,8 +6831,8 @@ DS<-names(methoden)
 methoden  <-c("1 dim plot of x"="plot(x)"
  ,"boxplot of x"              ="boxplot(x)"
  ,"jitterplot of x"              ="plot(jitter(x))"
- ,"histogram of x"              ="hist(x,prob=T)"
- ,"histogram of x, breaks at br"           ="hist(x,breaks=br,prob=T)"
+ ,"histogram of x"              ="hist(x,prob=TRUE)"
+ ,"histogram of x, breaks at br"           ="hist(x,breaks=br,prob=TRUE)"
  ,"plot of density trace of x, width w"="plot(density(x,width=w),type=\"l\")"
  ,"barplot of x"              ="barplot(x)"
  ,"barplot of relative frequencies of x"              ="plot(table(x)/length(x))"
@@ -6530,7 +6985,7 @@ TcltoWin.write<-function(x){
 #}else{
 #  is.UTF<-FALSE }
 TcltoWin.write<-function(x){
- lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+ lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
  UTF<-(1==length(grep("UTF",lcctype))) 
  # UTF<- UTF | nchar(deparse("\xc3")) > 3
  is.UTF<-substring(intToUtf8(as.integer(999)),2,2)==""
@@ -6557,7 +7012,7 @@ TcltoWin.write<-function(x){
  
 alt / Fehler
 \begin{verbatim}
-#if(0==length(grep("=de",grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)))) return(x)  ####060113 /0602013
+#if(0==length(grep("=de",grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)))) return(x)  ####060113 /0602013
 \end{verbatim}
 
 @
@@ -6566,7 +7021,7 @@ Umlautersetzung für Html-Datei-Speicherung.
  
 <<ersetze Umlaute; [[AsHtml]]>>=
 # Umlaute-Ersetzung fuer Tcl-Fenster nach Html:
- #lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+ #lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
  #UTF<-(1==length(grep("UTF",lcctype))) 
  ## UTF<- UTF | nchar(deparse("\xc3")) > 3
  #is.UTF<-substring(intToUtf8(as.integer(999)),2,2)==""
@@ -6650,7 +7105,7 @@ Die Option [[no.plots]] veranlaßt den Manager keine Bilder einzublenden.
 #      cat(".First.lib erledigt!\n")
 #}
 relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
- # Copyright (C) 2005 Hans Peter Wolf
+ # Copyright (C) 2005--2008 Hans Peter Wolf
   options(warn=1)
  #      options(warning.expression={cat("WARNING: Warning-Info see Console window")})
   <<stelle Pfad und Position von [[relax]] fest>>
@@ -6698,13 +7153,15 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   ##definiere Bindung zur Warnungsabarbeitung##
   melde("initialization of RELAX finished",3)
   <<lade ggf. [[file.name]] und verarbeite Argument [[cmds]]>>
+  ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
+  cat( <<Version von [[relax]]>> ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{
     cat("initialisation of relax completed!\nrestart relax by: relax()\n")
   }
-  tkwait.variable("tvexit")
+#  tkwait.variable("tvexit")  # version 1.082
   return()
 }
 
@@ -6734,6 +7191,8 @@ psheight.sys<-"10cm"
 psdesignheight.sys<-6
 # width parameter for postscript device
 psdesignwidth.sys<-6
+# rotation of PS graphics
+pshorizontal.sys<-FALSE
 # size parameter for jpeg device in inch
 jpgdesignsize.sys<-4
 # height of relax window ( e.g.: "500" or "1200" ) 
@@ -6755,8 +7214,11 @@ dvipdf.command.windows<-"dvipdfm"
 # text editor
 text.editor.windows<-"notepad"
 # browser
+browser.windows<-" "
 # browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
 pdfview.windows<-"acroread"
+# ghostscript-program e.g.: ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32"
+ghostscript<-" "
 #############################################
 ## special settings for linux
 path.tcltk.package.img<-"/usr/local/lib"
@@ -6820,7 +7282,8 @@ if(<<das OS ist Linux>>) {
 browser.sys<-""
 if(<<das OS ist Windows>>) {
   browser.sys<-"start "
-  if(exists("browser.windows")) browser.sys <- browser.windows
+  if(exists("browser.windows")&&nchar(browser.windows)>0&&0<length(grep("[a-zA-Z]",browser.windows))) 
+    browser.sys <- browser.windows
 }
 if(<<das OS ist Linux>>) {
   if(exists("browser.linux")) browser.sys <- browser.linux
@@ -6963,9 +7426,9 @@ if(<<das OS ist Linux>>){
 Zur Umsetzung von [[.Tcl("lappend auto_path /usr/local/lib") # img1.3 ]]\\
 sowie [[.Tcl("package require Img")]]
 <<setze unter [[Unix]] Pfad in [[Tcl/Tk]] zum Image-Paket>>=
-Img.ok<-F
+Img.ok<-FALSE
 if(file.exists(path.tcltk.package.img)){ # pwolf-lokal
-        addTclPath(path.tcltk.package.img); Img.ok<-T
+        addTclPath(path.tcltk.package.img); Img.ok<-TRUE
 }
 if(Img.ok) try(tclRequire("Img"))
 
@@ -7011,6 +7474,74 @@ relax.version.sys<- <<Version von [[relax]]>>
 (version$os=="Win32" || version$os=="mingw32")
 
 @
+Für Vista muss evtl. etwas geändert werden.
+Vgl. Mail:
+\begin{verbatim}
+This is a known problem with your compiler installation, discussed in the 
+R-admin manual.  From the version in R-patched:
+
+   There are known problems with one of the compilers sets in this toolset
+   on Windows Vista: see the workaround below. (With that workaround it has
+   been used on both 32- and 64-bit versions of Vista.)
+
+   ...
+
+   On Vista systems you will need to add
+
+   c:\Rtools\MinGW\libexec\gcc\mingw\3.4.5
+
+   to the path.
+
+This is not relevant to the recommended compiler set for R 2.6.0.
+
+
+On Wed, 19 Sep 2007, Anand Patil wrote:
+
+> Hi all,
+>
+>
+> I'd like to distribute an R package that compiles some (small) C functions
+> every time it's sourced. The relevant code in the top level R script is as
+> follows:
+>
+> system("R CMD SHLIB Selma_extensions.c")
+> if (.Platform$OS.type=="windows") {
+>    slash = '\\'
+>    dyn.load("Selma_extensions.dll")
+> }
+> if (.Platform$OS.type=="unix") {
+>    slash = '/'
+>    dyn.load("Selma_extensions.so")
+> }
+
+Hmm, all the information you need is already in .Platform, $file.sep and 
+$dynlib.ext: the latter varies by OS.type.
+
+> This works fine on a Mac, but I tried it under Windows Vista, after
+> installing RTools and telling it to put itself on the system path, and got
+> the following:
+>
+> making Selma_extensions.d from Selma_extensions.c
+> gcc.exe: installation problem, cannot exec `cc1': No such file or directory
+> make: *** [Selma_extensions.d] Error 1
+> Error in dyn.load(x, as.logical(local), as.logical(now)) :
+>        unable to load shared library
+> 'C:/Users/anand/Desktop/Selma/Selma_extensions.dll':
+>  LoadLibrary failure:  The specified module could not be found.
+>
+> Can this be fixed without requiring the user to do anything?
+
+The fix requires 'the user' to read the documentation.
+
+-- 
+Brian D. Ripley,                  [EMAIL PROTECTED]
+Professor of Applied Statistics,  http://www.stats.ox.ac.uk/~ripley/
+University of Oxford,             Tel:  +44 1865 272861 (self)
+1 South Parks Road,                     +44 1865 272866 (PA)
+Oxford OX1 3TG, UK                Fax:  +44 1865 272595
+\end{verbatim}
+
+@
 <<unused: definiere Funktionen zum Umgang mit [[Tcl]]-Variablen>>=
 get.tclvar<-function(name){
   tclvalue(name)
@@ -7049,6 +7580,7 @@ workname.sys<-"out.rev"
 @
 <<lade ggf. [[file.name]] und verarbeite Argument [[cmds]]>>=
 if(!missing(file.name)){
+   file.name<-as.character(substitute(file.name)) ## 071115
    file.name<-gsub("\\\\","/",file.name)
    if(0<length(grep("/",file.name))){
      path<-sub("^(.*)/(.*)","\\1",file.name)
@@ -7060,7 +7592,7 @@ if(!missing(file.name)){
    print(file.name)
    workname.sys<-file.name
    assign("cmds",paste("r",file.name),env=revive.env)
-   Execute.cmds(); RunStart()
+   Execute.cmds()
 }
 if(0<length(cmds) && cmds[1]!="") {
   assign("cmds",cmds,env=revive.env)
@@ -7277,7 +7809,7 @@ der eventuell veränderte Editor [[relax]] neu geladen werden.
 Dabei kommen schärfere Debugging Regeln zum Einsatz.
 <<dieser Chunk könnte beim Debuggen helfen>>=
 relax.debug<-function(){
-  DEBUG<<-T; options(warn=5)
+  DEBUG<<-TRUE; options(warn=5)
   path<-sub(paste("/",<<relax>>,sep=""),"",.find.package(<<relax>>))
   detach("package:relax")
   library(relax,lib.loc=path)
@@ -7292,12 +7824,12 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.081
-Date: 2007-10-08
+Version: 1.083
+Date: 2008-06-19
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
-Depends: R (>= 2.4.0), tcltk
+Depends: R (>= 2.5.0), tcltk
 Description: package relax contains some functions for report
     writing, presentation, and programming: relax(), tangleR(),
     weaveR(), slider(). "relax" is written in R and Tcl/Tk.
@@ -7312,15 +7844,27 @@ Description: package relax contains some functions for report
     tangleR() and weaveR() implement a plain kind of tangling
     and weaving. slider() is designed to define sliders for interactive
     experiments in a simple way.
-    The windows version uses some ingredients of the noweb system of Norman Ramsey
-    (http://www.eecs.harvard.edu/~nr/noweb/intro.html),
-    of the Img package of Jan Nijtmans (http://www.xs4all.nl/~nijtmans/img.html),
-    -- notice the copyright declarations of these products.
+    The syntax rules of code chunks and text chunks are defined by 
+    the noweb system proposed by Norman Ramsey
+    (http://www.eecs.harvard.edu/~nr/noweb/intro.html).
+    For integrating jpeg graphics into the text field you need the
+    Tcl/Tk Img package of Jan Nijtmans 
+    (see: http://members.chello.nl/~j.nijtmans/img.html or
+    http://tkimg.sourceforge.net/, the package is found on  
+    http://sourceforge.net/projects/tkimg).
+    The license terms concerning the img package are found in 
+    the source file of the package, see: relax/src/tkimg1.3.tar.gz.
+    The windows version of relax
+    contains the Tcl/Tk img package, so no further installations
+    have to be done.
+License: GPL (>= 2)
+URL: http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html
+
+@
+alt:
 License: This package was written by Hans Peter Wolf.
    This software is licensed under the GPL (version 2 or newer) terms.
     It is free software and comes with ABSOLUTELY NO WARRANTY.
-URL: http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html
-
 @
 \subsection{Help-Page von [[relax]]}
 
@@ -7432,7 +7976,7 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
    --
 }
 \references{\url{http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html}}
-\author{2005 Hans Peter Wolf}
+\author{Hans Peter Wolf}
 \note{}
 
 \seealso{  }
@@ -7447,7 +7991,7 @@ function (workname.sys = "out.rev", no.plots = FALSE, cmds = "", but.Wizardry = 
 
 @
 \subsection{Help-Page von [[slider]]}
-<<define-slider-function>>=
+<<define-slider-function -- old version>>=
 slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
                   but.functions,but.names,
                   no,set.no.value,obj.name,obj.value,
@@ -7531,8 +8075,8 @@ slider(sl.functions, sl.names, sl.mins, sl.maxs, sl.deltas, sl.defaults, but.fun
   variable \code{name} from environment \code{slider.env}}
   \item{obj.value}{\code{slider(obj.name=name,obj.value=value)} assigns \code{value}
   to variable \code{name} in environment \code{slider.env}}
-  \item{reset.function}{function that comprises the commands of the
-  \code{reset.button}}
+  \item{reset.function}{function that induce a \code{reset.button} and 
+        contains the commands of it.}
   \item{title}{title of the control window}
 }
 \details{
@@ -7549,7 +8093,7 @@ slider(sl.functions, sl.names, sl.mins, sl.maxs, sl.deltas, sl.defaults, but.fun
   \code{sl.functions, sl.names, sl.minima, sl.maxima,sl.deltas}, and \code{sl.defaults}.
   The first argument,
   \code{sl.functions}, is either a list of functions or a single function that 
-  entails the commands for the sliders.
+  contains the commands for the sliders.
   If there are three sliders and slider 2 is moved with the mouse the function stored in
   \code{sl.functions[[2]]} (or in case of one function for all sliders the function \code{sl.functions})
   is called.}
@@ -7668,56 +8212,6 @@ R.veil.in.the.wind<-function(){
 R.veil.in.the.wind()
 }
 
-
-## The function is currently defined as
-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
-                  but.functions,but.names,
-                  no,set.no.value,obj.name,obj.value,
-                  reset.function,title){
-  # slider, version2, pw 040107
-  if(!missing(no)) return(as.numeric(tclvalue(get(paste("slider",no,sep=""),env=slider.env))))
-  if(!missing(set.no.value)){ try(eval(parse(text=paste("tclvalue(slider",set.no.value[1],")<-",
-                            set.no.value[2],sep="")),env=slider.env)); return(set.no.value[2]) }
-  if(!exists("slider.env")) slider.env@<<-new.env()
-  if(!missing(obj.name)){
-    if(!missing(obj.value)) assign(obj.name,obj.value,env=slider.env) else
-      obj.value<-get(obj.name,env=slider.env)
-    return(obj.value)
-  }
-  if(missing(title)) title<-"slider control widget"
-  require(tcltk); nt<-tktoplevel(); tkwm.title(nt,title); tkwm.geometry(nt,"+0+15")
-  if(missing(sl.names)) sl.names<-NULL
-  if(missing(sl.functions)) sl.functions<-function(...){}
-  for(i in seq(sl.names)){
-    eval(parse(text=paste("assign('slider",i,"',tclVar(sl.defaults[i]),env=slider.env)",sep="")))
-    tkpack(fr<-tkframe(nt));  lab<-tklabel(fr, text=sl.names[i], width="25")
-    sc<-tkscale(fr,from=sl.mins[i],to=sl.maxs[i],showvalue=T,resolution=sl.deltas[i],orient="horiz")
-    tkpack(lab,sc,side="right"); assign("sc",sc,env=slider.env)
-    eval(parse(text=paste("tkconfigure(sc,variable=slider",i,")",sep="")),env=slider.env)
-    sl.fun<-if(length(sl.functions)>1) sl.functions[[i]] else sl.functions
-    if(!is.function(sl.fun)) sl.fun<-eval(parse(text=paste("function(...){",sl.fun,"}")))
-    tkconfigure(sc,command=sl.fun)
-  }
-  assign("slider.values.old",sl.defaults,env=slider.env)
-  tkpack(f.but<-tkframe(nt),fill="x")
-  tkpack(tkbutton(f.but, text="Exit", command=function()tkdestroy(nt)),side="right")
-  if(missing(reset.function)) reset.function<-function(...) print("relax")
-  if(!is.function(reset.function))
-    reset.function<-eval(parse(text=paste("function(...){",reset.function,"}")))
-  tkpack(tkbutton(f.but, text="Reset", command=function(){
-         for(i in seq(sl.names))
-            eval(parse(text=paste("tclvalue(slider",i,")<-",sl.defaults[i],sep="")),env=slider.env)
-         reset.function()  }  ),side="right")
-  if(missing(but.names)) but.names<-NULL
-  for(i in seq(but.names)){
-    but.fun<-if(length(but.functions)>1) but.functions[[i]] else but.functions
-    if(!is.function(but.fun))but.fun<-
-       eval(parse(text=paste("function(...){",but.fun,"}")))
-    tkpack(tkbutton(f.but, text=but.names[i], command=but.fun),side="left")
-    cat("button",i,"eingerichtet")
-  }
-  invisible(nt)
-}
 }
 \keyword{dynamic}% at least one, from doc/KEYWORDS
 \keyword{iplot}% __ONLY ONE__ keyword per line
@@ -7739,15 +8233,16 @@ notangle -Rdefine-tangleR          ../webR/webR.rev > relax/R/tangleR.R
 notangle -Rdefine-tangleR-help ../webR/webR.rev > relax/man/tangleR.Rd
 notangle -Rdefine-weaveR         ../webR/webR.rev > relax/R/weaveR.R
 notangle -Rdefine-weaveR-help ../webR/webR.rev > relax/man/weaveR.Rd
-notangle -Rdefine-weaveRhtml  ../webR/webR.rev > ../install.dir/relax/R/weaveRhtml.R
-notangle -Rdefine-weaveRhtml-help ../webR/webR.rev > ../install.dir/relax/man/weaveRhtml.Rd
+notangle -Rdefine-weaveRhtml  ../webR/webR.rev >  relax/R/weaveRhtml.R
+notangle -Rdefine-weaveRhtml-help ../webR/webR.rev > relax/man/weaveRhtml.Rd
 
 cp -p ../webR/webR.rev  relax/inst/src/webR.rev
 cp -p ../webR/webR.pdf  relax/inst/src/webR.pdf
 
 notangle -Rdefine-relax-help ../relax.rev > relax/man/relax.Rd
+notangle -Rdefine-slider ../slider-function.rev >  relax/R/slider.R
+### notangle -Rdefine-slider-function ../relax.rev > relax/R/slider.R
 notangle -Rdefine-slider-help   ../relax.rev > relax/man/slider.Rd
-notangle -Rdefine-slider-function ../relax.rev > relax/R/slider.R
 notangle -Rdefine-DESCRIPTION  ../relax.rev > relax/DESCRIPTION
 notangle -Rdefine-config-settings ../relax.rev > relax/inst/config/settings.relax
 notangle -Rdefine-config-settings ../relax.rev > relax/inst/config/settings.init
@@ -7757,14 +8252,14 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.081.tar.gz
+R CMD INSTALL --library=lib relax_1.083.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
-cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.081.zip relax/*
-mv relax_1.081.zip ..
+cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.083.zip relax/*
+mv relax_1.083.zip ..
 
 cd ..
-cp relax_1.081.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.081.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.083.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.083.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 
@@ -7839,7 +8334,7 @@ Hier endet der mit Ergebnissen zu versehende Text.
 n<-100; a<-10; b<-0.7; sigma.u<-5
 x<-1:n; y<-a+b*x+ rnorm(n,sd=sigma.u)
 plot(x,y); abline(lsfit(x,y))
-dev.copy(postscript,"tmp2.ps",horizontal=F,width=psdesignwidth.sys,height=psdesignheight.sys)
+dev.copy(postscript,"tmp2.ps",horizontal=FALSE,width=psdesignwidth.sys,height=psdesignheight.sys)
 dev.off()
 ff.verbatim("testtest")
 

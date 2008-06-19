@@ -16,6 +16,8 @@ psheight.sys<-"10cm"
 psdesignheight.sys<-6
 # width parameter for postscript device
 psdesignwidth.sys<-6
+# rotation of PS graphics
+pshorizontal.sys<-FALSE
 # size parameter for jpeg device in inch
 jpgdesignsize.sys<-4
 # height of relax window ( e.g.: "500" or "1200" ) 
@@ -37,8 +39,11 @@ dvipdf.command.windows<-"dvipdfm"
 # text editor
 text.editor.windows<-"notepad"
 # browser
+browser.windows<-" "
 # browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
 pdfview.windows<-"acroread"
+# ghostscript-program e.g.: ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32"
+ghostscript<-" "
 #############################################
 ## special settings for linux
 path.tcltk.package.img<-"/usr/local/lib"
