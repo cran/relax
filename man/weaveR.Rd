@@ -7,13 +7,19 @@
   of weaving. As a result a LaTeX file is generated.
 }
 \usage{
-weaveR(in.file,out.file)
+weaveR(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE,eval_Sexpr=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if missing the extension of the
   input file is turned to \code{.tex} }
+  \item{show.code}{ if FALSE the code will not be copied to the output file }
+  \item{show.text}{ if FALSE the text will not be copied to the output file }
+  \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
+   TeX sequences}
+  \item{eval_Sexpr}{ if TRUE \preformatted{\\Sexpr}-expressions will be evaluated 
+          and replaced by the result(s) }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -39,22 +45,48 @@ weaveR(in.file,out.file)
 
   \code{weaveR} expands the input by adding some latex macros
   to typeset code by a typewriter font.
-  Furthermore chunk numbers are appended to code chunk headers.
+  Furthermore chunk numbers are appended to code chunk headers
+  together with some information showing where are code is used.
+  If you want to suppress these hints you can include a line
+  beginning with the string \code{no.used.in.infos}.
+
+  Hint for references:
   The number of the last code chunk is stored in LaTeX-counter \code{Rchunkno}.
   After defining
-  \code{\newcommand\{\chunklabel\}[1]\{\newcounter\{#1\}\setcounter\{#1\}\{\value\{Rchunkno\} \} \}}
-  and \code{\newcommand\{\chunkref\}[1]\{\arabic\{#1\} \} } you can label a code chunk
-  by \code{\chunklabel\{xyzname\} } and reference it by \code{\chunkref\{xyzname\} }.
+  \preformatted{\\newcommand\{\\chunklabel\}[1]\{\\newcounter\{#1\}\\setcounter\{#1\}\{\\value\{Rchunkno\} \} \}}
+  and \preformatted{\\newcommand\{\\chunkref\}[1]\{\\arabic\{#1\} \} } you can label a code chunk
+  by \preformatted{\\chunklabel\{xyzname\} } and reference it by \preformatted{\\chunkref\{xyzname\} }.
+
+  Chunk Index: 
+  The user will get a list of all the code chunks if a line is found containing
+  \preformatted{@list.of.chunks}. However, there must be a minimum number of 
+  two list entries. Otherwise no index is appended to the text.
+
+  Object Index: 
+  An index of the objects 
+  will be generated if a line is found with the string \code{@index.of.objects}.
+  Object names consisting of one character are excluded from the search. 
+  However, you can define object names that should appear in the index by hand.
+  This requires a line (or lines) in the document beginning with the string \code{@index}
+  followed by the names of the objects that should appear in the index. 
+  This features is helpful if some objects are missing on the
+  list or if a name of an object to be listed is of length 1 only.
+  Bear in mind that the computation of the object index is time consuming.
+  If you do not want an index computed automatically you can include a line
+  with the string \code{@index.reduced} at the beginning of the line. Then the
+  object index will contain the object names of the \code{@index} statements only.
 }
 \value{
   a latex file is generated
 }
-\references{ \url{http://www.eecs.harvard.edu/~nr/noweb/intro.html} }
+\references{ by using noweb is an alternative approach, see: 
+            \url{http://www.eecs.harvard.edu/~nr/noweb/intro.html} }
 \author{Hans Peter Wolf}
 \seealso{  \code{\link{tangleR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work in an interactive R session
+## This example cannot be run by examples() but should be work 
+## in an interactive R session
   weaveR("testfile.rev","testfile.tex")
   weaveR("testfile.rev")
 }

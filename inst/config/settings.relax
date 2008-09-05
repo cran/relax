@@ -7,7 +7,7 @@
 language<-"english"
 # language<-"german"
 # maximal characters of output to be shown
-maxol.sys<-2500
+maxol.sys<-4000
 # size of fonts # set of values: 1,2, ..., 7
 initial.font.size<-4
 # height of included postscript plot in LaTeX document:
@@ -16,12 +16,18 @@ psheight.sys<-"10cm"
 psdesignheight.sys<-6
 # width parameter for postscript device
 psdesignwidth.sys<-6
+# rotation of PS graphics
+pshorizontal.sys<-FALSE
+# size parameter for jpeg device in inch
+jpgdesignsize.sys<-4
 # height of relax window ( e.g.: "500" or "1200" ) 
 relaxwindow.height.sys<-"700"
 # width of relax window ( e.g.: "500" or "1200" ) 
 relaxwindow.width.sys<-"700"
 # use of "tab"-key for name completion
 name.complete.sys<-TRUE
+# replace german umlaute
+replace.umlaute.sys<-TRUE
 #############################################
 ## special settings for windows
 # how to call LaTeX
@@ -33,7 +39,14 @@ dvipdf.command.windows<-"dvipdfm"
 # text editor
 text.editor.windows<-"notepad"
 # browser
-# browser.windows<-"c:/Programme/.../mozilla"
+browser.windows<-" "
+# browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
+pdfview.windows<-"acroread"
+# ghostscript-program e.g.: ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32"
+ghostscript<-" "
+# Path to Tcl/Tk-img-package:
+imgpath.sys<-""
+# imgpath.sys <- "C:/Tcl/lib"
 #############################################
 ## special settings for linux
 path.tcltk.package.img<-"/usr/local/lib"
@@ -43,8 +56,22 @@ latex.command.linux<-"echo q | latex"
 view.command.linux<-"xdvi"
 # how to call dvipdf
 dvipdf.command.linux<-"dvipdf"
-# text editor
+# text editor ?????????
 text.editor.linux<-"kwrite"
 # browser
 browser.linux<-"konqueror"
+# pdf viewer
+pdfview.linux<-"acroread"
+#############################################
+## special settings for mac
+# how to call LaTeX
+latex.command.mac<-"echo q | pdflatex" 
+# view command for viewing .dvi files
+view.command.mac<-"open " 
+# how to call dvipdf
+dvipdf.command.mac<-"dvipdf" 
+# text editor
+text.editor.mac<-"nano"
+# browser
+browser.mac<-"safari"
 
