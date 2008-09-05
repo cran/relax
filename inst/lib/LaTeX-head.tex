@@ -1,9 +1,19 @@
+%  --- begin of preamble
 \documentclass{article}
-\usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
-% \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
-\usepackage[scaled=.95]{helvet}
+%  --- packages  \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+\usepackage{graphicx}
+%  --- fonts 
+% \usepackage[scaled=.95]{helvet}
 \usepackage[T1]{fontenc}
+%  --- commands to control the layout of text and code chunks 
+\parskip1ex
+\parindent0mm
+\renewcommand{\textchunkcommands}{\normalsize}
+\renewcommand{\codechunkcommands}{\small}
+%  --- titlepage
 \title{Report: \rule{30mm}{.1mm}}
 \author{File: \jobname.rev\\in: JOBPATH}
+%  --- end of preamble
 \begin{document}\maketitle
+%  --- begin of document
 

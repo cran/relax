@@ -9,7 +9,7 @@
 }
 \usage{
 tangleR(in.file, out.file, expand.roots = NULL,
-expand.root.start = TRUE)
+expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -20,6 +20,8 @@ expand.root.start = TRUE)
   all will be processed }
   \item{expand.root.start}{ if TRUE (default) root chunk
   "start" will be expanded }
+  \item{insert.comments}{ if TRUE comments with chunk inofs will be added to the code }
+  \item{add.extension}{ if TRUE output file name will get extension .R }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text

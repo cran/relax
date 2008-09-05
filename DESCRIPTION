@@ -1,10 +1,10 @@
 Package: relax
-Version: 1.01
-Date: 2006-05-18
+Version: 1.1
+Date: 2008-09-05
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
-Depends: R (>= 2.1.0), tcltk
+Depends: R (>= 2.5.0), tcltk
 Description: package relax contains some functions for report
     writing, presentation, and programming: relax(), tangleR(),
     weaveR(), slider(). "relax" is written in R and Tcl/Tk.
@@ -19,12 +19,21 @@ Description: package relax contains some functions for report
     tangleR() and weaveR() implement a plain kind of tangling
     and weaving. slider() is designed to define sliders for interactive
     experiments in a simple way.
-    The windows version uses some ingredients of the noweb system of Norman Ramsey
-    (http://www.eecs.harvard.edu/~nr/noweb/intro.html),
-    of the Img package of Jan Nijtmans (http://www.xs4all.nl/~nijtmans/img.html),
-    -- notice the copyright declarations of these products.
-License: This package was written by Hans Peter Wolf.
-   This software is licensed under the GPL (version 2 or newer) terms.
-    It is free software and comes with ABSOLUTELY NO WARRANTY.
-URL: http://www.wiwi.uni-bielefeld.de/~wolf/software/relax/relax.html
-Packaged: Thu May 18 16:22:54 2006; pwolf
+    The syntax rules of code chunks and text chunks are defined by 
+    the noweb system proposed by Norman Ramsey
+    (http://www.eecs.harvard.edu/~nr/noweb/intro.html).
+    For integrating jpeg graphics into the text field you need the
+    Tcl/Tk Img package of Jan Nijtmans 
+    (see: http://members.chello.nl/~j.nijtmans/img.html,
+    http://home.kpnplanet.nl/~J.Nijtmans@kpnplanet.nl/img.html or
+    http://tkimg.sourceforge.net/, the package is found on  
+    http://sourceforge.net/projects/tkimg).
+    If an Img version is integrated in the relax package
+    the license terms concerning the img package will be found in 
+    the source file of the package, for example in: relax/src/tkimg1.3.tar.gz.
+    Older windows versions of relax
+    contain the Tcl/Tk img package, so no further installations
+    have to be done.
+License: GPL (>= 2)
+URL: http://www.wiwi.uni-bielefeld.de/statistik/mitarbeiter/wolf/software/relax.html
+Packaged: Mon Dec  1 17:19:15 2008; pwolf

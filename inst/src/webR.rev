@@ -1,4 +1,7 @@
 % New Report: Thu Feb  3 18:05:01 2005
+% 070518: Fehler in transform.command und
+% transform.structure.command: en-1  war   NA; erledigt
+% nach [[~]] wird ein Leerzeichen erzeugt!???
 \documentclass{article}
 \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
 \usepackage[scaled=.95]{helvet}
@@ -9,8 +12,8 @@
 \title{TANGLE und WEAVE mit R --- selbstgemacht}
 %\usepackage[T1]{fontenc}
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
-             Ort:  {\tt /home/wiwi/pwolf/work/work.rtrevive/webR }}
-\date{16.Jan.2006}
+             Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
+\date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007, 04.09.2008, 31.10.2008}
 \begin{document}
 \maketitle
 \raggedright
@@ -24,6 +27,20 @@ notangle -Rdefine-tangleR-help webR.rev > ../install.dir/relax/man/tangleR.Rd
 notangle -Rdefine-weaveR         webR.rev > weaveR.R
 notangle -Rdefine-weaveR         webR.rev > ../install.dir/relax/R/weaveR.R
 notangle -Rdefine-weaveR-help webR.rev > ../install.dir/relax/man/weaveR.Rd
+notangle -Rdefine-weaveRhtml  webR.rev > ../install.dir/relax/R/weaveRhtml.R
+notangle -Rdefine-weaveRhtml-help webR.rev > ../install.dir/relax/man/weaveRhtml.Rd
+# noweave -delay .index webR.rev > webR.tex; latex webR; dvipdf webR
+
+@
+\subsection{Neuste Korrekturen}
+\begin{itemize}
+\item weavetoHtml: statt code-Tag nun pre-Tag in verbatim-Outputs
+\item weavetoTex: par und vspace zu Beginn von Chunks
+\item tangleR: Expansion auf von Nicht-Root-Chunks
+\item tangleR: Speicherung auch ohne zusätzlicher R-Extension
+\item tangleR: ggf. auch ohne Kommentare mit Quellenhinweisen
+\end{itemize}
+
 
 @
 \section{TEIL I --- TANGLE}
@@ -52,7 +69,8 @@ und alle weiteren Wurzeln expandiert.
 Die Funktion besitzt folgende Struktur:
 <<define-tangleR>>=
 tangleR<-
-function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
+function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,insert.comments=TRUE,
+         add.extension=TRUE){
   # german documentation of the code:
   # look for file webR.pdf, P. Wolf 050204
   <<bereite Inhalt der Input-Datei auf [[tangleR]]>>
@@ -66,6 +84,7 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
   <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[tangleR]]>>
   <<speichere [[code.out]] [[tangleR]]>>
 }
+print("OK")
 
 @
 \subsection{Umsetzung der Teilschritte}
@@ -208,7 +227,7 @@ auf die Output-Variablen übertragen und Verfeinerungsverwendungen werden
 auf [[code.stack]] durch ihre Definitionen ersetzt.
 <<expandiere Start-Sektion [[tangleR]]>>=
 if(exists("DEBUG")) cat("bearbeite start\n")
-code.out<-c(code.out,"#0:","##start:##")
+if(insert.comments) code.out<-c(code.out,"#0:","##start:##")
 if(any(ch.no <-def.names=="start")){
    ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
    for(i in ch.no)
@@ -218,7 +237,7 @@ if(any(ch.no <-def.names=="start")){
      <<transferiere Startzeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>
    }
 }
-code.out<-c(code.out,"##:start##","#:0")
+if(insert.comments) code.out<-c(code.out,"##:start##","#:0")
 
 @
 Falls [[code.stack]] leer ist, ist nichts mehr zu tun. Andernfalls
@@ -258,16 +277,23 @@ Wurzeln sind alle Definitionsnamen, die nicht verwendet werden.
 root.no<-is.na(match(def.names,use.names))&def.names!="start"
 root.no<-seq(along=root.no)[root.no]
 roots  <-def.names[root.no]
-if(!is.null(expand.roots)){
-  h<-!is.na(match(roots,expand.roots))
-  roots<-roots[h]; root.no<-root.no[h]
+#if(!is.null(expand.roots)){ # verwende nur wirkliche Wurzeln
+#  h<-!is.na(match(roots,expand.roots))
+#  roots<-roots[h]; root.no<-root.no[h]
+#}
+if(!is.null(expand.roots)){ # verwende gegebene(n) Knoten
+  h<-!is.na(match(def.names,expand.roots))
+  root.no<-seq(def.names)
+  roots<-def.names[h]; root.no<-root.no[h]
 }
+if(0==length(roots)) cat("Sorry, no chunk for expanding found!\n")
+if(exists("DEBUG")) print(roots)
 
 @
 \subsubsection{Expansion der Wurzeln}
 Im Prinzip verläuft die Expansion der Wurzel wie die von [[start]].
 Jedoch werden etwas umfangreichere Kommentare eingebaut.
-<<expandiere Wurzeln [[tangleR]]>>=
+<<OLD -- expandiere Wurzeln [[tangleR]] -- OLD>>=
 if(exists("DEBUG")) cat("bearbeite Sektion-Nr./Name\n")
 for(r in seq(along=roots)){
   if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
@@ -281,6 +307,38 @@ for(r in seq(along=roots)){
     }
     code.out<-c(code.out,paste("##:",roots[r],"##",sep=""),
                          paste("#:",root.no[r],sep=""))
+  }
+}
+@
+<<expandiere Wurzeln [[tangleR]]>>=
+if(exists("DEBUG")) cat("bearbeite Sektion-Nr./Name\n")
+roots<-unique(roots)
+for(r in seq(along=roots)){
+  # if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
+  if(exists("DEBUG")) cat(which(def.names==roots[r]),":",roots[r],", ",sep="")
+  if(any(ch.no <-def.names==roots[r])){
+    ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
+    if(insert.comments) code.out<-c(code.out,
+          # # # paste("#",root.no[r],":",sep=""), new 071114
+                        paste("##",roots[r],":##",sep=""))
+    for(i in ch.no){
+       if((code.a[i]+1)<=code.z[i]){ 
+         # # # rows<-c(rows, (code.a[i]+1):code.z[i]) # new:
+            h<-code.a[i]+1
+            rows<-c(rows, h:code.z[i])
+            if(insert.comments) code.ch[h]<-paste("C#",i,":NeWlInE",code.ch[h],sep="")
+            h<-code.z[i]
+            if(insert.comments) code.ch[h]<-paste(code.ch[h] ,"NeWlInEC#:",i,sep="")
+       }
+    }
+    code.stack<-code.ch[rows]
+    code.stack<-unlist(strsplit(code.stack,"NeWlInE")) # new   
+    repeat{
+     <<transferiere Codezeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>
+    }
+    if(insert.comments) code.out<-c(code.out,paste("##:",roots[r],"##",sep="")
+               # # #    ,paste("#:",root.no[r],sep="")
+                        )
   }
 }
 
@@ -299,16 +357,21 @@ if("C"==substring(code.stack[1],1,1)){
   if(any(found<-def.names==def.line)){
     code.stack<-code.stack[-1]
     found<-rev(seq(along=def.names)[found])
-    for(no in found)
+    for(no in found){
       row.no<-c((code.a[no]+1),code.z[no])
       if(row.no[1]<=row.no[2]){
-        code.stack<-c(paste("C#"  ,no,":"  ,sep=""      ),
-                    paste("C##" ,def.line,":##",sep=""),
-                    code.ch[row.no[1]:row.no[2]] ,
-                    paste("C##:",def.line, "##",sep=""),
-                    paste("C#:" ,no      ,sep=""      ),
-                    code.stack)
-	}
+        if(insert.comments){ 
+          code.stack<-c(paste("C#"  ,no,":"  ,sep=""      ),
+                        paste("C##" ,def.line,":##",sep=""), 
+                        code.ch[row.no[1]:row.no[2]],
+                        paste("C##:",def.line, "##",sep=""),
+                        paste("C#:" ,no      ,sep=""      ),
+                        code.stack)
+        }else{
+          code.stack<-c(code.ch[row.no[1]:row.no[2]], code.stack)
+        }
+      }
+    } # end of for
   } else code.stack <-code.stack[-1] # ignore not defined chunks!
   # 051219 
 }
@@ -322,7 +385,7 @@ code.out<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",code.out))
 if(missing(out.file)||in.file==out.file){
   out.file<-sub("\\.([A-Za-z])*$","",in.file)
 }
-if(0==length(grep("\\.R$",out.file)))
+if(add.extension&&0==length(grep("\\.R$",out.file)))
   out.file<-paste(out.file,".R",sep="")
 get("cat","package:base")(code.out,sep="\n",file=out.file)
 cat("tangle process finished\n")
@@ -349,7 +412,7 @@ tangleR("out")
 }
 \usage{
 tangleR(in.file, out.file, expand.roots = NULL,
-expand.root.start = TRUE)
+expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -360,6 +423,8 @@ expand.root.start = TRUE)
   all will be processed }
   \item{expand.root.start}{ if TRUE (default) root chunk
   "start" will be expanded }
+  \item{insert.comments}{ if TRUE comments with chunk inofs will be added to the code }
+  \item{add.extension}{ if TRUE output file name will get extension .R }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -458,9 +523,9 @@ Eckige Klammern in Verbatim-Umgebungen werden nicht ersetzt.
 \end{itemize}
 Die Funktion besitzt folgenden Aufbau:
 <<define-weaveR>>=
-weaveR<-function(in.file,out.file){
+weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830
   <<initialisiere [[weaveR]]>>
   <<lese Datei ein [[weaveR]]>>
   <<substituiere mit @ versehene Zeichengruppen [[weaveR]]>>
@@ -469,22 +534,40 @@ weaveR<-function(in.file,out.file){
   <<ersetze Umlaute [[weaveR]]>>
   <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveR]]>>
   <<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>
+  <<entferne ggf.\ Code oder Text>>
+  <<entferne ggf. Umlaut-TeX-Makros aus Code-Zeilen>>
   <<schreibe Ergebnis in Datei [[weaveR]]>>
 }
 
 @
-Zunächst fixieren wir die Suchmuster für wichtige Dinge.
-Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Das Encoding wird mittels tcltk festgestellt.
 <<initialisiere [[weaveR]]>>=
+require(tcltk)
 pat.use.chunk<-paste("<","<(.*)>",">",sep="")
 pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
-lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=T)
+.Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+UTF<-0<length(grep("utf",UTF))
+if(<<DEBUG-Flag gesetzt>>){
+  if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n")
+}
+if(!UTF){ 
+      char267<-eval(parse(text='"\\267"'))
+}
+
+@
+ALT: Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Versuche zum UTF-Problem:
+[[is.utf<-"\"<c3>\""==deparse("\xc3")]]
+[[is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""]]
+<<old>>=
+lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
 UTF<-(1==length(grep("UTF",lcctype))) 
-UTF<- UTF | nchar(deparse("\xc3")) > 3
-if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
+is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
+UTF<- UTF | is.utf
 
 @
 Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
@@ -496,6 +579,10 @@ if(!file.exists(in.file)){
 }
 # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
 input<-readLines(in.file) # 2.1.0
+try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
+    # LATIN1-Dok :
+    input<-iconv(input,"LATIN1","")
+})
 length.input<-length(input)
 
 @
@@ -508,6 +595,32 @@ Umlaute sind ein Dauerbrenner.
 Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
 in der ersten Zeile ein \emph{ß}.
 <<ersetze Umlaute [[weaveR]]>>=
+if(replace.umlaute){
+ if(!UTF){
+ # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+    uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+    input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+    input<-gsub(substring(uml.latin1,7,7),"{\\\\ss}",input) # replace sz
+    uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+    input<-gsub(uml.pattern,"\\\\\"\\1",input)  # replace Umlaute ae->&aeuml; 
+# replace Umlaute &aeuml;->&auml;
+    input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)   
+ }else{
+  input<-gsub("\283\237","{\\\\ss}",input)
+  input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                            "\\\\\"\\1",input)
+  input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+ }
+ if(<<DEBUG-Flag gesetzt>>){
+  cat("german Umlaute replaced\n")
+ }
+}
+@
+Diese Darstellung ließ sich unter utf-8 nicht anzeigen!
+<<alte Umlautersetzung weaveR>>=
 if(!UTF){
  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
   input<-gsub("\283","",input)
@@ -523,7 +636,7 @@ if(!UTF){
   input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
                               "aouAOU", input)
 }
-cat("german Umlaute replaced\n")
+
 @
 Vor dem Wegschreiben müssen die besonderen Zeichengruppen
 zurückübersetzt werden.
@@ -532,14 +645,86 @@ input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
 input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
 
 @
+Es kam beim Umschalten auf Code zu unschönen Zeilenabständen, 
+die durch Vorschalten von [[\\par\\vspace{-\\parskip}]] ausgeschaltet werden sollen. Das schwierigste Makro ist [[\makemarginno]],
+mit dem von Text- auf Code-Chunk umgestellt wird. Es wird der
+Paragraph abgeschlossen, ein Vorschub von einem halben
+Absatzabstand eingebaut, alle Umschaltungskommandos umgesetzt
+der Zähler für die Randnummern hochgesetzt und der Zähler eingetragen.
 <<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>=
 input[1]<-paste(
      "\\newcounter{Rchunkno}",
-     "\\newcommand{\\makemarginno}{\\stepcounter{Rchunkno}",
-     "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}\\makebox[0mm]{",
-     "\\arabic{Rchunkno}",
-     "}\\hspace*{3em}}",
+     "\\newcounter{IsInCodeChunk}\\setcounter{IsInCodeChunk}{1}",
+     "\\newcommand{\\codechunkcommands}{\\relax}",
+     "\\newcommand{\\textchunkcommands}{\\relax}",
+     "\\newcommand{\\makemarginno}",
+          "{\\par\\vspace{-0.5\\parskip}\\codechunkcommands",
+          "\\stepcounter{Rchunkno}",
+          "\\setcounter{IsInCodeChunk}{1}",
+          "\\noindent\\hspace*{-3em}",
+          "\\makebox[0mm]{\\arabic{Rchunkno}}\\hspace*{3em}}",
      input[1],sep="")
+
+@
+\par\vspace{-0.5\parskip}\codechunkcommands
+\stepcounter{Rchunkno}
+\hspace*{-3em}\makebox[0mm]{\arabic{Rchunkno}}
+\hspace*{3em}
+
+@
+Falls nur Text oder nur Code gewünscht wird, 
+muss der Rest entfernt werden.
+<<entferne ggf.\ Code oder Text>>=
+if(show.code==FALSE){
+   input[code.index] <-"."
+   input[use.index] <-":"
+   an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
+   if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
+   input[an]<-paste(input[an],"${}^*$ --- only the TEXT of the paper ---\\par")
+}
+if(show.text==FALSE){
+   input<-sub("^%.*","%",input)
+   an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
+   en<-grep("\\\\end(.*)\\{document\\}",input)[1]
+   text.index<-which(line.typ=="TEXT")
+   text.index<-text.index[an<text.index&text.index<en]
+   input[c(text.index, verb.index)] <-"."
+   if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
+   input[an]<-paste(input[an],"${}^*$ --- only the CODE of the paper ---\\par")
+}
+
+@
+In den Code-Zeilen wollen wir die Umlaute wieder zurücksetzen.
+Dieses wollen wir nur machen, wenn keine Modulzeilen gefunden werden.
+<<entferne ggf. Umlaut-TeX-Makros aus Code-Zeilen>>=
+if(replace.umlaute && 0<length(ind<-grep(".newline.verb",input))){
+   ind2<-grep("langle(.*)rangle",input[ind]); if(0<length(ind2)) ind<-ind[-ind2]
+   if(0<length(ind)){
+    inp<-input[ind];  
+    if(!UTF){
+    # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+      # \"a -> ae, ... oe, ue, Ae, Oe, Ue, ß
+      u<-uml.latin1<-unlist(strsplit(eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"')),""))
+      inp<-gsub('\\\\"a',u[1],inp);inp<-gsub('\\\\"o',u[2],inp);inp<-gsub('\\\\"u',u[3],inp)
+      inp<-gsub('\\\\"A',u[4],inp);inp<-gsub('\\\\"O',u[5],inp);inp<-gsub('\\\\"U',u[6],inp) ##{
+      inp<-gsub(".\\\\ss}",u[7],inp)
+    }else{
+      # pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+      uml.utf.8 <-eval(parse(text='"\\283\\244\\283\\266\\283\\274\\283\\204\\283\\226\\283\\234\\283\\237"'))
+      u<-substring(uml.utf.8,1:7,1:7)
+      inp<-gsub('\\\\"a',u[1],inp);inp<-gsub('\\\\"o',u[2],inp)
+      inp<-gsub('\\\\"u',u[3],inp);inp<-gsub('\\\\"A',u[4],inp)
+      inp<-gsub('\\\\"O',u[5],inp);inp<-gsub('\\\\"U',u[6],inp) ##{
+      inp<-gsub(".\\\\ss}",u[7],inp)
+    }
+    input[ind]<-inp
+   }
+}
+if(<<DEBUG-Flag gesetzt>>){
+  cat("german Umlaute in code lines inserted\n")
+}
+
+
 @
 Zum Schluss müssen wir die modifizierte Variable [[input]] wegschreiben.
 <<schreibe Ergebnis in Datei [[weaveR]]>>=
@@ -606,10 +791,11 @@ a<-rep(0,length.input)
 a[text.start.index]<- -1; a[code.start.index]<-2
 a<-cbind(c(text.start.index,code.start.index),
   c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
-a<-a[order(a[,1]),,drop=F]
-b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=F]
+a<-a[order(a[,1]),,drop=FALSE]
+b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
 a<-rep(0,length.input); a[b[,1]]<-b[,2]
-a<-cumsum(a); a[code.start.index]<-0; a[empty.index]<-0
+a<-cumsum(a); a[code.start.index]<-0 
+## a[empty.index]<-0 ?? this was not a good idea 070709
 code.index<-which(a>0)
 code.index<-code.index[is.na(match(code.index,use.index))]
 
@@ -623,6 +809,16 @@ line.typ[use.index]<-"USE"
 line.typ[code.start.index]<-"HEADER"
 line.typ[code.index]<-"CODE"
 
+is.code.line<-text.start.indicator<-rep(0,length.input)
+text.start.indicator[1]<-1; text.start.indicator[text.start.index]<-1
+text.start.indicator<-cumsum(text.start.indicator)
+is.code.line[code.start.index]<-0-text.start.indicator[code.start.index]
+is.code.line<-cummin(is.code.line)
+is.code.line<-(text.start.indicator+is.code.line) < 1
+is.code.line[code.start.index]<-FALSE
+## TSI<<-text.start.index; CSI<<-code.start.index; UI<<-use.index
+
+
 @
 <<erstelle Output [[weaveR]]>>=
 <<erledige Text-Chunk-Starts [[weaveR]]>>
@@ -631,13 +827,21 @@ line.typ[code.index]<-"CODE"
 <<schreibe Code-Verwendungszeilen [[weaveR]]>>
 <<schreibe Code-Zeilen [[weaveR]]>>
 <<setze Code in Text-, Header- und Verwendungszeilen [[weaveR]]>>
-
+ 
 
 @
-Es müssen nur die Klammeraffen entfernt werden. Einfacher ist es
+Es müssen nur die Klammeraffen entfernt werden. Einfacher ist es,
 den entsprechenden Zeilen etwas Leeres zuzuweisen.
+Vor [[textchunkcommands]] wurde noch eine Paragraphenerzeugung
+vorangestellt, damit bei Schriftwechseln der Zeilenabstand stimmt.
 <<erledige Text-Chunk-Starts [[weaveR]]>>=
-input[text.start.index]<-""
+## input[text.start.index]<-""
+input[text.start.index]<-paste(
+                      "\\ifodd\\value{IsInCodeChunk}",
+                      "\\setcounter{IsInCodeChunk}{0}",
+                      "\\vspace{-\\parskip}\\par\\hspace*{-\\parindent}",
+                      "\\textchunkcommands\\fi",
+                      sep="")
 
 @
 <<extrahiere Header-, Code- und Verwendungszeilen [[weaveR]]>>=
@@ -646,14 +850,15 @@ use.lines<-input[use.index]
 code.lines<-input[code.index]
 
 @
+Vorschub und Einzug wird nur noch per Makro
+[[\makemarginno]] umgesetzt.
 <<schreibe Header-Zeilen [[weaveR]]>>=
 no<-1:length(code.start.index)
-def.ref.no<-match(gsub("\\ ","",code.start.lines), gsub("\\ ","",code.start.lines))
-code.start.lines<-paste(
-      # "\\rule{0mm}{0mm}\\\\\\hspace*{-3em}", "\\makebox[0mm]{",no,"}\\hspace*{3em}", # old: margin.no by number
-      "\\makemarginno ", # new: margin.no by counter
+def.ref.no<-match(gsub("\\ ","",code.start.lines), 
+                             gsub("\\ ","",code.start.lines))
+code.start.lines<-paste("\\makemarginno ", 
       "$\\langle${\\it ",code.start.lines,"}\\ $",def.ref.no,
-      "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$\\newline",sep="")
+      "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$",sep="")
 input[code.start.index]<-code.start.lines
 
 @
@@ -685,10 +890,28 @@ aussehen:
  Chunk Nummer \chunkref{chunkA} zeigt die Erstellung einer Graphik.
 \end{verbatim}
 @
+Code-Chunk-Verwendungszeilen.
+Zuerst werden die Leerzeichen vor den Verwendungszeilen
+auf [[leerzeichen.vor.use]] ergänzt um ein zusätzliches
+Leerzeichen abgelegt und ohne diese auf [[use.lines]]
+abgelegt. Jede Verwendungszeile wird in einem 
+Schleifendurchgang der for-Schleife untersucht:
+Dabei werden die Chunk-Namen solange aufgebrochen,
+bis alle in einzelnen Elementen von [[uli]] stehen.
+Die Stellen von [[uli]] mit Chunk-Namen werden auf 
+[[cand]] gemerkt. Dann können die Namen gesucht
+und um die Nummer ergänzt werden.
+Die mit Nummern und TeX-Klammern versehenen
+[[uli]]-Einträge werden zusammengepackt und auf
+[[use.lines]] zurückgespielt.
+Zuvor müssen die Nicht-Chunk-Namen jedoch noch
+wie Code behandelt werden!
 <<schreibe Code-Verwendungszeilen [[weaveR]]>>=
-use.lines<-input[use.index]
-leerzeichen.vor.use<-paste("\\verb|",sub("[^ ](.*)$","",use.lines),"|",sep="")
-use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-8)
+use.lines<-input[use.index]; is.use.lines.within.code<-is.code.line[use.index]
+leerzeichen.vor.use<-paste("\\verb|",
+                                           sub("[^ ](.*)$"," ",use.lines),
+                                           "|",sep="") ## plus 1 Leerzeichen 
+use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-7) ## 8
 for(i in seq(use.lines)){
   uli<-use.lines[i]
   repeat{
@@ -699,16 +922,21 @@ for(i in seq(use.lines)){
   cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
   ref.no<-match(uli[cand],code.chunk.names)
   uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
+#  formating code within use references, in code chunk a little different
   if(length(uli)!=length(cand)){
-    if(!UTF){ 
-      uli[-cand]<-paste("\\verb\267",uli[-cand],"\267",sep="") #050612
-    }else{
-      uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+    if(is.use.lines.within.code[i]){
+      if(!UTF){ 
+        uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
+      }else{
+        uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+      }
     }
   }
   use.lines[i]<-paste(uli,collapse="")
 }
-input[use.index]<-paste(leerzeichen.vor.use,use.lines,"\\newline")
+input[use.index]<-ifelse(is.use.lines.within.code,
+              paste("\\rule{0mm}{0mm}\\newline",leerzeichen.vor.use,use.lines,"%",sep=""),
+              paste(leerzeichen.vor.use,use.lines,sep=""))
 
 @
 <<old: schreibe Code-Verwendungszeilen [[weaveR]]>>=
@@ -734,9 +962,10 @@ könnte man den [[catcode]] so verändern:
 [[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
 <<schreibe Code-Zeilen [[weaveR]]>>=
 if(!UTF){
-  input[code.index]<-paste("\\verb\267",code.lines,"\267\\newline")
+  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb",char267," ",code.lines," ",char267,"%",sep="")
 }else{
-  input[code.index]<-paste("\\verb\140",code.lines,"\140\\newline") #060516
+  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb\140",code.lines,
+     "\140%") #060516 070706
 }
 
 @
@@ -784,10 +1013,11 @@ lines.to.check<-unlist(lapply(lines.to.check,function(x){
       cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
       cand<-gsub("\\[\\[","DoEckOpenKl-esc",cand)
       cand<-gsub("\\]\\]","DoEckCloseKl-esc",cand)
-      cand<-gsub("\\\\","\\\\char'134 ",cand)
+      cand<-gsub("\\\\","BaCkSlAsH",cand)
       cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
-      cand<-gsub("\\~","\\\\char'176 ",cand)
-      cand<-gsub("\\^","\\\\char'136 ",cand)
+      cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
+      cand<-gsub("\\~","{\\\\char'176}",cand)
+      cand<-gsub("\\^","{\\\\char'136}",cand)
       cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
       cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
       x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
@@ -811,9 +1041,9 @@ ind.cand<-grep("\\[\\[(.*)\\]\\]",lines.to.check)
 if(0<length(ind.cand)) {
   # zerlege Zeile in token der Form [[,  ]] und sonstige
   zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
-     zs<-strsplit(rbind("[[",paste(x[],"\333",sep=""))[-1],"\\]\\]")
+     zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
      zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
-     gsub("\333","",zs)
+     gsub("aAzsplitAa","",zs)
   })
   # suche von vorn beginnend zusammenpassende [[-]]-Paare
   z<-unlist(lapply(zsplit,function(x){
@@ -823,12 +1053,15 @@ if(0<length(ind.cand)) {
       br.close<-which(cand.sum==0)
       if(is.na(br.close<-br.close[br.open<br.close][1])) break
       if((br.open+1)<=(br.close-1)){
-        h<-x[(br.open+1):(br.close-1)]; h<-gsub("\\\\","\\\\char'134 ",h)
-        h<-gsub("([#$&_%{}])","\\\\\\1",h); h<-gsub("\\~","\\\\char'176 ",h) #2.1.0
+        h<-x[(br.open+1):(br.close-1)]; 
+        h<-gsub("\\\\","BaCkSlAsH",h);
+        h<-gsub("([#$&_%{}])","\\\\\\1",h)
+        h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
+        h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
         h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
         h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
         h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
-      x[(br.open+1):(br.close-1)]<-gsub("\\^","\\\\char'136 ",h)
+      x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
       }
       x[br.open]<-"{\\tt "; x[br.close]<-"}"
       x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
@@ -873,13 +1106,17 @@ weaveR("out.rev"); system("cat q|latex out.tex")
   of weaving. As a result a LaTeX file is generated.
 }
 \usage{
-weaveR(in.file,out.file)
+weaveR(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if missing the extension of the
   input file is turned to \code{.tex} }
+  \item{show.code}{ if FALSE the code will not be copied to the output file }
+  \item{show.text}{ if FALSE the text will not be copied to the output file }
+  \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
+   TeX sequences}
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
@@ -934,6 +1171,959 @@ weaveR<-function(in.file,out.file){
 \keyword{file}
 \keyword{documentation}
 \keyword{programming}
+
+@
+@
+\section{TEIL III --- WEAVEtoHTML}
+
+\subsection{[[weaveRhtml]] --- eine WEAVE-Funktion
+zur Erzeugung einfacher [[html]]-Pendants}
+Aufbauend auf der [[weaveR]]-Funktion wird in diesem Teil eine 
+einfache Funktionen zur Erzeugung einfacher [[html]]-Dateien
+beschrieben. Die Nebenbedingungen der Realisation 
+entsprechen denen von [[weaveR]]. Auch die grobe Struktur
+und besonders der Anfang der Lösung wurde im wesentlichen
+kopiert. Die Funktion besitzt folgenden Aufbau:
+<<define-weaveRhtml>>=
+weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
+  # german documentation of the code:
+  # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830 / 071016
+  <<initialisiere [[weaveRhtml]]>>
+  <<lese Datei ein [[weaveRhtml]]>>
+  <<entferne Kommentarzeichen [[weaveRhtml]]>>
+  <<substituiere mit @ versehene Zeichengruppen [[weaveRhtml]]>>
+  <<stelle Typ der Zeilen fest [[weaveRhtml]]>>
+  <<erstelle Output [[weaveRhtml]]>>
+  <<ersetze Umlaute [[weaveRhtml]]>>
+  <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>
+  <<formatiere Überschriften [[weaveRhtml]]>>
+  <<definiere einfachen head [[weaveRhtml]]>>
+  <<setze Schriften um [[weaveRhtml]]>>
+  <<entferne unbrauchbare Makros [[weaveRhtml]]>>
+  <<baue ggf.\ Rweb-Felder ein>>
+  <<integriere Newline hinter Zeilenumbrüchen>>
+  <<schreibe Ergebnis in Datei [[weaveRhtml]]>>
+}
+
+
+
+@
+<<DEBUG-Flag gesetzt>>=
+exists("DEBUG")
+@
+Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+<<initialisiere [[weaveRhtml]]>>=
+require(tcltk)
+pat.use.chunk<-paste("<","<(.*)>",">",sep="")
+pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
+pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
+pat.verbatim.end<-"\\\\end\\{verbatim\\}"
+pat.leerzeile<-"^(\\ )*$"
+.Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
+UTF<-0<length(grep("utf",UTF))
+if(<<DEBUG-Flag gesetzt>>){ 
+   if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n") 
+}
+@
+<<old>>=
+lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
+UTF<-(1==length(grep("UTF",lcctype))) 
+is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
+UTF<- UTF | is.utf
+if(<<DEBUG-Flag gesetzt>>){
+  if(UTF) cat("character set: UTF\n") else cat("character set: ascii\n")
+}
+
+@
+Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
+<<lese Datei ein [[weaveRhtml]]>>=
+if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
+if(!file.exists(in.file)){
+  cat(paste("ERROR:",in.file,"not found!!??\n"))
+  return("Error in weaveRhtml: file not found")
+}
+input<-readLines(in.file) 
+try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  # LATIN1-Dok 
+	  input<-iconv(input,"LATIN1","")
+})
+input<-gsub("\t","      ",input)
+input<-c(input,"@")
+length.input<-length(input)
+
+@
+<<substituiere mit @ versehene Zeichengruppen [[weaveRhtml]]>>=
+input<-gsub("@@>>","DoSpCloseKl-ESC",gsub("@@<<","DoSpOpenKl-ESC",input))
+input<-gsub("@\\]\\]","DoEckCloseKl-ESC",gsub("@\\[\\[","DoEckOpenKl-ESC",input))
+
+@
+Zuerst werden TeX-Kommentar-Zeichen vor Latex-Formel-Bildern entfernt, 
+dann werden html-Kommentar-Zeichen vor der LaTeX-Formel vom 
+unnötigen \%-Zeichen befreit und zum Schluss werden alle LaTeX-Kommentare
+entfernt.
+<<entferne Kommentarzeichen [[weaveRhtml]]>>=
+input<-sub('^% (<p><img src="t)',"\\1",input)
+input<-sub('^%(<!--latex-)',"\\1",input)
+h<-grep("^[ ]*%",input)
+if(0<length(h)) input<-input[-h]
+
+@
+Umlaute sind ein Dauerbrenner.
+Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
+in der ersten Zeile ein \emph{ß}.
+[[.Tcl("set XYZ [encoding system]"); tclvalue("XYZ")]], z.B.: iso8859-15, utf-8
+[[localeToCharset()]] liefert: "ISO8859-1" bzw.: [[ [1] "UTF-8" "ISO8859-1"]]
+<<ersetze Umlaute [[weaveRhtml]]>>=
+if(replace.umlaute){
+ if(!UTF){
+  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
+    uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
+    input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
+    input<-gsub(substring(uml.latin1,7,7),"&szlig;",input) # replace sz
+    uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
+    input<-gsub(uml.pattern,"&\\1uml;",input)  # replace Umlaute ae->&aeuml; 
+    # replace Umlaute &aeuml;->&auml;  
+    input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)  
+ }else{
+    input<-gsub("\283\237","&szlig;",input)
+    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                              "&\\1uml;",input)
+    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+ }
+}
+if(<<DEBUG-Flag gesetzt>>) cat("german Umlaute replaced\n")
+
+@
+<<old Umlaut-Replace>>=
+if(replace.umlaute){
+ if(!UTF){
+  # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+  input<-gsub("\283","",input)
+  input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
+  # Latin1 -> TeX-Umlaute
+  input<-gsub("\337","&szlig;",input) # SZ
+  input<-gsub("(\344|\366|\374|\304|\326|\334)","&\\1uml;",input)
+  input<-chartr("\344\366\374\304\326\334","aouAOU",input)
+ }else{
+  input<-gsub("\283\237","&szlig;",input)
+  input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+                            "&\\1uml;",input)
+  input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+                              "aouAOU", input)
+ }
+}
+if(<<DEBUG-Flag gesetzt>>) cat("german Umlaute replaced\n")
+
+@
+<<alternative zu [[!UTF]]>>=
+  # input<-iconv(input,"utf-8","")
+  # input<-gsub("ß","&szlig;",input)
+  # input<-gsub("(ä|ö|ü|Ä|Ö|Ü)","&\\1uml;",input)
+  # input<-chartr("äöüÄÖÜ","aouAOU",input)
+
+@
+Vor dem Wegschreiben müssen die besonderen Zeichengruppen
+zurückübersetzt werden.
+<<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>=
+#input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
+input<-gsub("DoSpCloseKl-ESC","&gt;&gt;",gsub("DoSpOpenKl-ESC","&lt;&lt;",input))
+input<-gsub("DoEckCloseKl-ESC","]]",gsub("DoEckOpenKl-ESC","[[",input))
+
+@
+Die Funktion [[get.argument]] holt die Argumente aller Vorkommnisse eines \LaTeX-Kommandos,
+dieses wird verwendet für Graphik-Einträge mittels [[includegraphics]].
+[[get.head.argument]] ermittelt für den Dokumentenkopf wichtige Elemente, dieses
+wird zur Ermittlung von Autor, Titel und Datum verwendet.
+[[transform.command]] ersetzt im Text [[txt]] \LaTeX-Kommandos mit einem Argument, zur Zeit nicht
+benutzt.
+[[transform.command.line]] transformiert \LaTeX-Kommandos mit einem Argument, die in einer Zeile 
+zu finden sind, dieses wird gebraucht für kurzzeitige Schriftenwechsel.
+[[transform.structure.command]] entstanden aus [[transform.command]].
+<<initialisiere [[weaveRhtml]]>>=
+get.argument<-function(command,txt,default="",kla="{",kle="}",
+    dist=TRUE,not.found.info="no parameter"){
+  ## print("get.argument")
+  command<-paste("\\\\",command,sep="")
+  if(0==length(grep(command,txt))) return(not.found.info)
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
+  arg<-lapply(txt,function(x){ 
+       n<-nchar(x); if(n<3) return(x)
+       x<-substring(x,1:n,1:n)
+       h<-which(x==kla)[1]; if(is.na(h)) h<-1
+       if(dist)x<-x[h:length(x)]
+       k<-which(cumsum((x==kla)-(x==kle))==0)[1]
+       ifelse(k<=2,default,paste(x[2:(k-1)],collapse=""))
+  })
+  arg
+}
+get.head.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
+## print("get.head.argument")
+  command<-paste("\\\\",command,sep="")
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
+  arg<-lapply(txt,function(x){ 
+       n<-nchar(x); x<-substring(x,1:n,1:n)
+       if(dist)x<-x[which(x==kla)[1]:length(x)]
+       k<-which(cumsum((x==kla)-(x==kle))==0)[1]
+       paste(x[2:(k-1)],collapse="")
+  })
+  unlist(arg)
+}
+transform.command<-function(command,txt,atag="<i>",etag="</i>",
+                       kla="{",kle="}"){
+## print("transform.command")
+  command<-paste("\\\\",command,sep="")
+  ##  if(0==length(grep(command,txt))){print("hallo"); return(txt)}
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))
+  tx<-unlist(lapply(txt[-1],function(x){ 
+       n<-nchar(x); if(n<4) return(x)
+       x<-substring(x,1:n,1:n)
+       an<-which(x==kla)[1]
+       en<-which(cumsum((x==kla)-(x==kle))==0)[1]
+      if(!is.na(an)&&!is.na(en)) 
+       paste(atag,paste(x[(an+1):(en-1)],collapse=""),etag,
+            paste(x[-(1:en)],collapse="")) else x
+  }))
+  unlist(strsplit(c(txt[1],tx),"\n"))
+}
+transform.command.line<-function(command,txt,atag="<i>",etag="</i>",
+                       kla="{",kle="}"){
+  command<-paste("\\\\",command,sep="")
+  if(0==length(ind<-grep(command,txt))){return(txt)}
+  txt.lines<-txt[ind]
+  txt.lines<-strsplit(txt.lines,command)
+  txt.lines<-lapply(txt.lines,function(xxx){ 
+    for(i in 2:length(xxx)){
+      m<-nchar(xxx[i])
+      if(is.na(m)) break
+      x.ch<-substring(xxx[i],1:m,1:m); x.info<-rep(0,m)
+      x.info<-cumsum((x.ch=="{") - (x.ch=="}"))
+      h<-which(x.info==0)[1]
+      if(!is.na(h)) {x.ch[1]<-atag; x.ch[h]<- etag }
+      xxx[i]<-paste(x.ch,collapse="")
+    }
+    paste(xxx,collapse="")
+  })
+  txt[ind]<-unlist(txt.lines)
+  txt
+}
+transform.structure.command<-function(command,txt,atag="<i>",etag="</i>",
+                       kla="{",kle="}"){
+## print("transform.structure.command")
+  command<-paste("\\\\",command,sep="")
+  if(0==length(grep(command,txt))){return(txt)}
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))
+  tx<-unlist(lapply(txt[-1],function(x){ 
+       n<-nchar(x); if(n<3) return(x)
+       x<-substring(x,1:n,1:n); an<-which(x==kla)[1]
+       en<-which(cumsum((x==kla)-(x==kle))==0)[1]
+      if(is.na(an)||is.na(en)||(an+1)>(en-1)) x<-paste(x,collapse="") else
+         paste(paste(if(an==1)""else x[1:(an-1)],collapse=""),
+                        atag,paste(x[(an+1):(en-1)],collapse=""),etag, 
+                        paste(if(en==n)""else x[-(1:en)],collapse=""),sep="")
+  }))
+  unlist(strsplit(c(txt[1],tx),"\n"))
+}
+
+@
+<<some old function>>=
+get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
+## print("get.argument")
+  command<-paste("\\\\",command,sep="")
+  if(0==length(grep(command,txt))) return(default)
+  txt<-unlist(strsplit(paste(txt,collapse="\n"),command))[-1]
+  arg<-lapply(txt,function(x){ 
+       n<-nchar(x); if(n<3) return(x)
+       x<-substring(x,1:n,1:n)
+       h<-which(x==kla)[1]; if(is.na(h)) h<-1
+       if(dist)x<-x[h:length(x)]
+       k<-which(cumsum((x==kla)-(x==kle))==0)[1]
+       paste(x[2:(k-1)],collapse="")
+  })
+  arg
+}
+
+
+@
+<<formatiere Überschriften [[weaveRhtml]]>>=
+# find sections, subsections, subsubsections, paragraphs
+atag<-"<h2>"; etag<-"</h2>"; command<-"section"
+<<formatiere Strukturkommandos [[weaveRhtml]]>>
+sec.links<-command.links; sec.no<-com.lines
+atag<-"<h3>"; etag<-"</h3>"; command<-"subsection"
+<<formatiere Strukturkommandos [[weaveRhtml]]>>
+subsec.links<-command.links; subsec.no<-com.lines
+atag<-"<h4>"; etag<-"</h4>"; command<-"subsubsection"
+<<formatiere Strukturkommandos [[weaveRhtml]]>>
+subsubsec.links<-command.links; subsubsec.no<-com.lines
+atag<-"<br><b>"; etag<-"</b>"; command<-"paragraph"
+<<formatiere Strukturkommandos [[weaveRhtml]]>>
+parsec.links<-command.links; parsec.no<-com.lines
+sec.typ<-rbind(cbind(c(0,sec.no),1),cbind(c(0,subsec.no),2),
+                        cbind(c(0,subsubsec.no),3),cbind(c(0,parsec.no),4))
+sec.typ<-sec.typ[sec.typ[,1]!=0,,drop=FALSE]; contents<-" "
+if(length(sec.typ>2)){
+  ind<-order(sec.typ[,1]); sec.typ<-sec.typ[ind,,drop=FALSE]
+  links<-c(sec.links,subsec.links,subsubsec.links,parsec.links)[ind]
+  # append a column with *section numbers
+  sec.typ<-cbind(sec.typ,"0")
+  sec.counter<-subsec.counter<-subsubsec.counter<-par.counter<-0
+  for(i in 1:nrow(sec.typ)){
+   if(sec.typ[i,2]=="1"){
+      sec.counter<-sec.counter+1
+      subsec.counter<-subsubsec.counter<-par.counter<-0
+      sec.typ[i,3]<-sec.counter
+   }
+   if(sec.typ[i,2]=="2"){
+      subsec.counter<-subsec.counter+1
+      subsubsec.counter<-par.counter<-0
+      sec.typ[i,3]<-paste(sec.counter,".",subsec.counter,sep="")
+   }
+   if(sec.typ[i,2]=="3"){
+      subsubsec.counter<-subsubsec.counter+1
+      par.counter<-0
+      sec.typ[i,3]<-paste(sec.counter,".",subsec.counter,".",subsubsec.counter,sep="")
+   }   
+   if(sec.typ[i,2]=="4"){
+      par.counter<-par.counter+1
+      sec.typ[i,3]<-paste(sec.counter,".",subsec.counter,".",subsubsec.counter,".",
+                                    par.counter,sep="")
+   }   
+  }
+  # construct table of contents with links
+  contents<-paste(sec.typ[,3],links)
+}
+
+@ 
+Dieser Chunk beschreibt die Umsetzung von Gliederungsbefehlen wie 
+section, subsection, ...
+<<formatiere Strukturkommandos [[weaveRhtml]]>>=
+command.n<-nchar(command)+2; command.links<-NULL
+kla<-"{"; kle<-"}"
+## print("STRUKTUR")
+if(0<length(com.lines<-grep(paste("^\\\\",command,sep=""),input))){
+  sec<-NULL
+  for(i in seq(com.lines)){
+    txt<-input[com.lines[i]+0:2]
+    txt<-paste(txt,collapse="\n"); n<-nchar(txt)   
+    x<-substring(txt,command.n:n,command.n:n)
+    en<-which(cumsum((x==kla)-(x==kle))==0)[1]
+    x[1]<-paste("<a name=\"",command,i,"\">",atag,sep="")
+    x[en]<-etag;  txt<-paste(x,collapse="")
+    sec<-c(sec,paste(x[2:(en-1)],collapse=""))
+    input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
+  }
+  command.links<-paste("<a href=\"#",command,seq(com.lines),
+                                      "\">",sec,"</a>\n",sep="") 
+}
+
+@
+<<definiere einfachen head [[weaveRhtml]]>>=
+## if(  DEBUG-Flag gesetzt  ) print("head")
+head<-grep("^\\\\title|^\\\\author|^\\\\date",input)
+if(0<length(head)){
+  h<-min(max(head)+5,length(input))
+  head<-input[1:h]
+  titel<-get.head.argument("title",head)[1]
+  titel<-sub("Report: \\\\rule\\{(.*)\\}","Report: ................",titel)
+  autor<-get.head.argument("author",head)[1]
+  autor<-sub("File: \\\\jobname.rev",paste("File:",sub(".*/","",in.file)),autor)
+  datum<-get.head.argument("date",head)[1]
+  if(is.null(datum)) datum<-date()
+  ## print(datum)
+} else {
+  head<-""; titel<-paste("File:",in.file); autor<-"processed by weaveRhtml"; datum<-date()
+}
+if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
+  input<-input[-(1:h[1])]
+  titel.titel<-gsub("\n","--",paste(titel,collapse="--"))
+  titel.titel<-gsub("<br>","--",titel.titel)
+  titel.titel<-gsub("\\\\","--",titel.titel)
+  input[1]<-paste(collapse="\n",
+  "<!--  generated by weaveRhtml --><html><head>",
+  "<meta content=\"text/html; charset=ISO-8859-1\">",
+  "<title>",titel.titel,"</title></head>",
+  "<body bgcolor=\"#FFFFFF\">",
+  "<h1>",if(!is.null(titel))titel,"</h1>",
+  "<h2>",if(!is.null(autor))autor,"</h2>",
+  "<h3>",if(!is.null(datum))datum,"</h3>",
+  "<h4>",paste(contents,collapse="<br>"),"</h4>"
+)
+
+
+@
+
+@
+Achtung: Falls diese Dinge im Code vorkommen, wird es einen Fehler geben.
+<<entferne unbrauchbare Makros [[weaveRhtml]]>>=
+input<-gsub("\\\\newpage","",input)
+input<-gsub("\\\\tableofcontents","",input)
+input<-gsub("\\\\raggedright","",input)
+input<-gsub("\\\\\\\\","<br>",input)
+h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",input)
+if(0<length(h)) input<-input[-h]
+
+@
+Die Rweb-Funktionalität ist entstanden in Anlehnung an Seiten 
+von Charlie Geyer [[http://www.stat.umn.edu/~charlie/]], wie:
+[[http://www.stat.umn.edu/geyer/3011/examp/reg.html]]
+<<baue ggf.\ Rweb-Felder ein>>=
+  txt<-input
+  ind.Rweb<-grep("^<a name=\"codechunk.*<i>&lt;Rweb",txt) ; txt[ind.Rweb]
+  ind.p   <-grep(paste("^<","p>",sep=""),txt) ; txt[ind.p]
+  if(length(ind.p)>0){
+    ind.Rweb.codes<-lapply(ind.Rweb,function(x) (x+1):(ind.p[ind.p>x][1]-1))
+    ## if( DEBUG-Flag gesetzt ) print(ind.Rweb.codes)
+    Rwebbegin<-paste(c(  # Rweb start 
+      '<hr SIZE=3><form onSubmit =" return checkData(this)"',
+      '  action="http://rweb.stat.umn.edu/cgi-bin/Rweb/Rweb.cgi" ',
+      '  enctype="multipart/form-data" method="post" target="_blank"><p>',
+      '<label for="filedata" size=20>data frame (load LOCAL file): </label>',
+      '<input type="file" name="FileData" id="filedata" size=30 >',
+      '<br><br>',
+      '<label for="urldata" size=20>data frame (via www -> URL): </label>',
+      '<input type="TEXT" name="URLData" size=40 id="urldata" YyYyY>',
+      '<br><br>',
+      '<label for="Rcode">R-Code:</label>',
+      '<textarea name="Rcode" rows="XxXxX" cols="80" id="Rcode">\n'
+      ),collapse=" ")
+    Rwebend<-  paste(c( # Rweb end
+      '</textarea><p>',
+      '<input type="submit" value="compute via Rweb">',
+      '<input type="reset" value="reset">',
+      '</form><hr SIZE=3>',
+      ' '),collapse=" ")
+    for(i in seq(ind.Rweb.codes)){
+      h<-sub("<code>","",txt[ind.Rweb.codes[[i]]])
+      h<-sub("<br>","",h)
+      h<-sub("</code>","",h)
+      h<-gsub("[&]nbsp[;]"," ",h)
+      data.http<-""    # ; data.loc<-""
+      ind<-length(grep("read.table",h))
+      if(0<length(ind)) {
+        h[ind]<-paste("#",h[ind],"# choose data by input field!!")
+        ind<-ind[1]
+        if(0<length(grep("http:",h[ind]))) {
+           data.http<-sub(".*(http)","\"\\1",h[ind])
+           data.http<-paste("value=",sub(".*(\".*\").*$","\\1",data.http),sep="")
+        }
+      }
+      rb<-sub("YyYyY",data.http,Rwebbegin)
+      h[1]<-paste(sub("XxXxX",as.character(length(h)),rb),h[1],sep="")
+      h[length(h)]<-paste(h[length(h)],Rwebend)
+      txt[ind.Rweb.codes[[i]]]<-h
+    }
+    input<-txt
+  }
+
+
+@
+<<zentriere und quote [[weaveRhtml]]>>=
+input<-sub("\\\\begin\\{center}","<center>",input)
+input<-sub("\\\\end\\{center}","</center>",input)
+input<-sub("\\\\begin\\{quote}","<ul>",input)
+input<-sub("\\\\end\\{quote}","</ul>",input)
+input<-sub("\\\\begin\\{itemize}","<ul>",input)
+input<-sub("\\\\end\\{itemize}","</ul>",input)
+input<-sub("\\\\begin\\{enumerate}","<ul>",input)
+input<-sub("\\\\end\\{enumerate}","</ul>",input)
+input<-sub("\\\\item\\[([^]]*)]","<br>\\1&nbsp;",input)
+input<-sub("\\\\item","</li><li>",input)
+
+@
+<<setze Schriften um [[weaveRhtml]]>>=
+if(0<length(h<-grep("\\\\myemph",input))){
+  input<-transform.command.line("myemph",input,"<i>","</i>")
+}
+if(0<length(h<-grep("\\\\texttt",input))){
+  input<-transform.command.line("texttt",input,"<code>","</code>")
+}
+if(0<length(h<-grep("\\\\emph",input))){
+  input<-transform.structure.command("emph",input,
+                     atag="<i>",etag="</i>",kla="{",kle="}")
+}
+if(0<length(h<-grep("\\\\textbf",input))){
+  input<-transform.structure.command("textbf",input,
+                     atag="<b>",etag="</b>",kla="{",kle="}")
+}
+
+@
+Nur für die Lesbarkeit der Html-Dateien werden noch ein paar Zeilenumbrüche
+eingefügt.
+<<integriere Newline hinter Zeilenumbrüchen>>=
+input<-gsub("<br>","<br>\n",input)
+
+@
+Zum Schluss müssen wir die modifizierte Variable [[input]] wegschreiben.
+<<schreibe Ergebnis in Datei [[weaveRhtml]]>>=
+if(missing(out.file)||in.file==out.file){
+  out.file<-sub("\\.([A-Za-z])*$","",in.file)
+}
+if(0==length(grep("\\.html$",out.file)))
+  out.file<-paste(out.file,".html",sep="")
+## out.file<-"/home/wiwi/pwolf/tmp/out.html"
+get("cat","package:base")(input,sep="\n",file=out.file)
+cat("weaveRhtml process finished\n")
+
+@
+Zu jeder Zeile wird ihr Typ festgestellt und auf dem Vektor [[line.typ]]
+eine Kennung vermerkt. Außerdem merken wir zu jedem Typ auf einer
+Variablen alle Zeilennummern des Typs. Wir unterscheiden:
+
+\begin{tabular}{lll}
+Typ  & Kennung & Indexvariable \\
+Leerzeile & [[EMPTY]] & [[empty.index]]\\
+Text-Chunk-Start &[[TEXT-START]] & [[text.start.index]]\\
+Code-Chunk-Start &[[HEADER]] & [[code.start.index]]\\
+Code-Chunk-Verwendungen& [[USE]] & [[use.index]]\\
+normale Code-Zeilen & [[CODE]] &[[code.index]]\\
+normale Textzeilen & [[TEXT]] &\\
+Verbatim-Zeilen & [[VERBATIM]] & [[verb.index]]
+\end{tabular}
+
+Leerzeilen, Text- und Code-Chunk-Anfänge sind leicht zu finden.
+Code-Verwendungen sind alle diejenigen Zeilen, die [[<<]]
+und [[>>]] enthalten, jedoch keine Headerzeilen sind.
+Am schwierigsten sind normale Code-Zeilen zu identifizieren.
+Sie werden aus den Code-Chunk-Anfängen und den Text-Chunkanfängen
+ermittelt, wobei die [[USE]]-Zeilen wieder ausgeschlossen werden.
+Alle übrigen Zeilen werden als Textzeilen eingestuft.
+<<stelle Typ der Zeilen fest [[weaveRhtml]]>>=
+<<checke Leer-, Textzeilen [[weaveRhtml]]>>
+<<behandle verbatim-Zeilen [[weaveRhtml]]>>
+<<checke Header- und Use-Zeilen [[weaveRhtml]]>>
+<<checke normale Code-Zeilen [[weaveRhtml]]>>
+<<belege Typ-Vektor [[weaveRhtml]]>>
+
+@
+<<checke Leer-, Textzeilen [[weaveRhtml]]>>=
+empty.index<-grep(pat.leerzeile,input)
+text.start.index<-which("@"==substring(input,1,1))
+
+@
+statt dem [[code]]- wird nun das [[pre]]-Tag probiert. 
+br hinter /pre?? und input[verb.index]<-paste(input[verb.index],"<br>") % 070703
+<<behandle verbatim-Zeilen [[weaveRhtml]]>>=
+a<-rep(0,length(input))
+an<-grep(pat.verbatim.begin,input)
+if(0<length(an)) {
+  a[an]<- 1
+  en<-grep(pat.verbatim.end,input); a[en]<- -1
+  input[a==1]<-"<pre><FONT COLOR=\"#0000FF\">"
+  input[a==-1]<-"</font></pre>"
+  a<-cumsum(a)
+}
+verb.index<-which(a>0)
+##input[verb.index]<-paste(input[verb.index],"<br>") # not used because of pre
+
+@
+<<checke Header- und Use-Zeilen [[weaveRhtml]]>>=
+code.start.index<-grep(pat.chunk.header,input)
+use.index<-grep(pat.use.chunk,input)
+use.index<-use.index[is.na(match(use.index,code.start.index))]
+
+@
+<<checke normale Code-Zeilen [[weaveRhtml]]>>=
+a<-rep(0,length.input)
+a[text.start.index]<- -1; a[code.start.index]<-2
+a<-cbind(c(text.start.index,code.start.index),
+  c(rep(-1,length(text.start.index)),rep(1,length(code.start.index))))
+a<-a[order(a[,1]),,drop=FALSE]
+b<-a[a[,2]!=c(-1,a[-length(a[,1]),2]),,drop=FALSE]
+a<-rep(0,length.input); a[b[,1]]<-b[,2]
+a<-cumsum(a); a[code.start.index]<-0; a[empty.index]<-0
+code.index<-which(a>0)
+code.index<-code.index[is.na(match(code.index,use.index))]
+
+@
+Auf [[is.code.line]] legen wir ab, ob eine Zeile zu einem
+Code-Chunk gehört.
+<<belege Typ-Vektor [[weaveRhtml]]>>=
+line.typ<-rep("TEXT" ,length.input)
+line.typ[empty.index]<-"EMPTY"
+line.typ[text.start.index]<-"TEXT-START"
+line.typ[verb.index]<-"VERBATIM"
+line.typ[use.index]<-"USE"
+line.typ[code.start.index]<-"HEADER"
+line.typ[code.index]<-"CODE"
+
+is.code.line<-text.start.indicator<-rep(0,length.input)
+text.start.indicator[1]<-1; text.start.indicator[text.start.index]<-1
+text.start.indicator<-cumsum(text.start.indicator)
+is.code.line[code.start.index]<-0-text.start.indicator[code.start.index]
+is.code.line<-cummin(is.code.line)
+is.code.line<-(text.start.indicator+is.code.line) < 1
+is.code.line[code.start.index]<-FALSE
+
+@
+<<erstelle Output [[weaveRhtml]]>>=
+<<zentriere und quote [[weaveRhtml]]>>
+<<erledige Text-Chunk-Starts [[weaveRhtml]]>>
+<<ersetze Befehl zur Bildeinbindung>>
+<<extrahiere Header-, Code- und Verwendungszeilen [[weaveRhtml]]>>
+<<schreibe Header-Zeilen [[weaveRhtml]]>>
+<<schreibe Code-Verwendungszeilen [[weaveRhtml]]>>
+<<schreibe Code-Zeilen [[weaveRhtml]]>>
+<<setze Code in Text-, Header- und Verwendungszeilen [[weaveRhtml]]>>
+
+
+@
+Es müssen nur die Klammeraffen entfernt werden. 
+Zur Kennzeichnung der Absätze erzeugen wir einen 
+neuen Paragraphen durch [[<p>]].
+<<erledige Text-Chunk-Starts [[weaveRhtml]]>>=
+input[text.start.index]<-"<p>"    # vorher: @
+lz<-grep("^[ ]*$",input)
+if(0<length(lz)) input[lz]<-"<br>"
+
+@
+Die Höhe 12cm entspricht auch einem 18 Zoll Terminal 
+[[height=420]]. Ist eine Bildhöhe von xcm erwünscht
+müssen wir rechnen: [[x*420/12=x*35]]. 
+Die Größenanpassung ist jedoch noch in Vorbereitung
+und zur Zeit auskommentiert.
+<<ersetze Befehl zur Bildeinbindung>>=
+plz.ind<-grep("\\\\includegraphics",input)
+if(0<length(plz.ind)){
+  plz<-input[plz.ind]
+  h<-unlist(get.argument("includegraphics",plz))
+  #hh<-unlist(get.argument("includegraphics",plz,
+  #                     default="height=xxcm",kla="[",kle="]"))
+  #l.unit<-match(sub("^.*[0-9]([a-z][a-z]).*$","\\1",hh),c("cm","mm","in"))
+  #l.unit<-ifelse(is.na(l.unit),1,l.unit)
+  #l.unit<-c(1,.1,2.54)[ifelse(is.na(l.unit),1,l.unit)]
+  #hh<-sub("^.*[=]([0-9.]+).*$","\\1",hh)
+  #hh<-floor(as.numeric(hh)*35*l.unit)
+  #hh<-ifelse(is.na(hh),"",paste(" height=",hh,sep=""))
+  #h<-paste("<img SRC=\"",sub(".ps$",".jpg",h),"\"",hh,">",sep="")
+  h<-paste("<img SRC=\"",sub(".ps$",".jpg",h),"\">",sep="")
+  input[plz.ind]<-h
+}
+
+@
+<<extrahiere Header-, Code- und Verwendungszeilen [[weaveRhtml]]>>=
+code.chunk.names<-code.start.lines<-sub(pat.chunk.header,"\\1",input[code.start.index])
+use.lines<-input[use.index]
+code.lines<-input[code.index]
+## print(input[code.start.index])
+
+@
+<<schreibe Header-Zeilen [[weaveRhtml]]>>=
+no<-1:length(code.start.index)
+def.ref.no<-match(gsub("\\ ","",code.start.lines), gsub("\\ ","",code.start.lines))
+code.start.lines<-paste(
+      "<a name=\"codechunk",no,"\"></a>",
+      "<a href=\"#codechunk",1+(no%%max(no)),"\">",
+      "<br>Chunk:",no," <i>&lt;",code.start.lines,def.ref.no,
+      "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a>",sep="") 
+input[code.start.index]<-code.start.lines
+
+@
+<<schreibe Code-Verwendungszeilen [[weaveRhtml]]>>=
+use.lines<-input[use.index]; is.use.lines.within.code<-is.code.line[use.index]
+leerzeichen.vor.use<-sub("[^ ](.*)$","",use.lines)
+use.lines<-substring(use.lines,nchar(leerzeichen.vor.use))
+h<-gsub("\\ ","&nbsp;",leerzeichen.vor.use)
+leerzeichen.vor.use<-ifelse(is.use.lines.within.code,h,leerzeichen.vor.use)
+for(i in seq(use.lines)){
+  uli<-use.lines[i]
+  such<-paste("(.*)<","<(.*)>",">(.*)",sep="")
+  repeat{
+    if(0==length(cand<-grep("@<<(.*)@>>",uli))) break
+    uli.h<-gsub(such,"\\1BrEaKuSeCHUNK\\2BrEaK\\3",uli)
+    uli<-unlist(strsplit(uli.h,"BrEaK"))
+  }
+  cand<-grep("uSeCHUNK",uli); uli<-sub("uSeCHUNK","",uli)
+  ref.no<-match(uli[cand],code.chunk.names)
+  if(is.use.lines.within.code[i]){
+    uli[cand]<-paste("</code>&lt;",uli[cand]," ",ref.no,"&gt;<code>",sep="")
+  }else{
+    uli[cand]<-paste(" &lt;",uli[cand]," ",ref.no,"&gt; ",sep="") 
+  }
+ #  formating code within use references weaveRhtml
+  if(length(uli)!=length(cand)){
+    if(!UTF){ 
+      uli[-cand]<-paste("",uli[-cand],"",sep="") #050612
+    }else{
+      uli[-cand]<-paste("",uli[-cand],"",sep="") #060516
+    }
+  }
+  if(is.use.lines.within.code[i]){
+    use.lines[i]<-paste("<code>",paste(uli,collapse=""),"</code>")
+  }else{ 
+    use.lines[i]<-paste(" ",paste(uli,collapse="")," ")
+  }
+}
+input[use.index]<-paste("<br>",leerzeichen.vor.use,use.lines)
+@
+<<ddd>>=
+uli<-paste("xxxt<","<hallo>",">asdf",sep="")
+such<-paste("(.*)<","<(.*)>",">(.*)",sep="")
+uli.h<-gsub(such,"\\1bReAkuSeChUnK\\2bReAk\\3",uli)
+rm(uli,uli.h)
+@
+Das Zeichen \verb+\267+ rief teilweise Probleme hervor, so dass
+statt dessen demnächst ein anderes Verwendung finden muss.
+Ein Weg besteht darin, aus dem Zeichenvorrat ein ungebrauchtes Zeichen
+auszuwählen, dessen [[catcode]] zu verändern und dann dieses zu verwenden.
+Nachteilig ist bei diesem Zeichen, dass verschiedene Editoren dieses nicht
+darstellen können. Darum ist es besser ein ungewöhnliches, aber darstellbares
+Zeichen zu verwenden. Zum Bespiel könnte man [[\343]] verwenden, so dass
+die Zeile unten lauten würde:
+[[input[code.index]<-paste("\\verb\343",code.lines,"\343\\newline")]]
+Um ganz sicher zu gehen, dass dieses Zeichen akzeptiert wird,
+könnte man den [[catcode]] so verändern:
+[[\catcode`\343=12"]] -- also in R:
+[[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
+<<schreibe Code-Zeilen [[weaveRhtml]]>>=
+leerzeichen.vor.c<-gsub("\t","      ",code.lines)
+leerzeichen.vor.c<-sub("[^ ](.*)$","",leerzeichen.vor.c)
+leerzeichen.vor.c<-gsub("\\ ","&nbsp;",leerzeichen.vor.c)
+# special case "<letter" has to be handled
+code.lines<-gsub("<(.)","&lt;\\1",code.lines) 
+code.lines<-gsub("\\ ","&nbsp;",code.lines) ## multiple blanks in code lines
+if(!UTF){
+  input[code.index]<-paste("<br>",leerzeichen.vor.c,"<code>",code.lines,"</code>")
+}else{
+  input[code.index]<-paste("<br>",leerzeichen.vor.c,"<code>",code.lines,"</code>") 
+}
+
+@
+<<setze Code in Text-, Header- und Verwendungszeilen [[weaveRhtml]]>>=
+typ<-"TEXT"
+<<setze Code in Zeilen vom Typ [[typ]] [[weaveRhtml]]>>
+typ<-"HEADER"
+<<setze Code in Zeilen vom Typ [[typ]] [[weaveRhtml]]>>
+typ<-"USE"
+<<setze Code in Zeilen vom Typ [[typ]] [[weaveRhtml]]>>
+
+@
+Code im Text wird auf zwei Weisen umgesetzt:\\
+a) Zerlegung von Zeilen in Wörter. Wörter der Form [[x==(1:10)+1]]
+werden untersucht und komische Zeichen werden ersetzt.
+b) In Zeilen, in denen immer noch doppelte Klammern gefunden werden,
+werden als ganzes behandelt; dabei wird versucht von vorn beginnend
+zu einander passende Klammern zu finden.
+<<setze Code in Zeilen vom Typ [[typ]] [[weaveRhtml]]>>=
+<<suche in Zeilen des Typs nach Code im Text [[code.im.text.index]] [[weaveRhtml]]>>
+if(0<length(code.im.text.index)){
+  lines.to.check<-input[code.im.text.index]
+  <<ersetze zusammenhängende Wortstücke [[weaveRhtml]]>>
+  <<checke und ersetze Code im Text mit Leerzeichen [[weaveRhtml]]>>
+  input[code.im.text.index]<-lines.to.check
+}
+
+@
+<<suche in Zeilen des Typs nach Code im Text [[code.im.text.index]] [[weaveRhtml]]>>=
+index<-which(line.typ==typ)
+code.im.text.index<-index[grep("\\[\\[(.*)\\]\\]",input[index])]
+
+@
+Die Zeilen werden mit [[strsplit]] aufgebrochen und
+die Teile mit doppelten eckigen Klammern werden
+behandelt. Die Behandlung erfolgt, wie mit nächsten
+Text-Chunk beschrieben. Anschließend
+wird die Zeile mit tt-gesetzten Code-Stücken
+wieder zusammengebaut.
+<<ersetze zusammenhängende Wortstücke [[weaveRhtml]]>>=
+lines.to.check<-strsplit(lines.to.check," ") # Zerlegung in Worte
+lines.to.check<-unlist(lapply(lines.to.check,function(x){
+    ind.cand<-grep("^\\[\\[(.*)\\]\\]$",x)
+    if(0<length(ind.cand)){
+      cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
+      cand<-gsub("\\[\\[","DoEckOpenKl-ESC",cand)
+      cand<-gsub("\\]\\]","DoEckCloseKl-ESC",cand)
+      cand<-gsub("DoSpOpenKl-ESC","@<<",cand) # 050612
+      cand<-gsub("DoSpCloseKl-ESC","@>>",cand) # 050612
+      x[ind.cand]<-paste("<code>",cand,"</code>",sep="")
+    }
+    x<-paste(x,collapse=" ")}
+)) # end of unlist(apply(..))
+
+@
+<<old>>=
+lines.to.check<-strsplit(lines.to.check," ") # Zerlegung in Worte
+lines.to.check<-unlist(lapply(lines.to.check,function(x){
+    ind.cand<-grep("^\\[\\[(.*)\\]\\]$",x)
+    if(0<length(ind.cand)){
+      cand<-gsub("^\\[\\[(.*)\\]\\]$","\\1",x[ind.cand])
+      cand<-gsub("\\[\\[","DoEckOpenKl-ESC",cand)
+      cand<-gsub("\\]\\]","DoEckCloseKl-ESC",cand)
+      cand<-gsub("\\\\","\\\\char'134 ",cand)
+      cand<-gsub("([#$&_%{}])","\\\\\\1",cand) #2.1.0
+      cand<-gsub("\\~","\\\\char'176 ",cand)
+      cand<-gsub("\\^","\\\\char'136 ",cand)
+      cand<-gsub("DoSpOpenKl-ESC","\\\\verb|<<|",cand) # 050612
+      cand<-gsub("DoSpCloseKl-ESC","\\\\verb|>>|",cand) # 050612
+      x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
+    }
+    x<-paste(x,collapse=" ")}
+)) # end of unlist(apply(..))
+
+@
+Nicht zusammenhängende Anweisungen, eingeschlossen in
+doppelten eckigen Klammern sind auch erlaubt.
+Diese werden in [[lines.to.check]] gesucht: [[ind.cand]].
+Es werden die gefundenen Klammeraffen entfernt.
+Die verbleibenden Kandidaten werden, wie folgt, abgehandelt:
+Ersetzung der doppelten eckigen Klammern durch eine unwahrscheinliche
+Kennung: [[AbCxYz]] und Zerlegung der Zeilen nach diesem Muster.
+Der mittlere Teil wird in eine Gruppe gesetzt und Sonderzeichen
+werden escaped bzw.\ durch den Charactercode ersetzt.
+Dann wird die Zeile wieder zusammengebaut und das Ergebnis zugewiesen.
+<<checke und ersetze Code im Text mit Leerzeichen [[weaveRhtml]]>>=
+ind.cand<-grep("\\[\\[(.*)\\]\\]",lines.to.check)
+if(0<length(ind.cand)) {
+  # zerlege Zeile in token der Form [[,  ]] und sonstige
+  zsplit<-lapply(strsplit(lines.to.check[ind.cand],"\\[\\["),function(x){
+     zs<-strsplit(rbind("[[",paste(x[],"aAzsplitAa",sep=""))[-1],"\\]\\]")
+     zs<-unlist(lapply(zs,function(y){ res<-rbind("]]",y[])[-1]; res }))
+     gsub("aAzsplitAa","",zs)
+  })
+  # suche von vorn beginnend zusammenpassende [[-]]-Paare
+  z<-unlist(lapply(zsplit,function(x){
+    repeat{
+      cand.sum<-cumsum((x=="[[")-(x=="]]"))
+      if(is.na(br.open<-which(cand.sum==1)[1])) break
+      br.close<-which(cand.sum==0)
+      if(is.na(br.close<-br.close[br.open<br.close][1])) break
+      if((br.open+1)<=(br.close-1)){
+        h<-x[(br.open+1):(br.close-1)]
+        h<-gsub(" ","&nbsp;",h) # Leerzeichen nicht vergessen! 060116
+        h<-gsub("DoSpOpenKl-ESC","<<",h)
+        h<-gsub("DoSpCloseKl-ESC",">>",h)
+        x[(br.open+1):(br.close-1)]<-h
+      }
+      x[br.open]<-"<code>"; x[br.close]<-"</code>"
+      x<-c(paste(x[1:br.close],collapse=""), x[-(1:br.close)])
+    }
+    paste(x,collapse="")
+  }))
+  lines.to.check[ind.cand]<-z
+}
+
+@
+Konstruktion eines geeigneten Shellscript.
+<<lege bin-Datei [[weaveRhtml]] an>>=
+tangleR("weaveRhtml",expand.roots="")    
+file.copy("weaveRhtml.R","/home/wiwi/pwolf/bin/revweaveRhtml.R",TRUE)
+h<-'echo "source(\\"/home/wiwi/pwolf/bin/revweaveRhtml.R\\"); weaveRhtml(\'"$1"\')" | R --vanilla'
+cat(h,"\n",file="/home/wiwi/pwolf/bin/revweaveRhtml")
+system("chmod +x /home/wiwi/pwolf/bin/revweaveRhtml")
+
+@
+Ein Test von [[weaveRhtml]].
+<<teste Funktion [[weaveRhtml]]>>=
+<<definiere-[[weaveRhtml]]>>
+#weaveRhtml("/home/wiwi/pwolf/tmp/vskm16.rev")
+weaveRhtml("/home/wiwi/pwolf/tmp/doof")
+#weaveRhtml("/home/wiwi/pwolf/tmp/aufgabenblatt2.rev")
+@
+<<t>>=
+<<teste Funktion [[weaveRhtml]]>>
+@
+
+@
+\subsection{Help-Page}
+<<define-weaveRhtml-help>>=
+\name{weaveRhtml}
+\alias{weaveRhtml}
+\title{ function to weave a rev-file to a html-file}
+\description{
+  \code{weaveRhtml} reads a file that is written according to
+  the rules of the \code{noweb} system and performs a simple kind
+  of weaving. As a result a html-file is generated.
+}
+\usage{
+weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{in.file}{ name of input file }
+  \item{out.file}{ name of output file; if this argument is missing the extension of the
+   input file is turned to \code{.html} }
+  \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
+   html sequences}
+}
+\details{
+  General remarks: A \code{noweb} file consists of a mixture of text
+  and code chunks. An \code{@} character (in column 1 of a line)
+  indicates the beginning of a text chunk. \code{@<<name of code chunk>>=}
+  (starting at column 1 of a line) is a header line of a code chunk with
+  a name defined by the text between \code{@<<} and \code{>>=}.
+  A code chunk is finished by the beginning of hte next text chunk.
+  Within the code chunk you are allowed to use other code chunks by referencing
+  them by name ( for example by: \code{@<<name of code chunk>>} ).
+  In this way you can separate a big job in smaller ones.
+
+  Rweb speciality: A code chunk with a code chunk name containing  \code{"Rweb"} 
+  as the first four characters will be translated to a text input field and
+  a submit button \code{compute via Rweb}. 
+  By pressing this button the code of the text field will be
+  sent for evaluation to Rweb \code{http://rweb.stat.umn.edu/Rweb/} 
+  and the results appears in a new browser window. 
+  This link to Rweb has been inspirited by web pages like 
+  \url{http://www.stat.umn.edu/geyer/3011/examp/reg.html} written
+  by Charlie Geyer \url{http://www.stat.umn.edu/~charlie}.
+
+  Technical remarks:
+  To format small pieces of code in text chunks you have to put them in
+  \code{[[...]]}-brackets: \code{text text [[code]] text text}.
+  One occurence of such a code in a text line is assumed to work always.
+  If an error emerges caused by formatting code in a text chunk
+  simplify the line by splitting it.
+  Sometimes you want to use
+  \code{[[}- or even \code{@<<}-characters in your text. Then it
+  may be necessary to escape them by an \code{@}-sign and
+  you have to type in: \code{@@<<}, \code{@[[} and so on.
+
+  \code{weaveRhtml} expands the input by adding a simple html-header
+  as well as some links for navigation.
+  Chunk numbers are written in front of the code chunk headers.
+
+  Further details:
+  Some LaTeX macros are transformed to improve the html document.
+  1. \code{weaveRhtml} looks for the LaTeX macros \code{\author}, 
+  \code{\title} and \code{\date} at the beginning of the input text.
+  If these macros are found their arguments are used to construct a simple
+  html-head. 
+  2. \code{\section\{...\}, \subsection\{...\}, \paragraph\{...\}} macros will be extracted
+  to include some section titles, subsection titles, paragraph titles in bold face fonts.
+  Additionally a simple table of contents is generated.
+  3. Text lines between \code{\begin\{center\}} and \code{\end\{center\}}
+  are centered.
+  4. Text lines between \code{\begin\{quote\}} and \code{\end\{quote\}}
+  are shifted a little bit to the right.
+  5. Text lines between \code{\begin\{itemize\}} and \code{\end\{itemize\}}
+  define a listing. The items of such a list have to begin with \code{\item}.
+  6. \code{\emh\{xyz\}} is transformed to \code{<i>xyz</i>} -- \code{xyz} will appear italic.
+  7. \code{\texttt\{xyz\}} is transformed to \code{<code>xyz</code>} -- this is formated like code.
+}
+\value{
+  a html file is generated
+}
+\references{ \url{http://www.eecs.harvard.edu/~nr/noweb/intro.html} }
+\author{Hans Peter Wolf}
+\seealso{  \code{\link{weaveR}}, \code{\link{tangleR}} }
+\examples{
+\dontrun{
+## This example cannot be run by examples() but should be work in an interactive R session
+  weaveRhtml("testfile.rev","testfile.tex")
+  weaveR("testfile.rev")
+}
+## The function is currently defined as
+weaveRhtml<-function(in.file,out.file){
+  # german documentation of the code:
+  # look for file webR.pdf, P. Wolf 060910
+  ...
+}
+}
+\keyword{file}
+\keyword{documentation}
+\keyword{programming}
+
 
 @
 \end {document}
