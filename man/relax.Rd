@@ -146,9 +146,6 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
 }
 \references{\url{http://www.wiwi.uni-bielefeld.de/statistik/mitarbeiter/wolf/software/relax.html}}
 \author{Hans Peter Wolf}
-\note{}
-
-\seealso{  }
 \examples{
 
 ## The function is currently defined as

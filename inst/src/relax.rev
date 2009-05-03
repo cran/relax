@@ -1,7 +1,7 @@
 % SavePlot:  Neuerstellung: show.single.plot,  Aktualisieren unter Edit eintragen, sonst  
 %                                              Aufrufparameter beachten
 % to do: Leerzeile als Trennzeichen nach CODE?
-% done: xtable bei output, sliderfns neu, log-Ausschnitt ins gelbe Fenster?
+% done: xtable bei output, sliderfns neu, log-Ausschnitt ins gelbe Fenster?, tcl(update)
 % steps to create a new relax-version: 
 % a) Datum/Version in RELAX-Chunk: "Version von [[relax]]" 
 % b) Nr in RELAX-Chunk: "define-DESCRIPTION", 
@@ -9,11 +9,11 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) [[ cp install.dir/relax_1.2.1.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.2.1.*
+% f) [[ cp install.dir/relax_1.3.1.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.1.*
 % g) upload to cran
 %     ftp ftp://cran.R-project.org/incoming/
-%     ftp> put relax_1.2.1.tar.gz
+%     ftp> put relax_1.3.1.tar.gz
 %     ftp> bye
 % Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel?? ok
 % Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel ok
@@ -63,7 +63,7 @@
 % library(relax,lib.loc="/home/wiwi/pwolf/R/work/relax/install.dir/lib");relax()
 %
 % Paketbeschaffung über Netz:
-% download.file("http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.2.1.tar.gz","relax_1.2.1.tar.gz")
+% download.file("http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.1.tar.gz","relax_1.3.1.tar.gz")
 %
 % Dokumentationserstellung:
 % cd /home/wiwi/pwolf/work/relax
@@ -107,7 +107,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.2.1 - 090325"
+"relax 1.3.1 - 091012"
 @
 <<relax>>=
 "relax"
@@ -132,7 +132,9 @@ as part of a CD-ROM distribution, provided that what you sell is the true, compl
     [[http://members.chello.nl/~j.nijtmans/img.html]] or
     [[http://home.kpnplanet.nl/~J.Nijtmans@kpnplanet.nl/img.html]]
     [[http://tkimg.sourceforge.net/, the package is found on]],
-    [[http://sourceforge.net/projects/tkimg]].%
+    [[http://sourceforge.net/projects/tkimg/files/]],
+    [[http://sourceforge.net/projects/tkimg]],%
+    [[http://www.posoft.de/html/extTkImg.html]]. % mit binaries for MAC/Linux
     -- the img package has to install additionally
 \footnote{Copyright (c) 1995-2003 Jan Nijtmans [[<nijtmans@users.sourceforge.com>]]\\
   see: [[http://sourceforge.net/docman/display_doc.php?docid=6025&group_id=1]],\\
@@ -1583,7 +1585,8 @@ if(<<OS ist Mac-Mini-Tiger>> ){
             news<-base::scan(file=pipe("pbpaste","r"),what="",
                                          sep="\n",blank.lines.skip=FALSE)
             tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
-            tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
+     #      tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
+            tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706 
   }
   ### tkevent.add("@<<Paste>>", "<Control_L><v>")
   tkbind(tworkwin,"<Control_L><v>",mac.paste)
@@ -2929,8 +2932,8 @@ Hier ist ein Vorschlag für einen Kopf eines LaTeX-Dokumentes:
 % \usepackage{NOWEBSTYLEFILE}\noweboptions{webnumbering,smallcode}
 <<LaTeX-head>>=
 %  --- begin of preamble
-\documentclass{article}
-%  --- packages  \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+\documentclass[a4paper]{article}
+%  --- packages  \usepackage{graphicx,mathpazo,courier,alltt,amssymb}
 \usepackage{graphicx}
 %  --- fonts 
 % \usepackage[scaled=.95]{helvet}
@@ -2938,8 +2941,9 @@ Hier ist ein Vorschlag für einen Kopf eines LaTeX-Dokumentes:
 %  --- commands to control the layout of text and code chunks 
 \parskip1ex
 \parindent0mm
-\renewcommand{\textchunkcommands}{\normalsize}
-\renewcommand{\codechunkcommands}{\small}
+\renewcommand{\textchunkcommands}{\normalsize}%
+\renewcommand{\codechunkcommands}{\small}%
+\renewcommand{\Routputcommands}{\footnotesize}%
 %  --- titlepage
 \title{Report: \rule{30mm}{.1mm}}
 \author{File: \jobname.rev\\in: JOBPATH}
@@ -3438,7 +3442,8 @@ neu integriert.
 <<definiere Funktion für Knopf: [[SavePlot]]>>=
 fSavePlot<-function(){
   melde("fSavePlot",1)
-  h<-strsplit(gsub(":","",date())," ")[[1]]
+  h<-gsub(" +"," ",date())
+  h<-strsplit(gsub(":","",h)," ")[[1]]
   bildname<-paste("p",h[5],"-",h[2],h[3],"-",h[4],".ps",sep="")
   <<lege Bild unter [[bildname]] ab>>
   tworkwin<-get("tworkwin",envir=revive.sys)
@@ -3446,6 +3451,9 @@ fSavePlot<-function(){
   if(!no.plots) createandshow.single.plot(tworkwin,insertline,jpgname)
   melde("fSavePlot",2)
 }
+@
+<<not always ok>>=
+h<-strsplit(gsub(":","",date())," ")[[1]] 
 
 @
 Die einzelnen Schritte: Namen überarbeiten, Vermerk im Report einfügen,
@@ -4208,7 +4216,8 @@ fUp<-function(){
   code.start<-grep("^@<<(.*)>>=",worktext)
   code.start<-rev(code.start[code.start<line])[1]
   if(!is.na(code.start)) tkmark.set(tworkwin, "insert", paste(code.start,".0",sep=""))
-  tksee(tworkwin,"insert")
+  tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706
+#  tksee(tworkwin,"insert")
   melde("fUp",2)
 }
 
@@ -4223,7 +4232,8 @@ fDown<-function(){
   code.start<-grep("^@<<(.*)>>=",worktext)
   code.start<-code.start[code.start>line][1]
   if(!is.na(code.start)) tkmark.set(tworkwin, "insert", paste(code.start,".0",sep=""))
-  tksee(tworkwin,"insert")
+  tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706
+#  tksee(tworkwin,"insert")
   melde("fDown",2)
 }
 
@@ -4823,6 +4833,13 @@ Der Browser kann gesetzt werden über:
 tkadd(mbFile.menu,"command", command=ViewReport.html,
       label="ViewReport.html:   view html representation of report")
 tkadd(mbFile.menu,"separator")
+tkadd(mbFile.menu,"command", command=OpenTextFile,
+      label="OpenTextFile:  open not-rev-file, translate console style and >>APPEND<< it to text field")
+tkadd(mbFile.menu,"command", command=SaveAsTextFile,
+      label="SaveAsTextFile:   dump report as txt-file in console style, as a rev-file and as an R-file")
+tkadd(mbFile.menu,"command", command=SaveAsPlainTeXFile,
+      label="SaveAsPlainTeXFile:   dump report as TeX-file in console style, as a rev-file and as an R-file")
+tkadd(mbFile.menu,"separator")
 tkadd(mbFile.menu,"command", command=LoadEnvironment,
       label="LoadEnvironment:   load objects from dump file into relax environment")
 tkadd(mbFile.menu,"command", command=DumpEnvironment,
@@ -4831,11 +4848,6 @@ tkadd(mbFile.menu,"command", command=SaveEnvironment,
       label="SaveEnvironment:   save objects of relax environment in binary file")
 tkadd(mbFile.menu,"command", command=CleanEnvironment,
       label="CleanEnvironment:   delete objects of environment")
-tkadd(mbFile.menu,"separator")
-tkadd(mbFile.menu,"command", command=OpenTextFile,
-      label="OpenTextFile:  open not-rev-file, translate console style and >>APPEND<< it to text field")
-tkadd(mbFile.menu,"command", command=SaveAsTextFile,
-      label="SaveAsTextFile:   dump report in console style, and as .script.R-file, but not as a rev-file")
 tkadd(mbFile.menu,"separator")
 
 @
@@ -5097,6 +5109,7 @@ SaveHtml<-function(){
 @
 <<implementiere Eigenschaften der allgemeinen Knöpfe>>=
 tkbind(TopW, "@<<SaveReport>>", SaveReport)
+
 @
 SaveAsTextFile: 
 <<definiere Kopf-Zeilen-Funktionen>>=
@@ -5104,16 +5117,20 @@ SaveAsTextFile<-function(){
   melde("SaveAsTextFile",1)
   filename<-tkgetSaveFile(filetypes="{{TEXT-FILE!} {*.*}}",
                           title="name of file?", initialdir=getwd(),
-                          defaultextension="", initialfile=sub(".rev$",".txt",workname.sys))
+                          defaultextension="", initialfile=sub(".rev$",".rev",workname.sys))
   <<checke [[filename]], quitte ggf.>>
   <<lese Arbeitsfenster auf [[worktext]] ein>>
-  <<speichere [[worktext]] ab, Indikator: [[ok]]>>
+  <<speichere [[worktext]] als Rev-File ab, Indikator: [[ok]]>>
+  filename<-sub("\\.rev$",".txt",filename)	
+  <<speichere [[worktext]] als Textfile ab, Indikator: [[ok]]>>
   if(ok){
-    filename<-paste(sub(".txt$","",filename),".rev",sep="")
+    filename<-sub("\\.txt$","",filename)
+    filename<-sub("\\.rev$","",filename)
+    filename<-sub("\\.R$","",filename)
+    filename<-paste(filename,".rev",sep="")
     <<aktualisiere Reportname>>
     <<kopiere ggf.\ Bilder ins neue Verzeichnis>>
     <<wechsele ins neue Verzeichnis>>
-    melde(paste("file",filename,"saved\n"),0)
   } else {
     cat("ERROR: write operation failed!!!\n")
   }
@@ -5124,12 +5141,15 @@ SaveAsTextFile<-function(){
 @
 Erste Zeile wird mit einem [[> ]] versehen, die Folgecodezeilen
 erhalten [[+ ]].
-<<speichere [[worktext]] ab, Indikator: [[ok]]>>=
+output-start, output-end umsetzen: 090717
+<<speichere [[worktext]] als Textfile ab, Indikator: [[ok]]>>=
 worktext<-sub("^@<<(.*)>>=(.*)","@<<\\1>>=",worktext)
-worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
-worktext<-sub("^output-end","\\\\end{verbatim}",worktext)
-if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
-worktext<-c(worktext,"@\n\\end{document}")
+#worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
+#worktext<-sub("^output-end","\\\\end{verbatim}",worktext)
+worktext<-sub("^output-start","",worktext)
+worktext<-sub("^output-end","",worktext)
+#if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
+#  worktext<-c(worktext,"@\n\\end{document}")
 ## remove noweb items
 code.ch<-c("@",worktext,"@")
 code.chunk.start<-paste("^<","<.*>",">=",sep="")
@@ -5142,6 +5162,7 @@ if(0<length(code.a)){
   ind<-(1==(cumsum(change)%%2))[-length(change)]
   def.lines<-diff(c(FALSE,ind))>0
   code.ch<-code.ch[!def.lines]; ind<-ind[!def.lines]
+  code.ch<-sub(paste("^ *<","<",sep=""),"# <<",code.ch) # Auskommentierung von uses
   code.ch[ind]<-paste("+",code.ch[ind])
   code.ch[ind]<-sub("^[+][ \t]*$"," ",code.ch[ind])
   ind<-diff(c(FALSE,ind))>0
@@ -5155,6 +5176,7 @@ worktext<-code.ch[-ind]
 worktext<-TcltoWin.write(worktext)
 try.res <- try(cat(worktext,file=filename,sep="\n"))
 <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+if(ok){ cat(paste("file",filename,"saved\n")) }
 # und ein script.R-file
 a<-worktext; ind<-grep("^[+>]",a)
 if(0!=length(ind)){
@@ -5164,6 +5186,97 @@ if(0!=length(ind)){
   if(0!=length(ind)) a[ind]<-paste("", substring(a[ind],2))
   filename<-sub(".txt$",".R",filename)
   try.res <- try(cat(a,file=filename,sep="\n"))
+  <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+  if(ok){ cat(paste("file",filename,"saved\n")) }
+}
+
+@
+SaveAsPlainTeXFile: 
+<<definiere Kopf-Zeilen-Funktionen>>=
+SaveAsPlainTeXFile<-function(){
+  melde("SaveAsPlainTeXFile",1)
+  filename<-tkgetSaveFile(filetypes="{{TEXT-FILE!} {*.*}}",
+                          title="name of file?", initialdir=getwd(),
+                          defaultextension="", initialfile=sub(".rev$",".rev",workname.sys))
+  <<checke [[filename]], quitte ggf.>>
+  <<lese Arbeitsfenster auf [[worktext]] ein>>
+  <<speichere [[worktext]] als Rev-File ab, Indikator: [[ok]]>>
+  filename<-sub("\\.rev$",".tex",filename)	
+  <<speichere [[worktext]] Plain-TeX-File ab, Indikator: [[ok]]>>
+  if(ok){
+    filename<-sub("\\.tex$","",filename)
+    filename<-sub("\\.rev$","",filename)	
+    filename<-sub("\\.R$","",filename)
+    filename<-paste(filename,".rev",sep="")
+    <<aktualisiere Reportname>>
+    <<kopiere ggf.\ Bilder ins neue Verzeichnis>>
+    <<wechsele ins neue Verzeichnis>>
+  } else {
+    cat("ERROR: write operation failed!!!\n")
+  }
+  melde("SaveAsPlainTeXFile",2)
+  return("ok")
+}
+
+@
+<<speichere [[worktext]] Plain-TeX-File ab, Indikator: [[ok]]>>=
+# verbatim-Separationszeichen festlegen: SEP
+.Tcl("set xyz [encoding system]"); UTF<-0<length(grep("utf",tclvalue("xyz")))
+SEP<- if(!UTF){ eval(parse(text='"\\267"')) }else{ trennzeichen<-"\140" }
+worktext<-sub("^@<<(.*)>>=(.*)","@<<\\1>>=",worktext)
+worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
+worktext<-sub("^output-end",  "\\\\end{verbatim}",worktext)
+if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
+  worktext<-c(worktext,"@\n\\end{document}")
+## remove noweb items
+code.ch<-c("@",worktext,"@")
+code.chunk.start<-paste("^<","<.*>",">=",sep="")
+code.a<- grep(code.chunk.start,code.ch)
+if(0<length(code.a)){
+  code.z<-grep("^@",code.ch)
+  code.z<-unlist(sapply(code.a ,function(x,y)min(y[y>x]),code.z))
+  code.n<-length(code.ch)
+  change<-rep(0,code.n); change[c(code.a ,code.z)]<-1
+  ind<-(1==(cumsum(change)%%2))[-length(change)]
+  def.lines<-diff(c(FALSE,ind))>0
+  code.ch<-code.ch[!def.lines]; ind<-ind[!def.lines]
+  code.ch<-sub(paste("^ *<","<",sep=""),"# <<",code.ch) # Auskommentierung von uses
+  code.ch[ind]<-paste("+",code.ch[ind])
+  code.ch[ind]<-sub("^[+][ \t]*$"," ",code.ch[ind]) # leer Codezeilen leeren
+  w.tmp<-code.ch; ind.tmp<-ind
+  code.ch[ind]<-paste("\\rule{0mm}{0mm}\\\\\\verb",SEP,code.ch[ind],SEP,sep="")
+  code.ch[!ind]<-gsub("\\[\\[(.*)\\$(.*)\\]\\]",paste("[[\\1\\\\","$\\2]]",sep=""),code.ch[!ind])
+  #code.ch[!ind]<-gsub("\\[\\[(.*)\\$(.*)\\]\\]",paste("\\1\\\\","$\\2",sep=""),code.ch[!ind])
+  #code.ch[!ind]<-gsub("\\[\\[(.+)\\]\\]","\\1",code.ch[!ind])
+  # code.ch[!ind]<-gsub("(\\[\\[.+\\]\\])",paste("\\\\verb",SEP,"\\1",SEP,sep=""),code.ch[!ind])
+  ind<-diff(c(FALSE,ind))>0
+  # Codeanfaenge mit ">" versehen:
+  code.ch[ind]<-paste("\\rule{0mm}{0mm}\\\\\\verb",SEP,">",substring(code.ch[ind],25),sep="") 
+##  code.ch[ind]<-paste(">",substring(code.ch[ind],3)) 
+
+#  code.ch[ind]<-paste("+",code.ch[ind])
+#  ind<-diff(c(FALSE,ind))>0
+#  code.ch[ind]<-sub("^[+] ","> ",code.ch[ind])
+} else { "no code" }
+ind<-grep("^@",code.ch)
+worktext<-code.ch[-ind]
+worktext<-TcltoWin.write(worktext)
+try.res <- try(cat(worktext,file=filename,sep="\n"))
+<<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+if(ok){ cat(paste("file",filename,"saved\n")) }
+# und ein script.R-file
+a<-w.tmp;   ind.a<-diff(c(FALSE,ind.tmp))>0
+ind<-grep("^[+]",a)
+if(0!=length(ind)){
+  a[ind.a]<-paste(">",substring(a[ind.a],3))
+  a<-a[ind]; ind<-grep("^[>]",a); no<-seq(ind)
+  a[ind]<-paste("#",no,": >\n ",substring(a[ind],2),sep="")
+  ind<-grep("^[+]",a)
+  if(0!=length(ind)) a[ind]<-paste("", substring(a[ind],2))
+  filename<-sub(".tex$",".R",filename)
+  try.res <- try(cat(a,file=filename,sep="\n"))
+  <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+  if(ok){ cat(paste("file",filename,"saved\n")) }
 }
 
 @
@@ -5210,6 +5323,7 @@ top<-tktoplevel();tt<-tktext(top);tkpack(tt)
 .Tcl("set ccc [ .Tk.ID(tt) insert \"0.0 end\" ] )
 
 \end{verbatim}
+% 090717
 <<speichere [[worktext]] als Rev-File ab, Indikator: [[ok]]>>=
 worktext<-sub("^@<<(.*)>>=(.*)","@<<\\1>>=",worktext)
 worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
@@ -5219,6 +5333,7 @@ if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
 worktext<-TcltoWin.write(worktext)
 try.res <- try(cat(worktext,file=filename,sep="\n"))
 <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
+if(ok){ cat(paste("file",filename,"saved\n")) }
 
 @
 Ersetzungsoperation direkt unter Tcl/Tk
@@ -5345,6 +5460,7 @@ OpenReport<-function(){
     news<-c("",try.res)
     <<schreibe [[news]] ans Ende des Arbeitstextes>>
     <<lese Arbeitsfenster auf [[worktext]] ein>>
+    <<setze Output-Klammern um>>
     <<aktualisiere Code-Chunk-Zähler und schreibe [[worktext]]>>
     RunStart()
     <<aktualisiere Texthervorhebungen>>
@@ -5353,6 +5469,12 @@ OpenReport<-function(){
   } else { cat("ERROR: File",filename,"not found!!!\n") }
   melde("OpenReport",2)
 }
+
+@
+<<setze Output-Klammern um>>=
+worktext<-sub("^\\\\begin\\{verbatim\\}","output-start",worktext)
+worktext<-sub("^\\\\end\\{verbatim\\}","output-end",worktext)
+
 @
 OpenTextFile
 <<definiere Kopf-Zeilen-Funktionen>>=
@@ -5376,6 +5498,7 @@ OpenTextFile<-function(){
     news<-c("",try.res)
     <<schreibe [[news]] ans Ende des Arbeitstextes>>
     <<lese Arbeitsfenster auf [[worktext]] ein>>
+    <<setze Output-Klammern um>>
     <<aktualisiere Code-Chunk-Zähler und schreibe [[worktext]]>>
     <<aktualisiere Texthervorhebungen>>
     <<kreiiere Bilder neu und zeige sie im Textfenster an>>
@@ -6708,6 +6831,7 @@ if(exists("running.function") && running.function==<<relax>>){
 }else{
        <<schreibe [[news]] ans Ende des Arbeitstextes>>
 }
+tcl("update","idletasks") # 090710
 
 @
 <<teste, ob [[relax]] aktiv ist>>=
@@ -7725,7 +7849,7 @@ if(<<das OS ist Windows>>){
     <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   }
   if(!res || !ok){ 
-          cat('Warning: Tcl/Tk-package Img not found!',
+          cat('Note: Tcl/Tk-package Img not found!',
     'Without this package relax is not able to show jpeg pictures in the report window.',
     'However, the pictures will appear in the html report and the formated tex report.',
     'For installing the Img package see: > help(relax).',
@@ -8143,8 +8267,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.2.1
-Date: 2008-09-05
+Version: 1.3.1
+Date: 2009-05-03
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -8338,9 +8462,6 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
 }
 \references{\url{http://www.wiwi.uni-bielefeld.de/statistik/mitarbeiter/wolf/software/relax.html}}
 \author{Hans Peter Wolf}
-\note{}
-
-\seealso{  }
 \examples{
 
 ## The function is currently defined as
@@ -8616,14 +8737,14 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.2.1.tar.gz
+R CMD INSTALL --library=lib relax_1.3.1.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
-cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.2.1.zip relax/*
-mv relax_1.2.1.zip ..
+cd $HOME/R/work/relax/install.dir/lib; zip -r relax_1.3.1.zip relax/*
+mv relax_1.3.1.zip ..
 
 cd ..
-cp relax_1.2.1.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.2.1.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.1.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.1.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 

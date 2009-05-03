@@ -19,7 +19,7 @@
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
 \date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007, 04.09.2008, 31.10.2008, 29.1.2009,
-20.2.2009, 24.3.2009}
+20.2.2009, 24.3.2009, 20.7.2009}
 \begin{document}
 \maketitle
 \raggedright
@@ -561,6 +561,7 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
   <<ersetze Umlaute [[weaveR]]>>
   <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveR]]>>
   <<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>
+  <<realisiere Output-Stilwechsel>>
   <<entferne ggf.\ Code oder Text>>
   <<entferne ggf. Umlaut-TeX-Makros aus Code-Zeilen>>
   <<schreibe Ergebnis in Datei [[weaveR]]>>
@@ -687,6 +688,7 @@ input[1]<-paste(
      "\\newcounter{IsInCodeChunk}\\setcounter{IsInCodeChunk}{1}",
      "\\newcommand{\\codechunkcommands}{\\relax}",
      "\\newcommand{\\textchunkcommands}{\\relax}",
+     "\\newcommand{\\Routputcommands}{\\relax}",
      "\\newcommand{\\makemarginno}",
           "{\\par\\vspace{-0.5\\parskip}\\codechunkcommands",
           "\\stepcounter{Rchunkno}",
@@ -701,6 +703,16 @@ input[1]<-paste(
 \stepcounter{Rchunkno}
 \hspace*{-3em}\makebox[0mm]{\arabic{Rchunkno}}
 \hspace*{3em}
+
+@
+090717
+Ggf. wünscht der Anwender einen Stilwechsel für den Output.
+Für diesen ist das Makro [[\Routputcommands]] vorbereitet worden.
+<<realisiere Output-Stilwechsel>>=
+input<-sub("^\\\\begin\\{verbatim\\}",
+           "\\\\par\\\\Routputcommands\\\\begin{verbatim}",input)
+input<-sub("^\\\\end\\{verbatim\\}",
+           "\\\\end{verbatim}\\\\textchunkcommands",input)
 
 @
 Falls nur Text oder nur Code gewünscht wird, 

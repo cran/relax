@@ -574,6 +574,7 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
        "\\newcounter{IsInCodeChunk}\\setcounter{IsInCodeChunk}{1}",
        "\\newcommand{\\codechunkcommands}{\\relax}",
        "\\newcommand{\\textchunkcommands}{\\relax}",
+       "\\newcommand{\\Routputcommands}{\\relax}",
        "\\newcommand{\\makemarginno}",
             "{\\par\\vspace{-0.5\\parskip}\\codechunkcommands",
             "\\stepcounter{Rchunkno}",
@@ -581,6 +582,11 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
             "\\noindent\\hspace*{-3em}",
             "\\makebox[0mm]{\\arabic{Rchunkno}}\\hspace*{3em}}",
        input[1],sep="")
+
+  input<-sub("^\\\\begin\\{verbatim\\}",
+             "\\\\par\\\\Routputcommands\\\\begin{verbatim}",input)
+  input<-sub("^\\\\end\\{verbatim\\}",
+             "\\\\end{verbatim}\\\\textchunkcommands",input)
 
   if(show.code==FALSE){
      input[code.index] <-"."

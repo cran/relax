@@ -1,6 +1,6 @@
 %  --- begin of preamble
-\documentclass{article}
-%  --- packages  \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
+\documentclass[a4paper]{article}
+%  --- packages  \usepackage{graphicx,mathpazo,courier,alltt,amssymb}
 \usepackage{graphicx}
 %  --- fonts 
 % \usepackage[scaled=.95]{helvet}
@@ -8,8 +8,9 @@
 %  --- commands to control the layout of text and code chunks 
 \parskip1ex
 \parindent0mm
-\renewcommand{\textchunkcommands}{\normalsize}
-\renewcommand{\codechunkcommands}{\small}
+\renewcommand{\textchunkcommands}{\normalsize}%
+\renewcommand{\codechunkcommands}{\small}%
+\renewcommand{\Routputcommands}{\footnotesize}%
 %  --- titlepage
 \title{Report: \rule{30mm}{.1mm}}
 \author{File: \jobname.rev\\in: JOBPATH}

@@ -36,6 +36,8 @@ function (sl.functions, sl.names, sl.mins, sl.maxs, sl.deltas,
      eval(parse(text=paste("assign('slider", i, 
                            "',tclVar(sl.defaults[i]),env=slider.env)",sep="")
      ))
+  }
+  for (i in seq(sl.names)) {
      tkpack(fr <- tkframe(nt))
      lab <- tklabel(fr, text = sl.names[i], width = "25")
      sc <- tkscale(fr, from = sl.mins[i], to = sl.maxs[i], 
