@@ -32,7 +32,7 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
 
   How to work with relax?
   \itemize{
-   \item{Load of package \code{relax}}{in \code{R} through: \code{library(relax)}.}
+   \item{Load of package \code{relax}}{in \code{R} by: \code{library(relax)}.}
 
    \item{Start the editor by:}{\code{relax()}.}
 
@@ -144,7 +144,7 @@ relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = TRUE)
     }
   }
 }
-\references{\url{http://www.wiwi.uni-bielefeld.de/statistik/mitarbeiter/wolf/software/relax.html}}
+\references{\url{http://www.wiwi.uni-bielefeld.de/com/wolf/software/relax.html}}
 \author{Hans Peter Wolf}
 \examples{
 
