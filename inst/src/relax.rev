@@ -9,12 +9,12 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) [[ cp install.dir/relax_1.3.4.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.4.*
+% f) [[ cp install.dir/relax_1.3.5.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.5.*
 % g) upload to cran
 %     ftp ftp://cran.R-project.org/incoming/
-%     ftp> put relax_1.3.4.tar.gz
-%     ftp> bye
+%     ftp> put relax_1.3.5.tar.gz
+%     ftp> bye   % 
 % Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel?? ok
 % Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel ok
 % Codeausblendmechanismus??
@@ -60,8 +60,8 @@
 %
 % Paketbeschaffung über Netz:
 % download.file(
-%  "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.3.tar.gz",
-%  "relax_1.3.3.tar.gz")
+%  "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.5.tar.gz",
+%  "relax_1.3.5.tar.gz")
 %
 % Dokumentationserstellung:
 % cd /home/wiwi/pwolf/work/relax
@@ -105,7 +105,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.3.4 - 101118"
+"relax 1.3.5 - 101203"
 @
 <<relax>>=
 "relax"
@@ -3247,7 +3247,7 @@ InsertLaTeXEnv<-function(){
   tkpack(tl,side="left",expand="yes",fill="y"); tkpack(scr,side="left",expand="yes",fill="y")
   tkbind(newtop,"<Escape>",function()tkdestroy(newtop))
   tkbind(newtop,"<Return>",function(){
-     choice<-as.numeric(tkcurselection(tl))+1; tkdestroy(newtop)
+     choice<-as.numeric(tkcurselection(tl))+1; # tkdestroy(newtop)
      if(!is.na(choice) && any(choice==1:6)){
        news<-c("\\begin{center}\n\n\\end{center}\n",
                       "\\begin{quote}\n\n\\end{quote}\n",
@@ -4114,6 +4114,9 @@ mit [[bind . <KeyPress> {puts  {%%K=%K}}]].
 Wird ein Hilfetext gefunden, wird dieser jetzt nicht mehr in einem neuen Top-Level-Fenster
 dargestellt, sondern mit Hilfe des Browsers. Die Verzögerung verhindert, dass
 [[help.start()]] durch [[help(xyz)]] überholt wird.
+
+Mit R-2.10.0 haben sich die help()-Argumente geändert, so dass dieses auch im Code 
+hier berücksichtigt werden muss.
 <<definiere Funktion für Knopf: [[Help.R]]>>=
 fHelp.R<-function(){
   melde("fHelp.R",1)
@@ -4127,7 +4130,10 @@ fHelp.R<-function(){
 			    "click \"ok\" and change to the R window")
       res<-tkmessageBox(message=mess,title="Help",icon="info",type="ok")
       try.res<-try(eval(parse(text=
-        paste("get(\"print\",\"package:base\")(help(\"",fns,"\",htmlhelp=FALSE))",sep=""))))
+##        paste("get(\"print\",\"package:base\")(help(\"",fns,"\",htmlhelp=FALSE))",sep="")
+## wegen Argument-Änderung
+        paste("get(\"print\",\"package:base\")(help(\"",fns,"\",help_type=\"text\"))",sep="")
+      )))
       if(length(try.res)==0){
         mess<- paste("Warning: no documentation for",fns,"found!")
 	res<-tkmessageBox(message=mess,title="Help",icon="info",type="ok")
@@ -7169,19 +7175,20 @@ melde("cat saved",3)
 Auch [[str]] schreibt direkt auf das Konsolenfenster und muss eingerahmt werden.
 <<definiere Input/Output-Funktionen neu>>=
 str<-function(object,...){
-  if(<<teste, ob [[relax]] aktiv ist>> ){
-     base::cat(file=<<tmp>>,"")
+  if(<<teste, ob [[relax]] aktiv ist>> ){ 
+     fname <- <<tmp>>; fname <- gsub("\\\\","/",fname)
+     base::cat(file=fname,"")
      if(is.data.frame(object)) 
-        base::cat(file=<<tmp>>,
+        base::cat(file=fname,
            paste("'data.frame':  ", 
            paste(dim(object)[1],"obs. of",dim(object)[2],"variables:\n")))
      a <- deparse(getS3method("str", "default"))
-     a <- gsub("cat[(]", paste("base::cat(file=\"", <<tmp>>, 
+     a <- gsub("cat[(]", paste("base::cat(file=\"", fname, 
                "\",append=TRUE,", sep = ""), a) # ))
      a <- sub(" str[(]", " mystr(", a) # ))
      mystr <- eval(parse(text = a))
      mystr(object)
-     news <- scan(file = <<tmp>>,
+     news <- scan(file = fname,
                   what = "", sep = "\n")
      news <- sub("chr .data.frame.", "", news)
      if(0<length(ind<-grep("^ -",news))) news<-news[-ind]
@@ -8720,8 +8727,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.3.4
-Date: 2010-09-14
+Version: 1.3.5
+Date: 2010-11-14
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -9278,16 +9285,16 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.3.4.tar.gz
+R CMD INSTALL --library=lib relax_1.3.5.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
 cd $HOME/R/work/relax/install.dir/lib; 
 # zip aus $HOME/bin mit 7z aus p7zip_9.13 
-zip a -r relax_1.3.4.zip relax
-mv relax_1.3.4.zip ..
+zip a -r relax_1.3.5.zip relax
+mv relax_1.3.5.zip ..
 
 cd ..
-cp relax_1.3.4.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.3.4.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.5.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.5.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 

@@ -828,23 +828,21 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   str<-function(object,...){
     if("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
- ){
-       base::cat(file=get("tmp.file.name",env=revive.sys)
-,"")
+ ){ 
+       fname <- get("tmp.file.name",env=revive.sys)
+; fname <- gsub("\\\\","/",fname)
+       base::cat(file=fname,"")
        if(is.data.frame(object)) 
-          base::cat(file=get("tmp.file.name",env=revive.sys)
-,
+          base::cat(file=fname,
              paste("'data.frame':  ", 
              paste(dim(object)[1],"obs. of",dim(object)[2],"variables:\n")))
        a <- deparse(getS3method("str", "default"))
-       a <- gsub("cat[(]", paste("base::cat(file=\"", get("tmp.file.name",env=revive.sys)
-, 
+       a <- gsub("cat[(]", paste("base::cat(file=\"", fname, 
                  "\",append=TRUE,", sep = ""), a) # ))
        a <- sub(" str[(]", " mystr(", a) # ))
        mystr <- eval(parse(text = a))
        mystr(object)
-       news <- scan(file = get("tmp.file.name",env=revive.sys)
-,
+       news <- scan(file = fname,
                     what = "", sep = "\n")
        news <- sub("chr .data.frame.", "", news)
        if(0<length(ind<-grep("^ -",news))) news<-news[-ind]
@@ -1376,7 +1374,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
                               "click \"ok\" and change to the R window")
         res<-tkmessageBox(message=mess,title="Help",icon="info",type="ok")
         try.res<-try(eval(parse(text=
-          paste("get(\"print\",\"package:base\")(help(\"",fns,"\",htmlhelp=FALSE))",sep=""))))
+  ##        paste("get(\"print\",\"package:base\")(help(\"",fns,"\",htmlhelp=FALSE))",sep="")
+  ## wegen Argument-Änderung
+          paste("get(\"print\",\"package:base\")(help(\"",fns,"\",help_type=\"text\"))",sep="")
+        )))
         if(length(try.res)==0){
           mess<- paste("Warning: no documentation for",fns,"found!")
           res<-tkmessageBox(message=mess,title="Help",icon="info",type="ok")
@@ -3928,7 +3929,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     tkpack(tl,side="left",expand="yes",fill="y"); tkpack(scr,side="left",expand="yes",fill="y")
     tkbind(newtop,"<Escape>",function()tkdestroy(newtop))
     tkbind(newtop,"<Return>",function(){
-       choice<-as.numeric(tkcurselection(tl))+1; tkdestroy(newtop)
+       choice<-as.numeric(tkcurselection(tl))+1; # tkdestroy(newtop)
        if(!is.na(choice) && any(choice==1:6)){
          news<-c("\\begin{center}\n\n\\end{center}\n",
                         "\\begin{quote}\n\n\\end{quote}\n",
@@ -4035,7 +4036,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
     doc<-c("=================================================",
            "RELAX -- R Editor for Literate Analysis and lateX",
            "=================================================","",
-           paste("version:","relax 1.3.4 - 101118"),"",
+           paste("version:","relax 1.3.5 - 101203"),"",
   "relax() is designed to support the process of data analysis, report writing,",
                  "presentation, and programming. On start it creates a new window for writing",
                  "code and text at the same time. You are allowed to evaluate R code chunks",
@@ -6979,7 +6980,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.3.4 - 101118"
+  relax.version.sys<- "relax 1.3.5 - 101203"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -7131,7 +7132,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
 
   TopW<-tktoplevel(); tkwm.geometry(TopW,"+0+15")
   tkwm.title(TopW,paste("RELAX -- R Editor for Literate Analysis and lateX:",
-                        "relax 1.3.4 - 101118"))
+                        "relax 1.3.5 - 101203"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -8380,7 +8381,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry=TRUE){
   ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
   ReloadReportWidget() # to repair defect report widget
-  cat( "relax 1.3.4 - 101118" ,"\n")
+  cat( "relax 1.3.5 - 101203" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{
