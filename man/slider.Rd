@@ -88,6 +88,8 @@ gslider(sl.functions, sl.names, sl.mins, sl.maxs, sl.deltas, sl.defaults, but.fu
   Use \code{slider(obj.name="p.save",obj.value=1-slider(no=2))}
   to assign value  \code{1-slider(no=2)} to the variable \code{p.save} .
   \code{slider(obj.name=p.save)} returns the value of variable \code{p.save}.
+
+  \bold{Dependencies} The function \code{gslider} depends on package \code{tkrplot}.
 }
 \value{
  Using \code{slider} in definition mode \code{slider} returns the value of new created the top level widget. 

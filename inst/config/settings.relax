@@ -20,6 +20,8 @@ psdesignwidth.sys<-6
 pshorizontal.sys<-FALSE
 # size parameter for jpeg device in inch
 jpgdesignsize.sys<-4
+# resolution for ppm-plot within report widget
+ppmresolution.sys<-15
 # height of relax window ( e.g.: "500" or "1200" ) 
 relaxwindow.height.sys<-"700"
 # width of relax window ( e.g.: "500" or "1200" ) 
@@ -42,7 +44,9 @@ text.editor.windows<-"notepad"
 browser.windows<-" "
 # browser.windows<-"c:/Programme/\"Mozilla Firefox\"/firefox.exe "
 pdfview.windows<-"acroread"
-# ghostscript-program e.g.: ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32"
+# ghostscript-program e.g.: 
+#   ghostscript<-"c:\\gs\\gs7.04\\bin\\gswin32c"
+#   ghostscript<-"C:\\Programme\\gs\\gs8.71\\bin\\gswin32c
 ghostscript<-" "
 # Path to Tcl/Tk-img-package:
 imgpath.sys<-""

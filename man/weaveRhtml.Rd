@@ -57,25 +57,29 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
   Further details:
   Some LaTeX macros are transformed to improve the html document.
 
-  1. \code{weaveRhtml} looks for the LaTeX macros \preformatted{\\author},      \preformatted{\\title} and \preformatted{\\date} at the beginning of the input text.
+  1. \code{weaveRhtml} looks for the LaTeX macros \verb{\\author},     
+    \verb{\\title} and \verb{\\date} at the beginning of the input text.
      If these macros are found their arguments are used to construct a simple
      html-head. 
 
-  2. \preformatted{\\section\{...\}, \subsection\{...\}, \paragraph\{...\}} macros 
+  2. \verb{\\section\{...\}, \\subsection\{...\}, \\paragraph\{...\}} macros 
      will be extracted to include some section titles, subsection titles, 
      paragraph titles in bold face fonts. Additionally a simple table 
      of contents is generated.
 
-  3. Text lines between \preformatted{\\begin\{center\}} and \preformatted{\\end\{center\}}     are centered.
+  3. Text lines between \verb{\\begin\{center\}} and \verb{\\end\{center\}}
+     are centered.
 
-  4. Text lines between \preformatted{\\begin\{quote\}} and \preformatted{\\end\{quote\}}   are shifted a little bit to the right.
+  4. Text lines between \verb{\\begin\{quote\}} and \verb{\\end\{quote\}}
+     are shifted a little bit to the right.
 
-  5. Text lines between \preformatted{\\begin\{itemize\}} and \preformatted{\\end\{itemize\}}  define a listing. The items of such a list have to begin with \preformatted{\\item}.
+  5. Text lines between \verb{\\begin\{itemize\}} and \verb{\\end\{itemize\}}
+     define a listing. The items of such a list have to begin with \verb{\\item}.
 
-  6. \preformatted{\\emh\{xyz\}} is transformed to \preformatted{<i>xyz</i>} 
-     -- \preformatted{xyz} will appear italic.
+  6. \verb{\\emh\{xyz\}} is transformed to \verb{<i>xyz</i>} 
+     -- \verb{xyz} will appear italic.
 
-  7. \preformatted{\\texttt\{xyz\}} is transformed to \preformatted{<code>xyz</code>} 
+  7. \verb{\\texttt\{xyz\}} is transformed to \verb{<code>xyz</code>} 
      -- this is formated like code.
 }
 \value{
@@ -101,5 +105,4 @@ weaveRhtml<-function(in.file,out.file){
 \keyword{file}
 \keyword{documentation}
 \keyword{programming}
-
 

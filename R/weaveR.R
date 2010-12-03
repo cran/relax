@@ -1,20 +1,28 @@
 weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
                  replace.umlaute=TRUE,eval_Sexpr=FALSE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830, 110919
   require(tcltk)
-  pat.use.chunk<-paste("<","<(.*)>",">",sep="")
-  pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
+  pat.use.chunk    <- paste("<","<(.*)>",">",sep="")
+  pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
+  pat.chunk.header <- paste("^<","<(.*)>",">=",sep="")
   pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
   pat.verbatim.end<-"\\\\end\\{verbatim\\}"
   pat.leerzeile<-"^(\\ )*$"
+  pat.KlAffeGG <- paste("@",">",">",sep="")
+  pat.KlAffeKK <- paste("@","<","<",sep="")
+  pat.Sp.open <- paste("DoSp","OpenKl-esc",sep="")
+  pat.Sp.close <- paste("DoSp","CloseKl-esc",sep="")
+  pat.Eck.open <- paste("DoEck","OpenKl-esc",sep="")
+  pat.Eck.close <- paste("DoEck","CloseKl-esc",sep="")
+
   .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
   UTF<-0<length(grep("utf",UTF))
   if(exists("DEBUG")){
     if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n")
   }
   if(!UTF){ 
-        char267<-eval(parse(text='"\\267"'))
+    char267<-eval(parse(text='"\\267"'))
   }
 
   if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
@@ -30,7 +38,7 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
   })
   length.input<-length(input)
 
-  input<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",input))
+  input<-gsub(pat.KlAffeGG,"DoSpCloseKl-esc",gsub(pat.KlAffeKK,"DoSpOpenKl-esc",input))
   input<-gsub("@\\]\\]","DoEckCloseKl-esc",gsub("@\\[\\[","DoEckOpenKl-esc",input))
 
   empty.index<-grep(pat.leerzeile,input)
@@ -81,32 +89,138 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
   use.lines<-input[use.index]
   code.lines<-input[code.index]
 
-  if(eval_Sexpr){ is.text.line<-line.typ=="TEXT"
+  if(eval_Sexpr){ if(!exists("revive.env")) revive.env <- ""
+                  # finde alle Textzeilen
+                  is.text.line<-line.typ=="TEXT"
+                  # extrahiere alle Textzeilen
                   text.lines<-input[is.text.line]
+                  # suche Textzeilen mit Sexpr-Expressions
                   sexpr.lines<-grep("\\Sexpr\\{.*\\}",text.lines)
+                  # falls es keine Sexpr-Expressions gibt, relax
                   if(0<length(sexpr.lines)){
+                    # arbeite Zeilen mit Sexpr-Expressions nacheinander ab
                     for(l in seq(along=sexpr.lines)){
+                      # hole Nummer l der Zeilen, die Sexpr-Expressions enthalten 
                       cand<-text.lines[sexpr.lines[l]]
+                      # knacke Kandidaten-Zeile an der Stelle auf, an der \Sexpr gefunden wird
                       cand<-unlist(strsplit(cand,"\\\\Sexpr"))
+                      # cand[1] ist der vor der ersten Expression, 
+                      # cand[i+1] der mit der i-ten Expression beginnt
+                      # alle Expressions der Zeile werden nacheinander abgearbeitet
                       for(j in seq(cand)[-1]){
+                        # ncandj zeigt die Laenge von Kandidat j an
                         ncandj<-nchar(cand[j])
-                        sexpr<-substring(cand[j],1:ncandj,1:ncandj) # Zerlegung in Buchstaben
-                        brack<-cumsum((sexpr=="{")-(sexpr=="}")) # Argument von sexpr
+                        # sexpr verwaltet den j-ten Kandidaten zeichenweise
+                        sexpr<-substring(cand[j],1:ncandj,1:ncandj) 
+                        # es gilt die beendende Klammer von Sexpr zu finden
+                        brack<-cumsum((sexpr=="{")-(sexpr=="}")) 
+                        # n.sexpr zeigt die Stelle der schliessenden-Klammer
                         n.sexpr<-which(brack==0)[1]; if(is.na(n.sexpr)) next
-                        result<-try(eval(parse(text=paste(collapse="",sexpr[1:n.sexpr]))))
-                        if(identical(result,"")) next
-                        # print("---");print(result);print("---")
-                        if(class(result)=="try-error"){ 
-                          result<-paste("[[\\Sexpr-error:",
-                                        paste(sexpr[1:n.sexpr],collapse=""),"]]",collaspe="")
-                        }else{
-                          if(is.numeric(result)) result<-signif(result,digits=options()$digits)
-                          result<-paste("[[",paste(unlist(result),collapse=" "),"]]",sep="")
+                        # mit n.sexpr greifen wir den vorderen Teil von sexpr und evaluieren
+                        code <- paste(collapse="",sexpr[1:n.sexpr])
+                        if(exists("DEBUG")){ print(code) }
+                        if(identical(revive.env,"")) 
+                           result <- try(eval(parse(text=code),envir=revive.env))  
+                        else 
+                           result <- try(eval(parse(text=code)))
+                        # wenn nichts rauskommt, ist nichts zu modifizieren
+                        if(0!=length(result)&&!identical(result,"")) { 
+                          # 101217 auch leere Ergebnisse ersetzen Sexpr!
+                          # print("---");print(result);print("---")
+                          # im Fehlerfall muss es eine Meldung geben
+                          if(class(result)=="try-error"){ 
+                            result<-paste("[[\\Sexpr-error:",
+                                          paste(sexpr[1:n.sexpr],collapse=""),"]]",collaspe="")
+                          }else{
+                            # bei nummerischen Ergebnissen werden ungewollte Nachkommastellen entfernt
+                            if(is.numeric(result)) result<-signif(result,digits=options()$digits)
+                            # Das Ergebnis wird verpackt
+                            result<-paste("[[",paste(unlist(result),collapse=" "),"]]",sep="")
+                          }
                         }
+                        # das Ergebnis des j-ten Ausdrucks wird vorn,
+                        # also wo das Kommando stand eingetragen
                         cand[j]<-paste(result, substring(cand[j],n.sexpr+1),sep="")
                       }
                       text.lines[sexpr.lines[l]]<-paste(cand,collapse="")  
                     }
+                    # aktualisiere Textzeilen 
+                    input[is.text.line]<-text.lines
+                  }
+
+                  # finde alle Textzeilen
+                  is.text.line<-line.typ=="TEXT"
+                  # extrahiere alle Textzeilen
+                  text.lines<-input[is.text.line]
+                  # suche Textzeilen mit Splot-Expressions
+                  splot.lines<-grep("\\Splot\\{.*\\}",text.lines)
+                  # falls es keine Splot-Anweisungen gibt, relax
+                  if(0<length(splot.lines)){
+                    if(identical(revive.env,"")) revive.sys <- get("revive.sys",revive.env)
+                    copy.plot<-function(psname,latexheight,height,width,horizontal,center=TRUE,...){
+                      psname<-as.character(substitute(psname))
+                      if(exists("revive.sys")){
+                        if(missing(latexheight)) latexheight <- get("psheight.sys",revive.sys)
+                        if(missing(height))      height <-      get("psdesignheight.sys",revive.sys)
+                        if(missing(width))       width <-       get("psdesignwidth.sys",revive.sys)
+                        if(missing(horizontal))  horizontal <-  get("pshorizontal.sys",revive.sys)
+                      } else {
+                        if(missing(latexheight))     latexheight <- "10cm"
+                        if(missing(height))          height <-      6
+                        if(missing(width))           width <-       6
+                        if(missing(horizontal))      horizontal <-  FALSE
+                      }
+                      if(exists("DEBUG")){ cat(psname,latexheight,height,width,horizontal) }
+                      if(0==length(grep("\\.ps$",psname))) psname<-paste(psname,".ps",sep="") 
+                      news<-paste(if(center)"\n\\begin{center}","\\includegraphics[",
+                                  "height=",latexheight,"]{",psname,"}",
+                                  if(center)"\\end{center}\n",sep="") 
+                      result<-try({dev.copy(postscript,psname,horizontal=horizontal,
+                                  width=width,height=height,...);dev.off()}
+                      )
+                      if(class(result)=="try-error"){ news <- result } 
+                      news
+                    }
+                    # arbeite Zeilen mit Splot-Expressions nacheinander ab
+                    for(l in seq(along=splot.lines)){
+                      # hole Nummer l der Zeilen, die Splot-Expressions enthalten 
+                      cand<-text.lines[splot.lines[l]]
+                      # knacke Kandidaten-Zeile an der Stelle auf, an der \Splot gefunden wird
+                      cand<-unlist(strsplit(cand,"\\\\Splot"))
+                      # cand[1] ist der vor der ersten Expression, 
+                      # cand[i+1] der mit der i-ten Expression beginnt
+                      # alle Expressions der Zeile werden nacheinander abgearbeitet
+                      for(j in seq(cand)[-1]){
+                        # ncandj zeigt die Laenge von Kandidat j an
+                        ncandj<-nchar(cand[j])
+                        # splot verwaltet den j-ten Kandidaten zeichenweise
+                        splot<-substring(cand[j],1:ncandj,1:ncandj) 
+                        # es gilt die beendende Klammer von Splot zu finden
+                        brack<-cumsum((splot=="{")-(splot=="}")) 
+                        # n.splot zeigt die Stelle der schliessenden-Klammer
+                        n.splot<-which(brack==0)[1]; if(is.na(n.splot)) next
+                        # mit n.splot greifen wir den vorderen Teil von splot und evaluieren
+                  ###
+                        code <- paste("copy.plot(",paste(collapse="",splot[2:(n.splot-1)]),")")
+                        if(exists("DEBUG")){ print(code) }
+                  ###
+                        result <- try(eval(parse(text=code)))      
+                        # wenn nichts rauskommt, ist nichts zu modifizieren
+                        if(!identical(result,"")) { 
+                          # print("---");print(result);print("---")
+                          # im Fehlerfall muss es eine Meldung geben
+                          if(class(result)=="try-error"){ 
+                            result<-paste("[[\\Splot-error:",
+                                          paste(splot[1:n.splot],collapse=""),"]]",collaspe="")
+                          }
+                        }
+                        # das Ergebnis des j-ten Ausdrucks wird vorn, 
+                        # also wo das Kommando stand eingetragen
+                        cand[j]<-paste(result, substring(cand[j],n.splot+1),sep="")
+                      }
+                      text.lines[splot.lines[l]]<-paste(cand,collapse="")  
+                    }
+                    # aktualisiere Textzeilen 
                     input[is.text.line]<-text.lines
                   }
  }
@@ -129,12 +243,13 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
    names.use.cand<-input[lines.use]; l.u<-n.u<-NULL
    for(ii in seq(along=lines.use)){ # aufknacken mehrerer Chunks in einer Code-Zeile
       h<-names.use.cand[ii] 
-      repeat{ 
+      repeat{  # old: last<-sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",h) 
         # if(!exists("max.wd")) max.wd<-10; max.wd<-max.wd-1; if(max.wd<1) break
-        last<-sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",h) # extract name
+        last<-sub(pat.use.chunk.line,"\\2",h) # extract name
         if(last!=h){ # something found during substitution => chunk use found
           l.u<-c(l.u,lines.use[ii]); n.u<-c(n.u, last)
-          h<-sub(paste("^(.*)<","<.*>",">.*",sep=""),"\\1",h) # rm identified chunk use 
+          # old: h<-sub(paste("^(.*)<","<.*>",">.*",sep=""),"\\1",h) # rm 
+          h<-sub(pat.use.chunk.line,"\\1",h) # rm identified chunk use 
           if(nchar(h)==0) break
         } else break # no more chunk uses in line ii
       }
@@ -143,8 +258,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
 
    # chunk uses found: names (names.use) and lines (lines.use)
    # find headers that have been used, their lines and compute used-in-info
-   # remove brackets etc.
-   names.header<-sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",names.header) 
+   # remove brackets... old: sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",names.header)
+   names.header<-sub(pat.use.chunk.line,"\\2",names.header) 
    ind<-!is.na(match(names.header,names.use))
    names.header.used<-names.header[ind]; lines.header.used<-code.start.index[ind] # 
    if((anz<-length(names.header.used))>0){ 
@@ -247,8 +362,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
     uli<-use.lines[i]
     # split chunk names and other strings
     repeat{
-      if(0==length(cand<-grep("<<(.*)>>",uli))) break
-      uli.h<-gsub("(.*)<<(.*)>>(.*)","\\1bReAkuSeChUnK\\2bReAk\\3",uli)
+      if(0==length(cand<-grep(pat.use.chunk,uli))) break
+      uli.h<-gsub(pat.use.chunk.line,"\\1bReAkuSeChUnK\\2bReAk\\3",uli)
       uli<-unlist(strsplit(uli.h,"bReAk"))
     }
     # find chunk names
@@ -261,13 +376,11 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
     if(length(uli)!=length(cand)){
       if(is.use.lines.within.code[i]){ 
         # within code chunks: code (but no the chunk names) has to be escaped
-        if(!UTF){ 
-            uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
-        }else{
-            uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
-        }
+         uli[-cand]<-gsub("\\?","?\\\\verb!?!\\\\verb?",uli[-cand]) #110518
+         uli[-cand]<-paste("\\verb?",uli[-cand],"?",sep="") #110518
       }
     }
+
     use.lines[i]<-paste(uli,collapse="")
   }
   # store modified use lines
@@ -275,14 +388,10 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
         paste("\\rule{0mm}{0mm}\\newline",leerzeichen.vor.use,use.lines,"%",sep=""), 
         paste(gsub("[^ ]","",leerzeichen.vor.use),use.lines,sep=""))
 
-  if(!UTF){
-    input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb",char267,
-                             " ",code.lines," ",char267,"%",sep="")
-  }else{
-    input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb\140",code.lines,
-       "\140%") #060516 070706
-  }
-
+  #110518:
+  code.lines<-gsub("\\?","?\\\\verb!?!\\\\verb?",code.lines) #110518
+  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb?",
+                             " ",code.lines," ","?%",sep="")    
   typ<-"TEXT"
   index<-which(line.typ==typ)
   code.im.text.index<-index[grep("\\[\\[(.*)\\]\\]",input[index])]
@@ -301,8 +410,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
           cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
           cand<-gsub("\\~","{\\\\char'176}",cand)
           cand<-gsub("\\^","{\\\\char'136}",cand)
-          cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
-          cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
+          cand<-gsub(pat.Sp.open,"\\\\verb|<<|",cand) # 050612
+          cand<-gsub(pat.Sp.close,"\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
         }
         x<-paste(x,collapse=" ")}
@@ -330,8 +439,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
             h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
             h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
-            h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
-            h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
+            h<-gsub(pat.Sp.open,"\\\\verb|<<|",h) # 050612
+            h<-gsub(pat.Sp.close,"\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
@@ -363,8 +472,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
           cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
           cand<-gsub("\\~","{\\\\char'176}",cand)
           cand<-gsub("\\^","{\\\\char'136}",cand)
-          cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
-          cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
+          cand<-gsub(pat.Sp.open,"\\\\verb|<<|",cand) # 050612
+          cand<-gsub(pat.Sp.close,"\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
         }
         x<-paste(x,collapse=" ")}
@@ -392,8 +501,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
             h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
             h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
-            h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
-            h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
+            h<-gsub(pat.Sp.open,"\\\\verb|<<|",h) # 050612
+            h<-gsub(pat.Sp.close,"\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
@@ -425,8 +534,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
           cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
           cand<-gsub("\\~","{\\\\char'176}",cand)
           cand<-gsub("\\^","{\\\\char'136}",cand)
-          cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
-          cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
+          cand<-gsub(pat.Sp.open,"\\\\verb|<<|",cand) # 050612
+          cand<-gsub(pat.Sp.close,"\\\\verb|>>|",cand) # 050612
           x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
         }
         x<-paste(x,collapse=" ")}
@@ -454,8 +563,8 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
             h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
             h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
             h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
-            h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
-            h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
+            h<-gsub(pat.Sp.open,"\\\\verb|<<|",h) # 050612
+            h<-gsub(pat.Sp.close,"\\\\verb|>>|",h) # 050612
           x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
           }
           x[br.open]<-"{\\tt "; x[br.close]<-"}"
@@ -546,28 +655,28 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
    if(!UTF){
    # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 
    # (see: $ man iso-8859-1 / Latin1 / unicode)
-      pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+      pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
       uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
       uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
       input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
-      input<-gsub(substring(uml.latin1,7,7),"{\\\\ss}",input) # replace sz
+      input<-gsub(substring(uml.latin1,7,7),paste("{\\\\s","s}",sep=""),input) # sz
       uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
       input<-gsub(uml.pattern,"\\\\\"\\1",input)  # replace Umlaute ae->&aeuml; 
   # replace Umlaute &aeuml;->&auml;
       input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)   
    }else{
-    input<-gsub("\283\237","{\\\\ss}",input)
-    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+    input<-gsub("\303\237",paste("{\\\\s","s}",sep=""),input)
+    input<-gsub("(\303\244|\303\266|\303\274|\303\204|\303\226|\303\234)",
                               "\\\\\"\\1",input)
-    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+    input<-chartr("\303\244\303\266\303\274\303\204\303\226\303\234", 
                                 "aouAOU", input)
    }
    if(exists("DEBUG")){
     cat("german Umlaute replaced\n")
    }
   }
-  input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
-  input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
+  input<-gsub(pat.Sp.close,">>",gsub(pat.Sp.open,"<<",input))
+  input<-gsub(pat.Eck.close,"]]",gsub(pat.Eck.open,"[[",input))
 
   input[1]<-paste(
        "\\newcounter{Rchunkno}",
@@ -588,6 +697,22 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
   input<-sub("^\\\\end\\{verbatim\\}",
              "\\\\end{verbatim}\\\\textchunkcommands",input)
 
+  if(show.code == "echo"){
+    # checke code chunk names
+    idx <- grep("echo *= *FALSE",input[code.start.index])
+    if(0 < length(idx)){
+      remove.chunk.set <- code.start.index[idx]
+      for(i in seq(along=remove.chunk.set)){
+        # remove code chunks with names containing "echo=FALSE"
+        st <- en <- remove.chunk.set
+        repeat{
+          en <- en + 1; if( length.input < en || line.typ[en] == "TEXT-START" ) break
+        }
+        en <- en - 1  
+        input[st:en] <- " "
+      }
+    }
+  }
   if(show.code==FALSE){
      input[code.index] <-"."
      input[use.index] <-":"
@@ -619,20 +744,25 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
         # \"a -> ae, ... oe, ue, Ae, Oe, Ue, ß
         u<-uml.latin1<-unlist(strsplit(eval(parse(
              text='"\\344\\366\\374\\304\\326\\334\\337"')),""))
-        inp<-gsub('\\\\"a',u[1],inp)
-        inp<-gsub('\\\\"o',u[2],inp);inp<-gsub('\\\\"u',u[3],inp)
-        inp<-gsub('\\\\"A',u[4],inp);inp<-gsub('\\\\"O',u[5],inp)
-        inp<-gsub('\\\\"U',u[6],inp) ##{
-        inp<-gsub(".\\\\ss}",u[7],inp)
+        inp<-gsub(paste('\\\\"',"a",sep=""),u[1],inp)
+        inp<-gsub(paste('\\\\"',"o",sep=""),u[2],inp) 
+        inp<-gsub(paste('\\\\"',"u",sep=""),u[3],inp)
+        inp<-gsub(paste('\\\\"',"A",sep=""),u[4],inp)
+        inp<-gsub(paste('\\\\"',"O",sep=""),u[5],inp)
+        inp<-gsub(paste('\\\\"',"U",sep=""),u[6],inp) ##{
+        inp<-gsub(paste(".\\\\s","s}",sep=""),u[7],inp)
       }else{
-        # pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+        # pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
         uml.utf.8 <-eval(parse(text=
-             '"\\283\\244\\283\\266\\283\\274\\283\\204\\283\\226\\283\\234\\283\\237"'))
+             '"\\303\\244\\303\\266\\303\\274\\303\\204\\303\\226\\303\\234\\303\\237"'))
         u<-substring(uml.utf.8,1:7,1:7)
-        inp<-gsub('\\\\"a',u[1],inp);inp<-gsub('\\\\"o',u[2],inp)
-        inp<-gsub('\\\\"u',u[3],inp);inp<-gsub('\\\\"A',u[4],inp)
-        inp<-gsub('\\\\"O',u[5],inp);inp<-gsub('\\\\"U',u[6],inp) ##{
-        inp<-gsub(".\\\\ss}",u[7],inp)
+        inp<-gsub(paste('\\\\"',"a",sep=""),u[1],inp)
+        inp<-gsub(paste('\\\\"',"o",sep=""),u[2],inp)
+        inp<-gsub(paste('\\\\"',"u",sep=""),u[3],inp)
+        inp<-gsub(paste('\\\\"',"A",sep=""),u[4],inp)
+        inp<-gsub(paste('\\\\"',"O",sep=""),u[5],inp)
+        inp<-gsub(paste('\\\\"',"U",sep=""),u[6],inp) ##{
+        inp<-gsub(paste(".\\\\s","s}",sep=""),u[7],inp)
       }
       input[ind]<-inp
      }

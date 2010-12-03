@@ -3,6 +3,19 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,
          insert.comments=TRUE,add.extension=TRUE){
   # german documentation of the code:
   # look for file webR.pdf, P. Wolf 050204
+  AtSignLineBegin <- "^@"
+  pat.chunk.header <- paste("^<","<(.*)>",">=",sep="")
+  pat.chunk.header.line <- paste("(.*)",pat.chunk.header,"(.*)",sep="")
+  pat.use.chunk      <- paste("<","<(.*)>",">",sep="")
+  pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
+  ReplaceStringChHeader <- paste("cOdE","dEf",sep="")
+  ReplaceStringChUse <- paste("uSe","ChUnK",sep="")
+  ReplaceStringEscLGB <- paste("DoSpOpenKl","-esc",sep="")
+  ReplaceStringEscRGB <- paste("DoSpCloseKl","-esc",sep="")
+  BREAK <- paste("bRe","Ak",sep="")
+  EscLeftLowerBrackets <- paste("@<","<",sep="")
+  EscRightGreaterBrackets <- paste("@>",">",sep="")
+
   if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
   if(!file.exists(in.file)){
     cat(paste("ERROR:",in.file,"not found!!??\n"))
@@ -11,37 +24,55 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,
   # code.ch<-scan(in.file,sep="\n",what=" ",blank.lines.skip =FALSE)
   code.ch<-readLines(in.file) # 2.1.0
 
+  # append empty text chunk
   code.ch<-c(code.ch,"@")
-  code.a<- grep("^<<(.*)>>=",code.ch)
+  # check for code chunk starts
+  code.a <- grep(pat.chunk.header,code.ch)
   if(0==length(code.a)){return("Warning: no code found!!!!")}
-    # was tun, wenn mehrere code chunks nicht durch text chunks getrennt wurden? 090220
-    aa<-as.list(code.ch)
-    aa[code.a]<-lapply(aa[code.a],function(x) c("@",x)) 
-    code.ch<-unlist(aa); code.a<- grep("^<<(.*)>>=",code.ch)
-  code.z<-grep("^@",code.ch)
-  code.z    <-unlist(sapply(code.a ,function(x,y)min(y[y>x]),code.z))
-  code.n    <-length(code.ch)
-  change    <-rep(0,code.n); change[c(code.a ,code.z)]<-1
+  # integrate "@" lines 090220
+  aa<-as.list(code.ch) 
+  aa[code.a]<-lapply(aa[code.a],function(x) c("@",x)) 
+  code.ch<-unlist(aa)
+  code.n <-length(code.ch)
+  # find code chunk starts again
+  code.a<- grep(pat.chunk.header,code.ch)
+  # find code chunk endings
+  #  text chunk starts
+  code.z    <-grep(AtSignLineBegin,code.ch)
+  #  text chunk starts that follow code chunks
+  code.z    <-unlist(sapply(code.a, function(x,y) min(y[y>x]),code.z))
+  # find positions of change from text to code chunk or from code chunk to text chunk
+  change    <-rep(0,code.n); change[c(code.a ,code.z)] <- 1
+  # extract code chunks
   code.ch   <-code.ch[1==(cumsum(change)%%2)]
+  # save number of lines
   code.n    <-length(code.ch)
 
-  code.ch<-gsub("@>>","DoSpCloseKl-esc",gsub("@<<","DoSpOpenKl-esc",code.ch))
+  code.ch<-gsub(EscRightGreaterBrackets,
+                ReplaceStringEscRGB,
+                gsub(EscLeftLowerBrackets,ReplaceStringEscLGB,code.ch))
 
-  code.ch<-gsub("(.*)<<(.*)>>=(.*)","cOdEdEf\\2",code.ch)
+  # remove disturbing characters in a code chunk definition line
+  code.ch<-gsub(pat.chunk.header.line,
+                paste(ReplaceStringChHeader,"\\2",sep=""),
+                code.ch)
+  ReplaceStringUseLine <- paste("\\1",BREAK,ReplaceStringChUse,"\\2",BREAK,"\\3",sep="")
   repeat{
-    if(0==length(cand<-grep("<<(.*)>>",code.ch))) break
-    code.ch<-unlist(strsplit(gsub("(.*)<<(.*)>>(.*)",
-               "\\1bReAkuSeChUnK\\2bReAk\\3",code.ch),"bReAk"))
+    if(0==length(cand<-grep(pat.use.chunk,code.ch))) break
+    code.ch<-unlist(strsplit(
+                gsub(pat.use.chunk.line,ReplaceStringUseLine,code.ch),
+                BREAK 
+             ))
   }
   code.ch<-code.ch[code.ch!=""]
   code.n<-length(code.ch)
   if(exists("DEBUG")) print(code.ch)
 
   line.typ  <-rep("C",code.n)
-  code.a    <-grep("cOdEdEf",code.ch)
+  code.a    <-grep(ReplaceStringChHeader,code.ch)
   code.ch[code.a]<-substring(code.ch[code.a],8)
   line.typ[code.a]<-"D"
-  code.use    <-grep("uSeChUnK",code.ch)
+  code.use  <-grep(ReplaceStringChUse,code.ch)
   code.ch[code.use]<-substring(code.ch[code.use],9)
   line.typ[code.use]<-"U"
 
@@ -158,7 +189,7 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,
     }
   }
 
-  code.out<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",code.out))
+  code.out<-gsub(ReplaceStringEscRGB,">>",gsub(ReplaceStringEscLGB,"<<",code.out))
 
   if(missing(out.file)||in.file==out.file){
     out.file<-sub("\\.([A-Za-z])*$","",in.file)
@@ -168,8 +199,6 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,
   get("cat","package:base")(code.out,sep="\n",file=out.file)
   cat("tangle process finished\n")
 
-
-
 }
-print("OK")
+cat("function tangleR defined\n")
 

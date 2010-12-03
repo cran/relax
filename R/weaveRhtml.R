@@ -3,10 +3,20 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   # look for file webR.pdf, P. Wolf 060920 / 070309 / 070830 / 071016
   require(tcltk)
   pat.use.chunk<-paste("<","<(.*)>",">",sep="")
+  pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
   pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
+
   pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
   pat.verbatim.end<-"\\\\end\\{verbatim\\}"
   pat.leerzeile<-"^(\\ )*$"
+
+  pat.KlAffeGG <- paste("@",">",">",sep="")
+  pat.KlAffeKK <- paste("@","<","<",sep="")
+  pat.Sp.open <- paste("DoSp","OpenKl-ESC",sep="")
+  pat.Sp.close <- paste("DoSp","CloseKl-ESC",sep="")
+  pat.Eck.open <- paste("DoEck","OpenKl-ESC",sep="")
+  pat.Eck.close <- paste("DoEck","CloseKl-ESC",sep="")
+
   .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
   UTF<-0<length(grep("utf",UTF))
   if(exists("DEBUG")){ 
@@ -114,7 +124,7 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   h<-grep("^[ ]*%",input)
   if(0<length(h)) input<-input[-h]
 
-  input<-gsub("@>>","DoSpCloseKl-ESC",gsub("@<<","DoSpOpenKl-ESC",input))
+  input<-gsub(pat.KlAffeGG,"DoSpCloseKl-ESC",gsub(pat.KlAffeKK,"DoSpOpenKl-ESC",input))
   input<-gsub("@\\]\\]","DoEckCloseKl-ESC",gsub("@\\[\\[","DoEckOpenKl-ESC",input))
 
   empty.index<-grep(pat.leerzeile,input)
@@ -205,7 +215,7 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   def.ref.no<-match(gsub("\\ ","",code.start.lines), gsub("\\ ","",code.start.lines))
   code.start.lines<-paste(
         "<a name=\"codechunk",no,"\"></a>",
-        "<a href=\"#codechunk",1+(no%%max(no)),"\">",
+        "<a href=\"#codechunk",if(length(no)>0)1+(no%%max(no)),"\">",
         "<br>Chunk:",no," <i>&lt;",code.start.lines,def.ref.no,
         "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a>",sep="") 
   input[code.start.index]<-code.start.lines
@@ -215,11 +225,11 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   use.lines<-substring(use.lines,nchar(leerzeichen.vor.use))
   h<-gsub("\\ ","&nbsp;",leerzeichen.vor.use)
   leerzeichen.vor.use<-ifelse(is.use.lines.within.code,h,leerzeichen.vor.use)
+  such<-pat.use.chunk.line 
   for(i in seq(along=use.lines)){
     uli<-use.lines[i]
-    such<-paste("(.*)<","<(.*)>",">(.*)",sep="")
     repeat{
-      if(0==length(cand<-grep("<<(.*)>>",uli))) break
+      if(0==length(cand<-grep(pat.use.chunk,uli))) break
       uli.h<-gsub(such,"\\1BrEaKuSeCHUNK\\2BrEaK\\3",uli)
       uli<-unlist(strsplit(uli.h,"BrEaK"))
     }
@@ -422,7 +432,7 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   if(replace.umlaute){
    if(!UTF){
     # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-      pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+      pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
       uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
       uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
       input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
@@ -432,18 +442,18 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
       # replace Umlaute &aeuml;->&auml;  
       input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)  
    }else{
-      input<-gsub("\283\237","&szlig;",input)
-      input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+      input<-gsub("\303\237","&szlig;",input)
+      input<-gsub("(\303\244|\303\266|\303\274|\303\204|\303\226|\303\234)",
                                 "&\\1uml;",input)
-      input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+      input<-chartr("\303\244\303\266\303\274\303\204\303\226\303\234", 
                                 "aouAOU", input)
    }
   }
   if(exists("DEBUG")) cat("german Umlaute replaced\n")
 
-  #input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
-  input<-gsub("DoSpCloseKl-ESC","&gt;&gt;",gsub("DoSpOpenKl-ESC","&lt;&lt;",input))
-  input<-gsub("DoEckCloseKl-ESC","]]",gsub("DoEckOpenKl-ESC","[[",input))
+  #input<-gsub("DoSpClose Kl-esc",">>",gsub("DoSpOpen Kl-esc","<<",input))
+  input<-gsub(pat.Sp.close,"&gt;&gt;",gsub(pat.Sp.open,"&lt;&lt;",input))
+  input<-gsub(pat.Eck.close,"]]",gsub(pat.Eck.open,"[[",input))
 
   # find sections, subsections, subsubsections, paragraphs
   atag<-"<h2>"; etag<-"</h2>"; command<-"section"
