@@ -9,11 +9,11 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) [[ cp install.dir/relax_1.3.6.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.6.*
+% f) [[ cp install.dir/relax_1.3.7.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.7.*
 % g) upload to cran
 %     ftp ftp://cran.R-project.org/incoming/
-%     ftp> put relax_1.3.6.tar.gz
+%     ftp> put relax_1.3.7.tar.gz
 %     ftp> bye   % 
 % Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel?? ok
 % Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel ok
@@ -60,8 +60,8 @@
 %
 % Paketbeschaffung über Netz:
 % download.file(
-%  "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.6.tar.gz",
-%  "relax_1.3.6.tar.gz")
+%  "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.7.tar.gz",
+%  "relax_1.3.7.tar.gz")
 %
 % Dokumentationserstellung:
 % cd /home/wiwi/pwolf/work/relax
@@ -105,7 +105,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.3.6 - 110927"
+"relax 1.3.7 - 111111"
 @
 <<relax>>=
 "relax"
@@ -795,13 +795,19 @@ tabula rasa realisiert.
 <<generiere eine neue Umgebung für die Anwenderdaten>>=
 revive.env<-"1"; rm(revive.env)
 if(!exists("revive.env")){
-  revive.env<<-revive.env<-new.env(parent=.GlobalEnv)
+  revive.env<<-rev.env<-new.env(parent=.GlobalEnv) ### 111103
 } else {
   revive.sys<-get("revive.sys",envir=revive.env)
-  rm(list=ls(env=revive.sys),  envir=revive.sys)
+  rm(list=ls(envir=revive.sys),  envir=revive.sys)
 }
 revive.sys<-environment()
 assign("revive.sys", revive.sys, envir=revive.env)
+if(0<length(grep("relax.fns",search()))) detach("relax.fns")
+attach(what=NULL,name="relax.fns")
+pos.of.relax.fns <- grep("relax.fns",search())
+@
+relax.fns<-"1"; rm(relax.fns)
+assign("relax.fns",new.env(),envir=revive.env)
 
 @
 \subsection{Der Ausgangspunkt für die Oberfläche}
@@ -1409,13 +1415,14 @@ tkpack(brelax,side="left")
 @
 <<generiere interaktives icon>>=
 function(){
-  res<-tkmessageBox(message=if(language=="german") "Soll das interaktive Icon aktiert werden?"
-	    else "Do you want to activate interactive icon?",
-                    title="RELAX-ICON",icon="warning",type="yesnocancel",default="no")
-  if("externalptr"==mode(res))  res<-tclvalue(res)
-  if(res=="cancel") return()
-  if(res=="no") return()
-
+  if(FALSE){
+    res<-tkmessageBox(message=if(language=="german") "Soll das interaktive Icon aktiert werden?"
+                              else "Do you want to activate interactive icon?",
+                      title="RELAX-ICON",icon="warning",type="yesnocancel",default="no")
+    if("externalptr"==mode(res))  res<-tclvalue(res)
+    if(res=="cancel") return()
+    if(res=="no") return()
+  }
 chair<-function(xcenter=1.2,xspread=1,ycenter=1.2,yspread=1,lwd=4){
   # cat("chair: ", xcenter,xspread,ycenter,yspread)
   x<-seq(0,1.6,length=(n<-40))
@@ -1468,12 +1475,19 @@ redo<-function(...){
   h<-slider(obj.name="chair.center"); xchcenter<-h[1]; ychcenter<-h[2]
   a<-par(family="mono")
   plot(-2:2,-2:2,type="n",axes=FALSE,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
-  polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA)
-  polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)
+  #polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA) # strand
+  #polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)   # air
+  n <- 1000; xa<-rep(-4,n); xb <- xa + 8
+  y <- seq(hori,-3.5,length=n); segments(xa,y,xb,y,col=rainbow(n,start=0.11,end=0.18),xpd=NA)
+  y <- seq(hori, 3.5,length=n); segments(xa,y,xb,y,col=rainbow(n,start=0.53,end=0.70),xpd=NA)
   b<-as.numeric(unlist(strsplit(sub(".*([0-9][0-9]:[0-9][0-9]:).*","\\1",date()),":")))
-  b[2]<-b[2]/60; b[1] <- b[1]+6; b <- (sum(b)%%12)/12
+  b[2]<-b[2]/60; bb<-b; b[1] <- b[1]+6; b <- (sum(b)%%12)/12
   cen <- c(-2*cos(pi*b),sin(pi*b)*(2-hori)+hori+.5)
   points(cen[1],cen[2],cex=15,col=heat.colors(18)[6+floor(abs(20*min(b,1-b)))],pch=16,xpd=NA)
+  h <- 2*pi*(sum(bb)/12); h <- cen + c(sin(h),cos(h))*0.3
+  arrows(cen[1],cen[2],h[1],h[2],.08,col="blue",lwd=4,xpd=NA)
+  h <- 2*pi*(bb[2]); h <- cen + c(sin(h),cos(h))*0.4
+  arrows(cen[1],cen[2],h[1],h[2],.08,col="blue",lwd=4,xpd=NA)
   text(0.5,-.5,"relax",cex=4)
   tree(xcenter=xtrcenter,xspread=xtrsc,n=n.leafs,n.l=leaf.sty,
        ycenter=ytrcenter,yspread=ytrsc,lwd=3)
@@ -1495,16 +1509,17 @@ redo<-function(...){
     slider(obj.name="chair.center",obj.value=xy)
     redo()
   }
-  slider(redo,
+  if("tkrplot" %in% list.files(.libPaths())) sl <- gslider else sl <- slider
+  sl(redo,
     c("tree scale factor", "x scale chair",
       "design of chair", "size of beach",
       "number of leafs", "style of leafs"),
     c(.1,.1,.1,-2,7,5),c(5,2.4,2.4,2,17,30),
     c(.1,.1,.1,.1,1,1),c(3.5,1.2,1.2,-0.7,9,12),
-    list(set.tree,set.chair),
-    but.names=c("tree location","new chair location")
+    list(set.tree,set.chair,redo),
+    but.names=c("tree location","new chair location","update clock")
   )
-  redo()
+  if("tkrplot" %in% list.files(.libPaths())) "relax" else redo()
   "relax"
 }
 
@@ -1741,7 +1756,7 @@ tkpack(toutwin,fill="both",expand="yes")
 
 if(<<das OS ist Windows>>) #{}
 { # 110505
-# fout<-get("fout",env=revive.sys); toutwin<-get("toutwin",env=revive.sys)
+# fout<-get("fout",envir=revive.sys); toutwin<-get("toutwin",envir=revive.sys)
  tkbind(fout,"<Configure>","")
  config.fns<-function(...){
   if("1"==tclvalue(tkwinfo("ismapped",toutwin))){
@@ -1913,7 +1928,7 @@ function(tworkwin){
      fname<-tclvalue(tkget(tworkwin,paste(line,"0",sep="."),paste(line,"40",sep=".")))
      fname<-sub("^.*img src..","",fname)
      fname<-sub("(.jpg).*$","\\1",fname)
-     browser.sys<-get("browser.sys",env=revive.sys)
+     browser.sys<-get("browser.sys",envir=revive.sys)
      cat(fname, "will be displayed by browser in a few seconds!\n")
      if( <<das OS ist Windows>> ){
        browser.exe<- if(browser.sys=="") "start " else browser.sys
@@ -2003,7 +2018,7 @@ Exit<-function(){
   if(res=="cancel") return()
   if(res=="no") SaveReport()
   set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
-  remove("print",pos=which(.path.package("relax")==searchpaths()))
+  ## remove("print",pos=which(.path.package("relax")==searchpaths())) ## 111103
   melde("==================================================\n")
   melde("RELAX --- EXIT                    \n")
   # melde("copy of report saved as: \n")
@@ -2047,8 +2062,8 @@ SetPSDesignWidth<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       h<-as.numeric(tclvalue("tvinfo"))
-      assign("psdesignwidth.sys",h,env=revive.sys)
-      melde(paste('> assign("psdesignwidth.sys","',psdesignwidth.sys,'",env=revive.sys)',sep="")
+      assign("psdesignwidth.sys",h,envir=revive.sys)
+      melde(paste('> assign("psdesignwidth.sys","',psdesignwidth.sys,'",envir=revive.sys)',sep="")
                 , "cmd.msg")
     }
   )
@@ -2065,8 +2080,8 @@ SetPSWidth<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       pswidth.sys<-tclvalue("tvinfo")
-      assign("pswidth.sys",pswidth.sys,env=revive.sys)
-      melde(paste('> assign("pswidth.sys","',pswidth.sys,'",env=revive.sys)',sep="")
+      assign("pswidth.sys",pswidth.sys,envir=revive.sys)
+      melde(paste('> assign("pswidth.sys","',pswidth.sys,'",envir=revive.sys)',sep="")
                 , "cmd.msg")
     }
   )
@@ -2080,7 +2095,7 @@ die Variable [[pswidth.sys]] direkt setzen läßt. Entsprechendes
 läßt sich auch für andere Knöpfe erfinden. Hier das Muster:
 <<unused: future version>>=
 SetPSWidth.bat<-function(pswidth.sys){
-      assign("pswidth.sys",pswidth.sys,env=revive.sys)
+      assign("pswidth.sys",pswidth.sys,envir=revive.sys)
       melde(paste("> pswidth.sys <-",pswidth.sys),"cmd.msg")
 }
 environment(SetPSWidth.bat)<-revive.sys
@@ -2147,8 +2162,8 @@ SetPlotHeight<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       psheight.sys<-tclvalue("tvinfo")
-      assign("psheight.sys",psheight.sys,env=revive.sys)
-      melde(paste('> assign("psheight.sys","',psheight.sys,'",env=revive.sys)',sep="")
+      assign("psheight.sys",psheight.sys,envir=revive.sys)
+      melde(paste('> assign("psheight.sys","',psheight.sys,'",envir=revive.sys)',sep="")
             ,"cmd.msg")
     }
   )
@@ -2162,8 +2177,8 @@ SetPSDesignHeight<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       h<-as.numeric(tclvalue("tvinfo"))
-      assign("psdesignheight.sys",h,env=revive.sys)
-      melde(paste('> assign("psdesignheight.sys","',psdesignheight.sys,'",env=revive.sys)',sep="")
+      assign("psdesignheight.sys",h,envir=revive.sys)
+      melde(paste('> assign("psdesignheight.sys","',psdesignheight.sys,'",envir=revive.sys)',sep="")
                 , "cmd.msg")
     }
   )
@@ -2177,9 +2192,9 @@ SetPSRotation<-function(){
   <<zeige Menü von [[choices]], Vorschlag:[[activate]], liefere [[choice]] ab>>
   if(choice!=0){
       pshorizontal.sys<-2==choice
-      assign("pshorizontal.sys",pshorizontal.sys,env=revive.sys)
+      assign("pshorizontal.sys",pshorizontal.sys,envir=revive.sys)
       melde(paste(
-           '> assign("pshorizontal.sys","',pshorizontal.sys,'",env=revive.sys)'
+           '> assign("pshorizontal.sys","',pshorizontal.sys,'",envir=revive.sys)'
            ,sep=""),"cmd.msg")
   }
   melde("SetPSRotation",2)
@@ -2193,9 +2208,9 @@ SetJPGSize<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       h<-as.numeric(tclvalue("tvinfo"))
-      assign("jpgdesignsize.sys",h,env=revive.sys)
+      assign("jpgdesignsize.sys",h,envir=revive.sys)
       melde(paste(
-  '> assign("jpgdesignsize.sys","',jpgdesignsize.sys,'",env=revive.sys)',
+  '> assign("jpgdesignsize.sys","',jpgdesignsize.sys,'",envir=revive.sys)',
          sep=""), "cmd.msg")
     }
   )
@@ -2229,7 +2244,7 @@ SetFontType<-function(){
     font<-choices[choice]
     tfont.sys<-sub("be-.+-Me",paste("be-",font,"-Me",sep=""),tfont.sys)
     tkconfigure(tworkwin,font=tfont.sys)
-    assign("tfont.sys",tfont.sys,env=revive.sys)
+    assign("tfont.sys",tfont.sys,envir=revive.sys)
     ## if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
   }
   melde(paste("> font type changed"))
@@ -2262,9 +2277,9 @@ SetFontSize<-function(){
     size<-sizes[choice]
     tfont.sys<-sub("al--.+-.+-\\*",paste("al--",size,"-*",sep=""),tfont.sys)
     tkconfigure(tworkwin,font=tfont.sys)
-    assign("tfont.sys",tfont.sys,env=revive.sys)
+    assign("tfont.sys",tfont.sys,envir=revive.sys)
     outfont.sys<-sub("al--.+-.+-\\*",paste("al--",size,"-*",sep=""),outfont.sys)
-    assign("outfont.sys",outfont.sys,env=revive.sys)
+    assign("outfont.sys",outfont.sys,envir=revive.sys)
     <<aktualisiere Texthervorhebungen>>
     tkconfigure(toutwin,font=outfont.sys)
     melde(paste("> font size changed"))
@@ -2287,7 +2302,7 @@ SetOutputLength<-function(){
     function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       h<-as.numeric(tclvalue("tvinfo"))
-      if(!is.na(h)) assign("maxol.sys",h,env=revive.sys)
+      if(!is.na(h)) assign("maxol.sys",h,envir=revive.sys)
       melde(paste("> maxol.sys <-",maxol.sys),"cmd.msg")
     }
   )
@@ -2314,7 +2329,7 @@ ConfigRelax<-function(){
 		 tkdestroy(.newl); set.tclvalue("tvscandone",2)
       })
       ReloadOld<-tkbutton(fcmd,width=15,text="reload old",command=function(){
-		 settings<-get("settings",env=revive.sys)
+		 settings<-get("settings",envir=revive.sys)
 		 tkdelete(tt,"0.0","end")
                  try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
       })
@@ -2327,7 +2342,7 @@ ConfigRelax<-function(){
       tkwm.title(.newl,"view and change settings of relax: config/settings.relax")
       filename<-file.path(.path.package("relax"),"config/settings.relax")
       settings<-scan(file=filename,what="",sep="\n")
-      assign("settings",settings,env=revive.sys)
+      assign("settings",settings,envir=revive.sys)
       try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
       tkbind(.newl,"<Escape>", function(){
 		 tkdestroy(.newl); set.tclvalue("tvscandone",2)
@@ -2368,8 +2383,8 @@ platziert worden.
 tkbind(TopW, "@<<FindReportText>>", FindReportText)
 tkbind(TopW,"<F3>", function(){  # 050628
       set.tclvalue("tvmess","relax")
-      if(!exists("string.sys",env=revive.sys)) return()
-      such.orig<-such<-get("string.sys",env=revive.sys)
+      if(!exists("string.sys",envir=revive.sys)) return()
+      such.orig<-such<-get("string.sys",envir=revive.sys)
       <<lese Arbeitsfenster auf [[worktext]] ein>>
       <<bearbeite Suchmuster [[such]] für Textsuche>>
       if(length(found<-grep(such,worktext))>0){
@@ -2400,8 +2415,8 @@ if(any(found==cline)){
 <<old-version>>=
 tkbind(TopW,"<F3>", function(){  # 050628
       set.tclvalue("tvmess","relax")
-      if(!exists("string.sys",env=revive.sys)) return()
-      such.orig<-such<-get("string.sys",env=revive.sys)
+      if(!exists("string.sys",envir=revive.sys)) return()
+      such.orig<-such<-get("string.sys",envir=revive.sys)
 
       repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
       repl.pat<-paste("([",repl.pat,"])",collapse="")
@@ -2448,7 +2463,7 @@ FindReportText<-function(){
       repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
       repl.pat<-paste("([",repl.pat,"])",collapse="")
       such<-gsub(repl.pat,"\\\\\\1",such)
-      assign("string.sys",string.sys,env=revive.sys)
+      assign("string.sys",string.sys,envir=revive.sys)
       <<lese Arbeitsfenster auf [[worktext]] ein>>
       if(nchar(such)==0) {
         tcl("findclear",tworkwin); tkfocus(tworkwin); return()
@@ -2464,7 +2479,7 @@ FindReportText<-function(){
         if(is.na(h<-h[1])) h<-0
         h<-paste(line,".",h,sep="")
         tkmark.set(tworkwin, "insert", h[1]); tkfocus(tworkwin)
-	# tworkwin<-get("tworkwin",env=revive.sys)
+	# tworkwin<-get("tworkwin",envir=revive.sys)
         tktag.configure(tworkwin,"found",background="#000999fff",relief="raised")
         tcl("findmatches",tworkwin,such)
       } else set.tclvalue("tvmess",paste("Warning: search string >",tclvalue("tvinfo"),"< not found!!!"))
@@ -2507,7 +2522,7 @@ GoToLine<-function(){
   tkbind(TopW,"<Return>", function(){
       <<setze Manager nach {\sc Return} in Normalzustand>>
       line<-string.sys<-tclvalue("tvinfo")[1]
-      assign("string.sys",string.sys,env=revive.sys)
+      assign("string.sys",string.sys,envir=revive.sys)
       line<-as.numeric(line)
       if(!is.na(line)){
         tksee(tworkwin,h<-paste(line,".1",sep=""))
@@ -2834,7 +2849,7 @@ eine Spezialform des noweb-Systems unter Windows installiert sein.
       <<setze Manager nach {\sc Return} in Normalzustand>>
       set.tclvalue("tvmess","relax")
       sweave.args.sys<-tclvalue("tvinfo")
-      assign("sweave.args.sys",sweave.args.sys,env=revive.sys)
+      assign("sweave.args.sys",sweave.args.sys,envir=revive.sys)
       if(nchar(sweave.args.sys)!=0) {
         sweave.call<-paste("Sweave(\"",workname.Rnw,"\",",sweave.args.sys,")",sep="")
       } else sweave.call<-paste("Sweave(\"",workname.Rnw,"\")",sep="")
@@ -2867,7 +2882,7 @@ SWEAVEB<-function(){ ###060112
       <<setze Manager nach {\sc Return} in Normalzustand>>
       set.tclvalue("tvmess","relax")
       sweave.args.sys<-tclvalue("tvinfo")
-      assign("sweave.args.sys",sweave.args.sys,env=revive.sys)
+      assign("sweave.args.sys",sweave.args.sys,envir=revive.sys)
       if(nchar(sweave.args.sys)!=0) {
         sweave.call<-paste("Sweave(\"",workname.Rnw,"\",",sweave.args.sys,")",sep="")
       } else sweave.call<-paste("Sweave(\"",workname.Rnw,"\")",sep="")
@@ -2938,7 +2953,7 @@ ProcessChunk<-function(){
       }
     }
   }
-  TcltoWin.write <- get("TcltoWin.write",env=revive.sys)
+  TcltoWin.write <- get("TcltoWin.write",envir=revive.sys)
   <<speichere [[worktext]] als Rev-File ab, Indikator: [[ok]]>>
   Sys.sleep(0.25)
   try(weaveR(filename,replace.umlaute=replace.umlaute.sys))
@@ -2990,17 +3005,17 @@ sich der Cursor aufhält als eigener Chunk formuliert.
 Zum Testen kann folgender Chunk in den Report-Manager geladen werden. Dann muss nicht jedesmal 
 das gesamte Paket übersetzt werden.
 <<teste ProcessChunk>>=
-ol <- ls(env=revive.sys)
+ol <- ls(envir=revive.sys)
 for(o in ol){ ## print(o)
   if(0<length(grep("tmp",o))) next
   if(0<length(grep("file.name",o))) next
-  try(eval(parse(text=paste(o," <- get('",o,"',env=revive.sys)",sep=""))))
+  try(eval(parse(text=paste(o," <- get('",o,"',envir=revive.sys)",sep=""))))
 }
 system("notangle -R'definiere [[ProcessChunk]]' ../relax.rev > testchunk")
 txt <- readLines("testchunk")
-eval(parse(text=txt)); eval(parse(text=txt),env=revive.sys) 
+eval(parse(text=txt)); eval(parse(text=txt),envir=revive.sys) 
 # ProcessChunk() # aus Report
-# eval(parse(text="ProcessChunk()"),env=get("revive.sys",revive.env)) # aus Konsole
+# eval(parse(text="ProcessChunk()"),envir=get("revive.sys",revive.env)) # aus Konsole
  
 @
 \paragraph{Demo-Funktion.}
@@ -3048,18 +3063,18 @@ Das kleine neue Fenster besitzt auch einen Aktivierungsknopf, der zu einer Aktiv
 in der Umgebung [[revive.env]] führt.
 <<definiere Kopf-Zeilen-Funktionen>>=
 assign("relax.history",
-       c(if(0<length(ls(pattern="relax.history",env=revive.sys))) # to extend existing history
-         get("relax.history",env=revive.sys) else NULL,           # to extend existing history
+       c(if(0<length(ls(pattern="relax.history",envir=revive.sys))) # to extend existing history
+         get("relax.history",envir=revive.sys) else NULL,           # to extend existing history
          list(c("@",paste("<","<*>",">=",sep=""),paste("# relax history file --",date())))
        )                                                           # to extend existing history
-       ,env=revive.sys)
+       ,envir=revive.sys)
 ShowHistory<-function(){
   melde("ShowHistory",1)
   # check history
-  if(0==length(grep("relax.history",ls(env=revive.sys)))){ cat("relax warning: no history found"); return() }
+  if(0==length(grep("relax.history",ls(envir=revive.sys)))){ cat("relax warning: no history found"); return() }
   # save history in file
-  relax.history<-get("relax.history",env=revive.sys); txt<-unlist(relax.history)
-  workname<-sub(".rev$",".history.rev",get("workname.sys",env=revive.sys))
+  relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
+  workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
   base::cat(txt,file=workname,sep="\n")
   # tangle history file
   try(tangleR(workname)); workname<-sub(".rev$",".R",workname); cat(workname,"generated\n")
@@ -3084,7 +3099,7 @@ ShowHistory<-function(){
   # print viewer function during debugging
   melde(paste(txt,collapse="\n"),2)
   # start of history viewer
-  try(eval(parse(text=txt),env=revive.env))
+  try(eval(parse(text=txt),envir=revive.env))
   melde("ShowHistory",2)
 }
 
@@ -3827,11 +3842,11 @@ Zur Fehlerbehebung wurde verschiedene Versuche durchgeführt.
 Hier ist das Protokoll der Versuche.
 <<ReportWidget-Fehleranalyse>>=
 # GET Vars
-revive.sys<-get("revive.sys",env=revive.env);foutwin<-get("foutwin",env=revive.sys);
-fworkwin<-get("fworkwin",env=revive.sys);fhandle<-get("fhandle",env=revive.sys);
-fout<-get("fout",env=revive.sys);fworkcmds<-get("fworkcmds",env=revive.sys);
-foutcmds<-get("foutcmds",env=revive.sys);tworkwin<-get("tworkwin",env=revive.sys);
-workbar<-get("workbar",env=revive.sys);proc<-get("proc",env=revive.sys)
+revive.sys<-get("revive.sys",envir=revive.env);foutwin<-get("foutwin",envir=revive.sys);
+fworkwin<-get("fworkwin",envir=revive.sys);fhandle<-get("fhandle",envir=revive.sys);
+fout<-get("fout",envir=revive.sys);fworkcmds<-get("fworkcmds",envir=revive.sys);
+foutcmds<-get("foutcmds",envir=revive.sys);tworkwin<-get("tworkwin",envir=revive.sys);
+workbar<-get("workbar",envir=revive.sys);proc<-get("proc",envir=revive.sys)
 @
 1. Vergrößern, Verkleinern, Mitte verschieben: kein Erfolg;
    dann Minimieren, wieder darstellen: Erfolg
@@ -3874,8 +3889,8 @@ tkpack.forget(tworkwin); tkpack(tworkwin,expand="yes",fill="both")
 Verzögerungen eingebaut.
 <<ReportWidget-Fehleranalyse>>=
 relax()
-revive.sys<-get("revive.sys",env=revive.env)
-tworkwin<-get("tworkwin",env=revive.sys); fworkwin<-get("fworkwin",env=revive.sys)
+revive.sys<-get("revive.sys",envir=revive.env)
+tworkwin<-get("tworkwin",envir=revive.sys); fworkwin<-get("fworkwin",envir=revive.sys)
 del<-0.02; tkpack.forget(tworkwin); Sys.sleep(del)
 tkpack(tworkwin,expand="yes",fill="both"); Sys.sleep(del)
 .Tcl(paste("place ",fworkwin$ID," -relheight 0.35")); Sys.sleep(del)
@@ -3886,8 +3901,8 @@ Deshalb wird zur Reparatur ein Menü-Punkt angeboten.
 <<definiere Kopf-Zeilen-Funktionen>>=
 ReloadReportWidget<-function(){
   melde("ReloadReportWidget",1)
-  revive.sys<-get("revive.sys",env=revive.env)
-  tworkwin<-get("tworkwin",env=revive.sys); fworkwin<-get("fworkwin",env=revive.sys)
+  revive.sys<-get("revive.sys",envir=revive.env)
+  tworkwin<-get("tworkwin",envir=revive.sys); fworkwin<-get("fworkwin",envir=revive.sys)
   del<-0.02; tkpack.forget(tworkwin); Sys.sleep(del)
   tkpack(tworkwin,expand="yes",fill="both"); Sys.sleep(del)
   .Tcl(paste("place ",fworkwin$ID," -relheight 0.35")); Sys.sleep(del)
@@ -4271,7 +4286,7 @@ Stelle.
   ,"$w image create $place -image $imageno"
   ,"}"
 , sep="\n")) 
-assign("pic.list.sys",NULL,env=revive.sys)
+assign("pic.list.sys",NULL,envir=revive.sys)
 # --------------------------------------------------------------------
 # show an image 
 try(.Tcl( paste(
@@ -4298,8 +4313,8 @@ createandshow.single.plot<-function(textwidget,row.of.plot,picname,type="jpg"){
   # update pic list
   if(try.res=="ok"){
     imageno<-tclvalue(.Tcl("set imageno"))
-    pic.list<-rbind(get("pic.list.sys",env=revive.sys),c(picname,imageno))
-    assign("pic.list.sys",pic.list,env=revive.sys)
+    pic.list<-rbind(get("pic.list.sys",envir=revive.sys),c(picname,imageno))
+    assign("pic.list.sys",pic.list,envir=revive.sys)
   }
   melde("createandshow.single.plot",2)
 }
@@ -4316,7 +4331,7 @@ show.plots.again<-function(tworkwin){
     rows   <-grep("<img src=",worktext); if(0==length(rows))return()
     pic.names.report  <-unlist(lapply(strsplit(worktext[rows],"<img src=\""), 
                              function(x){ x<-x[2]; strsplit(x,"\"")[[1]][1] }))
-    pic.list<-get("pic.list.sys",env=revive.sys)
+    pic.list<-get("pic.list.sys",envir=revive.sys)
     ind<-match(sub("....$","",pic.names.report),sub("....$","",pic.list[,1]))
     image.ok<-!is.na(ind); ind<-ind[image.ok]
     if(0==length(ind))return()
@@ -4372,7 +4387,7 @@ createandshow.all.plots<-function(tworkwin){
    }
    pic.list<-cbind(picname,image.nos)
    pic.list<-pic.list[pic.list[,2]!="xx",,drop=FALSE]
-   assign("pic.list.sys",pic.list,env=revive.sys)
+   assign("pic.list.sys",pic.list,envir=revive.sys)
    melde("createandshow.all.plots",2)
 } 
 
@@ -4489,8 +4504,8 @@ createandshow.single.plot<-function(textwidget,row.of.plot,jpgname,type="jpg"){ 
   # update pic list
   if(try.res=="ok"){
     imageno<-tclvalue(.Tcl("set imageno"))
-    pic.list<-rbind(get("pic.list.sys",env=revive.sys),c(picname,imageno))
-    assign("pic.list.sys",pic.list,env=revive.sys)
+    pic.list<-rbind(get("pic.list.sys",envir=revive.sys),c(picname,imageno))
+    assign("pic.list.sys",pic.list,envir=revive.sys)
   }
   melde("createandshow.single.plot",2)
 }
@@ -4805,7 +4820,7 @@ fHelp.R<-function(){
 	# }
          #if(##das OS ist Linux##){
   	  mess<-paste("documentation of",fns,"appears in browser if it is running")
-	  assign("cmds",paste(">",help.cmd,sep=""),env=revive.env)
+	  assign("cmds",paste(">",help.cmd,sep=""),envir=revive.env)
 	  out<-tclvalue(tkget(toutwin,"0.0","end"))
           <<lese Arbeitsfenster auf [[worktext]] ein>>
 	  report<-worktext
@@ -4993,11 +5008,11 @@ Der Name einer temporären Datei soll nur an einer Stelle
 ermittelt werden. Dieses geschieht hier.
 <<ermittle Namen einer temporären Datei>>=
 tmp.file.name <- tempfile("rt-tmp")
-assign(tmp.file.name,"tmp.file.name",env=revive.sys)
+assign(tmp.file.name,"tmp.file.name",envir=revive.sys)
 
 @
 <<tmp>>=
-get("tmp.file.name",env=revive.sys)
+get("tmp.file.name",envir=revive.sys)
 
 @
 Bei einigen alten Versionen gab es Kollisionen im Falle von Fehlbenutzungen
@@ -5007,11 +5022,11 @@ Falls solche Dinge wieder auftreten, läßt sich mit diesem Code-Chunk
 der Name der temporäre Datei für [[sink]]-Operationen verändern.
 <<ermittle Namen einer Sink-Datei>>=
 tmp.sink.name <- tempfile("rt-sink")
-assign(tmp.sink.name,"tmp.sink.name",env=revive.sys)
+assign(tmp.sink.name,"tmp.sink.name",envir=revive.sys)
 @
 vorher: "r.tmp"
 <<tmp.sink>>=
-get("tmp.file.name",env=revive.sys)
+get("tmp.file.name",envir=revive.sys)
 
 @
 \subsubsection{Arbeitsfenstersteuerung: [[TrashROutput]]}
@@ -5082,7 +5097,7 @@ tkfocus(tworkwin)
 @
 \subsubsection{Arbeitsfenstersteuerung: [[Up]]}
 \paragraph{[[Up]] zum Cursor-Zurücksetzen.}
-a<-get("tworkwin",env=revive.sys)
+a<-get("tworkwin",envir=revive.sys)
 tkmark.set(a,"insert","10.0")
 <<definiere Funktion für Knopf: [[Up]]>>=
 fUp<-function(){
@@ -5191,7 +5206,7 @@ Checkwarnings<-function(){
   LAST.WARNING<-c(LAST.WARNING,"no warnings")[1]
   if(LAST.WARNING!="no warnings"){
     if(!identical(LAST.WARNING,OLD.WARNING)){
-      assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+      assign("LAST.WARNING",LAST.WARNING,envir=revive.sys)
       news<-c("last.warning(s):",
                    paste(paste(names(LAST.WARNING),LAST.WARNING,sep=" in: "),collapse="\n"))
       <<schreibe [[news]] ans Ende des Outputfeldes>>
@@ -5216,7 +5231,7 @@ if(204<=Rversion){
   LAST.WARNING<-c(LAST.WARNING,"no warnings")[1]
   if(LAST.WARNING!="no warnings"){
     if(!identical(LAST.WARNING,OLD.WARNING)){
-      assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+      assign("LAST.WARNING",LAST.WARNING,envir=revive.sys)
       news<-c("last.warning(s):",
                    paste(paste(names(LAST.WARNING),LAST.WARNING,sep=" in: "),collapse="\n"))
       <<schreibe [[news]] ans Ende des Outputfeldes>>
@@ -5237,7 +5252,7 @@ if(204<=Rversion){
 @
 <<setze einige Konstanten>>=
 LAST.WARNING<-"no warnings"
-assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+assign("LAST.WARNING",LAST.WARNING,envir=revive.sys)
 Rversion<-as.numeric(R.version$major)*100+as.numeric(R.version$minor)
 
 @
@@ -5301,8 +5316,8 @@ melde("code:",3,code,"\n")
 <<merke [[code]] für Historie>>=
 if(0<length(code)){
   tld <- paste("<","<*>",">=",sep="")
-  rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-  assign("relax.history",rh,env=revive.sys)
+  rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+  assign("relax.history",rh,envir=revive.sys)
 }
 
 @
@@ -5401,7 +5416,7 @@ cline.pos<-as.numeric(sub(".*\\.","",cline.pos))
         h<-paste(line,".",h,sep="")
         tkmark.set(tworkwin, "insert", h[1]); tkfocus(tworkwin)
 
-	# tworkwin<-get("tworkwin",env=revive.sys)
+	# tworkwin<-get("tworkwin",envir=revive.sys)
         tktag.configure(tworkwin,"found",background="#000999fff",relief="raised")
         tcl("findmatches",tworkwin,such)
       } else set.tclvalue("tvmess",paste("Warning: search string >",
@@ -5414,7 +5429,7 @@ cline.pos<-as.numeric(sub(".*\\.","",cline.pos))
 repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
 repl.pat<-paste("([",repl.pat,"])",collapse="")
 such<-gsub(repl.pat,"\\\\\\1",such)
-assign("string.sys",string.sys,env=revive.sys)
+assign("string.sys",string.sys,envir=revive.sys)
 if(nchar(such)==0) {
   tcl("findclear",tworkwin); tkfocus(tworkwin); return()
 }
@@ -5616,7 +5631,7 @@ tkbind(twin,"@<<Klammera>>",f.sonderzeichen("@"))
 tkbind(twin,"@<<Pipe>>",    f.sonderzeichen("|"))
 tkbind(twin,"@<<Backsl>>",  f.sonderzeichen("\\"))
 renewhighlighting<-function(){
-  tworkwin<-get("tworkwin",env=revive.sys)
+  tworkwin<-get("tworkwin",envir=revive.sys)
   <<aktualisiere Texthervorhebungen>>
 }
 # tkbind(twin,"@<<Klammeraffe>>",renewhighlighting)
@@ -5666,7 +5681,7 @@ proc<-c(  # 060704
 .Tcl(paste(proc,collapse="\n"))
 tktag.configure(tworkwin,"secondbracket",background="#000dddfff",relief="raised")
 MarkSecondBracket<-function(){
-  tworkwin<-get("tworkwin",env=revive.sys)
+  tworkwin<-get("tworkwin",envir=revive.sys)
   left.of.cursor<-tclvalue(tkget(tworkwin,"insert - 1 chars"))
   open<-0
   if(left.of.cursor %in% c("{","[","(")){ ## print("Klammer auf")
@@ -5734,7 +5749,7 @@ tkbind(tworkwin,"<ButtonRelease>",function(){
 091210 ::  Tab ist ok, falls kein Namensteil gefunden wird
 <<definiere Wirkung von [[Tab]] im Reportfenster>>=
  tkbind(tworkwin,"<Tab><KeyRelease>", function() {
-  #  tworkwin<-get("tworkwin",env=revive.sys)
+  #  tworkwin<-get("tworkwin",envir=revive.sys)
  ## check, ob Leerzeichen oder nicht vorm Cursor steht
   if(1==length(grep("[a-zA-Z._\\(]", #)
                     tclvalue(tkget(tworkwin,"insert - 2 char")))))
@@ -5751,7 +5766,7 @@ tkbind(tworkwin,"<ButtonRelease>",function(){
                       paste(rev(substring(anfang,1:h,1:h)),collapse="")
   suchstring<-paste("^",anfang,sep="")
 
-  objekt<-grep(suchstring,ls(env=revive.env),ignore.case=FALSE,value=TRUE)
+  objekt<-grep(suchstring,ls(envir=revive.env),ignore.case=FALSE,value=TRUE)
   objekt<-c(objekt,apropos(suchstring,ignore.case=FALSE))
   if(length(objekt)==0) return();  if(length(objekt)>40) return()
 
@@ -5759,7 +5774,7 @@ tkbind(tworkwin,"<ButtonRelease>",function(){
     if(klammer) objekt<-substring(suchstring,2) # ohne ^
     objtail<-sub(suchstring,"",objekt)
     objtail<-substring(objekt,nchar(suchstring)) # because of "^", 1+(nchar(.)-1)
-    if(0==length(find(objekt))) h<-get(objekt,env=revive.env) else h<-get(objekt)
+    if(0==length(find(objekt))) h<-get(objekt,envir=revive.env) else h<-get(objekt)
     # cat("h"); print(h); cat("objtail"); print(objtail) # der angefuegt werden muss
     if(is.function(h)){
       h<-paste(deparse(args(h)),collapse=" ")[1]
@@ -5971,10 +5986,10 @@ DumpEnvironment<-function(){
   <<checke [[filename]], quitte ggf.>>
   noenv<-TRUE # ignore environments 
   <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
-  assign("list.of.env.obj",objlist,env=revive.env)
+  assign("list.of.env.obj",objlist,envir=revive.env)
   try.res<-try(eval(parse(text=
-                  paste(sep="","dump(list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
-  try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+                  paste(sep="","dump(list.of.env.obj,file=\"",filename,"\")")),envir=revive.env))
+  try(eval(parse(text="remove(\"list.of.env.obj\")"),envir=revive.env))
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(ok){
     cat(paste("Objects of environment saved in file:",filename,"!\n"))
@@ -5992,10 +6007,10 @@ SaveEnvironment<-function(){
   <<checke [[filename]], quitte ggf.>>
   noenv<-FALSE # do not ignore environments 
   <<ermittle und zeige Objektliste [[objlist]] von revive.env>>
-  assign("list.of.env.obj",objlist,env=revive.env)
+  assign("list.of.env.obj",objlist,envir=revive.env)
   try.res<-try(eval(parse(text=
-                  paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
-  try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+                  paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),envir=revive.env))
+  try(eval(parse(text="remove(\"list.of.env.obj\")"),envir=revive.env))
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(ok){
     cat(paste("Objects of environment saved in file:",filename,"!\n"))
@@ -6015,11 +6030,11 @@ LoadEnvironment<-function(){
                           initialdir=getwd())
   <<checke [[filename]], quitte ggf.>>
   if(0<length(grep("bin-relax-env$",filename))){
-    try.res<-try(load(filename,env=revive.env))
+    try.res<-try(load(filename,envir=revive.env))
   } else {
     obj<-scan(filename,""); ind<-grep("<-",obj)-1   
     obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
-    try.res<-try(eval(parse(text=obj),env=revive.env))
+    try.res<-try(eval(parse(text=obj),envir=revive.env))
   }
   <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>
   if(ok){
@@ -6043,8 +6058,8 @@ CleanEnvironment<-function(){
       title="Clean Environment?",icon="warning",type="yesnocancel",default="no")
   res<-tclvalue(res)
   if(res=="yes"){    
-    objlist<-c(objlist,"objlist"); assign("objlist",objlist,env=revive.env)
-    try.res<-try(eval(parse(text="remove(list=objlist)"),env=revive.env))
+    objlist<-c(objlist,"objlist"); assign("objlist",objlist,envir=revive.env)
+    try.res<-try(eval(parse(text="remove(list=objlist)"),envir=revive.env))
     cat("Objects of environment have been deleted!\n")
     # print(try.res)
   }
@@ -6053,8 +6068,8 @@ CleanEnvironment<-function(){
 
 @
 <<ermittle und zeige Objektliste [[objlist]] von revive.env>>=
-objlist<-ls(env=revive.env) 
-if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+objlist<-ls(envir=revive.env) 
+if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,envir=revive.env)))]
 objlist<-objlist[substring(objlist,1,6)!="revive"]
 if(length(objlist)==0){
   cat("WARNING: no objects found for saving!!!\n")
@@ -6359,7 +6374,7 @@ die richtigen Zeichen. Der zweite kann jedoch nicht aufgefangen werden.
 
 > .Tcl("puts $bbb")
 asdfäöüÄÖÜßasdf
-\end{verbatimÿ}
+\end{verbatim}
 Auch hilft eine Umkodierung mit allen möglichen code Tabellen nicht weiter:
 \begin{verbatim}
 > .Tcl(paste("set bbb [ encoding convertfrom",readline()," $aaa ] ")); .Tcl("set bbb")
@@ -6399,6 +6414,8 @@ Ersetzungsoperation direkt unter Tcl/Tk
 Diese Operation wird an verschiedenen Stellen gebraucht, so
 daß ein eigener Code-Chunk eingerichtet wird.
 [[ok]] zeigt [[TRUE]] im Erfolgs- und [[False]] im Fehlerfall.
+Als Verbesserung ist zu bedenken, dass im Fehlerfall das Ergebnis 
+die Klasse try-error besitzt.
 <<lege auf [[ok]] ab, ob [[try.res]] Fehler zeigt>>=
 if(is.function(try.res)){
   ok <- "OK"
@@ -6410,7 +6427,8 @@ if(is.function(try.res)){
 }
 if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
   ok<-FALSE
-  cat(error.msg<-unclass(try.res),"\n")
+  error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+  cat(error.msg,"\n")
   if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
      cat("A warning message stopped the evaluation!",
            "If you want to\nevaluate the code anyway",
@@ -7031,7 +7049,7 @@ for(l in seq(along=sexpr.lines)){
     code <- paste(collapse="",sexpr[1:n.sexpr])
     melde("werte Sexpr aus",2,code)
     # if(identical(revive.env,"")) ... else -> gegenüber weaveR vereinfacht
-    result <- try(eval(parse(text=code),env=revive.env))
+    result <- try(eval(parse(text=code),envir=revive.env))
     # wenn nichts rauskommt, ist nichts zu modifizieren
     if(0!=length(result)&&!identical(result,"")) { 
       # 101217 auch leere Ergebnisse ersetzen Sexpr!
@@ -7362,10 +7380,10 @@ PLAYGROUND<-function() playground(revive.env)
 
 @
 <<*>>=
-playground<-function(playground.env=NULL,code=NULL){
+playground<-function(playground.envir=NULL,code=NULL){
   require(tcltk)
   pg<-tktoplevel(); tkwm.geometry(pg,"+100+100")
-  tkwm.title(pg, "playground for testing R code -- output appears on output device")
+  tkwm.title(pg, "playground for testing R code (error messages appear in the R Console)")
   pgtext<-tktext(pg,height=19,background="#f7fffF",
                  font="-Adobe-courier-Medium-R-Normal--18-180-*")
   tkbind(pgtext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
@@ -7384,26 +7402,23 @@ playground<-function(playground.env=NULL,code=NULL){
     code<-tclvalue(tkget(pgtext,"0.0","end"))
     code.orig<-code<-unlist(strsplit(code,"\n"))
     if(length(code)==0){ cat("warning: no code found!\n"); return() }    
-    if(!is.null(playground.env)){  ## exists("revive.env") ##
-      if(0 < grep("revive.sys", ls(env=playground.env))){
-        revive.sys <- get("revive.sys",playground.env)
+    if(!is.null(playground.envir)){  ## exists("revive.env") ##
+      if(0 < grep("revive.sys", ls(envir=playground.envir))){
+        revive.sys <- get("revive.sys",playground.envir)
         <<merke [[code]] für Historie>>   ## stores code in revive.sys
       }
-      result<-try(eval(parse(text=code),envir=playground.env)) 
+      result<-try(eval(parse(text=code),envir=playground.envir)) 
     }else{ 
       result<-try(eval(parse(text=code),envir=pos.to.env(1)))
     }
-    if(is.null(result)||is.na(result)){
-      cat("warning: output of length 0!\n"); return() }
-    if(is.list(result)&& length(names(result))> 0 && 
-                               names(result)[1]=="ID") return()
-    if(is.list(result)&& TRUE) return()
     if(class(result)=="try-error"){
-     class(result)<-"character"
-     cat(result,"\n")
-    }else{
-     print(result)
-    }
+      class(result)<-"character"; cat(result,"\n"); return()
+    } else { 
+      idx <- which("relax.fns"==search())
+      if( 0 < length(idx) ) print <- get("print",pos=idx)
+      print(result) 
+    }  
+    NULL
   }
   exit.function<-function(){
      tkdestroy(pg)
@@ -7411,7 +7426,17 @@ playground<-function(playground.env=NULL,code=NULL){
   }
   tkconfigure(bexit,command=exit.function)
   tkconfigure(beval,command=eval.code)
+  invisible(NULL)
 }
+
+@
+<<alte Ausgabeverarbeitungen>>=
+    ##if(is.null(result)){ cat("warning: output of length 0!\n"); return() }
+    ##if(any(is.na(result))){ cat("warning: there are NAs in the output!\n"); return() }
+    ##if(is.list(result)&& length(names(result))> 0 && 
+    ##                     names(result)[1]=="ID") return()
+    ## if(is.list(result)&& TRUE) return()
+
 
 @
 <<hole chunk Nummer>>=
@@ -7911,7 +7936,7 @@ tkbind(TopW, "@<<Acticmds>>", Execute.cmds)
 melde("beginn repeat",1)
 if(length(cmds) == 0) break
 cmd <- substring(cmds[1],1,1); choice<-substring(cmds[1],2)
-cmds<-cmds[-1]; assign("cmds",cmds,env=revive.env)
+cmds<-cmds[-1]; assign("cmds",cmds,envir=revive.env)
 switch(cmd
   ,"s" = {
            <<lese Arbeitsfenster auf [[worktext]] ein>>
@@ -8031,6 +8056,10 @@ Deshalb wird ab 05/2011 readline()-Aufrufe über das Informationsaustauschfenster
 abgewickelt.
 <<definiere Input/Output-Funktionen neu>>=
 readline<-function(prompt=""){
+  if(! (<<teste, ob [[relax]] aktiv ist>>) ){  ### 111103
+    readline<-get("readline", pos="package:base")
+    return(readline(prompt=prompt))
+  }
   linfo <- get("linfo",revive.sys)
   linfo.tmp <- get("linfo.tmp",revive.sys)
   einfo.tmp <- get("einfo.tmp",revive.sys)
@@ -8060,17 +8089,20 @@ readline<-function(prompt=""){
   <<setze Manager nach {\sc Return} in Normalzustand>>
   return(out)
 }
-assign("readline",readline,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+# assign("readline",readline,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("readline",readline, pos=pos.of.relax.fns)
 melde("readline saved",3)
 
 @
+Zur Erledigung einer Eingabe mittels readline() oder scan() kann es hilfreich sein, die 
+letzten Ausgaben einzublenden. Deshalb wird -- falls relax aktiv ist, in dem Fenster zur
+Eingabe der letzte Ausschnitt von Ergebnissen eingeblendet. Ist relax nicht aktiv, 
 <<schreibe letzte Ausgabe als Info in Widget [[.newl]]>>=
-if(exists("running.function") && running.function==<<relax>>){
+if(TRUE){ ## exists("running.function") && running.function==#<relax>#){ ### 111103
   <<schreibe Inhalt von [[toutwin]] als Info in ein Message-Widget unter [[.newl]]>>
 }else{
   <<schreibe letzte Ausgabe als Info in ein Message-Widget unter [[.newl]]>>
 }
-
 
 @
 Zur Information ist es hilfreich, wenn die letzten Dialogfragmente in
@@ -8097,18 +8129,19 @@ if(length(worktext)>0){
 <<hole ggf. [[toutwin]]>>=
 if(!exists("toutwin"))
   toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-
 @
 <<hole ggf. [[tworkwin]]>>=
 if(!exists("tworkwin"))
   tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
 
 @
+Info über letzte Ausgaben für readline und scan, wenn relax läuft.
 <<schreibe Inhalt von [[toutwin]] als Info in ein Message-Widget unter [[.newl]]>>=
 tkpack(minfo<-tkmessage(.newl,width="1000",justify="left",relief="raised"))
 <<hole ggf. [[toutwin]]>>
 news<-strsplit(tclvalue(tkget(toutwin,"0.0","end")),"\n")[[1]]
 if(length(news)>10) news<-rev(rev(news)[1:10])
+# kaum relevant
 if(length(h<-grep("^output", news))>0) news<-news[-h]
 if(length(h<-grep("^@", news))>0)      news<-news[-h]
 if(length(h<-grep("verbatim",news))>0) news<-news[-h]
@@ -8137,7 +8170,7 @@ verwendet werden!
 <<definiere Input/Output-Funktionen alt>>=
 menu<-function(choices, graphics=FALSE, title=""){
   if(! (<<teste, ob [[relax]] aktiv ist>>) ){
-    menu<-get("menu", pos="package:base")
+    menu<-get("menu", pos="package:utils")
     return(menu(choices=choices,graphics=graphics,title=title))
   }else{
     TopN<-tktoplevel()
@@ -8161,7 +8194,7 @@ menu<-function(choices, graphics=FALSE, title=""){
                    paste(paste(c(1:(nc-1),"0"),choices,sep=":"),collapse="\n"),
                    "\nSelection: ",choice, "",sep="")
     <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-    tkfocus(get("tworkwin",env=get("revive.sys",env=revive.env))) # wichtig!!
+    tkfocus(get("tworkwin",envir=get("revive.sys",envir=revive.env))) # wichtig!!
     tkdestroy(TopN)
     return(as.numeric(choice))
   }
@@ -8200,11 +8233,12 @@ menu<-function(choices, graphics=FALSE, title=""){
   choice<- if(choice==length(choices)) 0 else as.numeric(choice)
   news<-paste("",paste(choices,collapse="\n"),"\nSelection: ",choice, "",sep="")
   <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-  tkfocus(get("tworkwin",env=get("revive.sys",env=revive.env))) # wichtig!!
+  tkfocus(get("tworkwin",envir=get("revive.sys",envir=revive.env))) # wichtig!!
   return(choice)
  }
 }
-assign("menu",menu,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+# assign("menu",menu,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("menu",menu, pos=pos.of.relax.fns)
 melde("menu saved",3)
 
 @
@@ -8225,7 +8259,8 @@ scan<-function(file="",what=double(0),nmax=-1,n=-1,sep="",
     }
     worktext
 }
-assign("scan",scan,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+# assign("scan",scan,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("scan",scan, pos=pos.of.relax.fns)
 melde("scan saved",3)
 
 @
@@ -8300,54 +8335,53 @@ Parametern zur Anwendung, so daß im R-Fenster die normale Ausgabe erscheint.
 Zusätzlich wird sie aufgerufen, um das Ausgegebene auch in der Datei
 [[<<tmp>>]]q
 abzulegen. Der Inhalt von [[<<tmp>>]] wird dann ins Arbeitsfenster übertragen.
+Frage: print gibt etwas invisible aus. 
+Zur Zeit wird das nicht mit dem relax-print abgebildet. OK?
 <<definiere Input/Output-Funktionen neu>>=
 print<-function(x, ...){ # 050614
   if( <<teste, ob [[relax]] aktiv ist>> ){
     sink(<<tmp.sink>>); base::print(x, ...); sink()
-    news<-paste("", # date(),
-                 paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
-                 "",sep="\n" )
+    news<-paste("", paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
+                "",sep="\n" )
     <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-  } else base::print(x, ...)
+  } # else
+  base::print(x, ...)
+  NULL
 }
-assign("print",print,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+## assign("print",print,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("print",print, pos=pos.of.relax.fns)
 melde("print saved",3)
 
 @
-<<print alte Version>>=
-print<-function(x, ...){
-  local.print<-function(x, ...){
-    UseMethod("print")
-  }
-  local.print(x, ...)
-  sink(<<tmp.sink>>); local.print(x, ...); sink()
-  if( <<teste, ob [[relax]] aktiv ist>> ){
-     news<-paste("", # date(),
-                 paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
-                 "",sep="\n" )
-    <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-  }
-}
-assign("print",print,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
-melde("print saved",3)
+<<testbeispiele für print>>=
+print(1:3)
+print("asdf")
+print(co2[1:5])
+print(matrix(4,4,4))
+print(list(1,1:2,"asdf"))
+print(print)
+print(NA)
+print(summary(co2))
+
 @
 \subsubsection{Die Überlagerung von [[cat]]}
-Die Struktur von [[cat]] entspricht fast  der von
+Die Struktur von [[cat]] entspricht fast der von
 [[print]]. [[cat]] löste jedoch beim internen Tanglen Probleme aus,
 so daß es angepaßt werden mußte.
 <<definiere Input/Output-Funktionen neu>>=
 cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
-  cat<-get("cat",pos="package:base")
-  cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
+  ## if(exists("eval.something.for.check")) eval(parse(text=eval.something.for.check)) ###
   if(file==""&& <<teste, ob [[relax]] aktiv ist>> ){
-     cat(...,file=<<tmp>>,sep=sep,fill=fill,labels=labels,append=append)
-     news<-paste("\n", # date(),
-                 paste(scan(file=<<tmp>>,what="",sep="\n"),collapse="\n"),
+     base::cat(...,file=<<tmp>>,sep=sep,fill=fill,labels=labels,append=append)
+     news<-paste("\n", paste(scan(file=<<tmp>>,what="",sep="\n"),collapse="\n"),
                  "",sep="\n")
      <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
   }
+  base::cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
+  NULL
 }
-assign("cat",cat,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+# assign("cat",cat,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("cat",cat, pos=pos.of.relax.fns)
 melde("cat saved",3)
 
 @
@@ -8378,7 +8412,8 @@ str<-function(object,...){
   } else { utils::str(object,...) }
   invisible(NULL)
 }
-assign("str",str,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+# assign("str",str,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("str",str, pos=pos.of.relax.fns)
 melde("str saved",3)
 
 @
@@ -8388,7 +8423,9 @@ step.dep<-deparse(stats::step)
 step.dep<-gsub("cat[(]", "relax::cat(",step.dep) # ))  
 step.dep<-gsub("print[(]", "relax::print(",step.dep) # ))  
 mystep <- eval(parse(text = step.dep))
-assign("step",mystep,pos=<<stelle Nummer von [[relax]] im Suchpfad fest>>)
+step<- mystep
+# assign("step",mystep,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+assign("step",step, pos=pos.of.relax.fns)
 melde("step saved",3)
 
 @
@@ -8399,16 +8436,16 @@ revive.sys<-new.env(); assign("tmp.file.name","hallo",revive.sys)
 
 mstr<-function(object){
         if (is.data.frame(object))
-        base::cat(file=get("tmp.file.name", env = revive.sys),
+        base::cat(file=get("tmp.file.name", envir = revive.sys),
            paste("'data.frame':  ", 
            paste(dim(object)[1],"obs. of",dim(object)[2],"variables:\n")))
         a <- deparse(getS3method("str", "default"))
         a <- gsub("cat[(]", paste("base::cat(file=\"", get("tmp.file.name",
-            env = revive.sys), "\",append=TRUE,", sep = ""), a) # ))
+            envir = revive.sys), "\",append=TRUE,", sep = ""), a) # ))
         a <- sub(" str[(]", " mystr(", a) # ))
         mystr <- eval(parse(text = a))
         mystr(object)
-        news <- scan(file = get("tmp.file.name", env = revive.sys),
+        news <- scan(file = get("tmp.file.name", envir = revive.sys),
             what = "", sep = "\n")
         news <- sub("chr .data.frame.", "", news)
         if(0<length(ind<-grep("^ -",news))) news<-news[-ind]
@@ -8419,43 +8456,39 @@ mstr<-function(object){
 }; mstr(df)
 
 @
-<<old version of str>>=
-str<-function(object,...){
-  if(<<teste, ob [[relax]] aktiv ist>> ){
-     if(is.data.frame(object)) 
-#      cat(paste("'data.frame':", paste("Obs.:",dim(object)[1],"Vars.:",dim(object)[2])))
-       cat(paste("'data.frame':", 
-           paste(dim(object)[1],"obs. of",dim(object)[2],"variables:")))
-     a<-deparse(getS3method("str","default"))
-     a<-sub("cat[(]",paste("base::cat(file=\"",<<tmp>>,"\",",sep=""),a) # ))
-     mystr<-eval(parse(text=a)); mystr(object,...)
-     news<-scan(file=<<tmp>>,what="",sep="\n")
-     news<-sub("chr .data.frame.","",news)
-     news<-paste("\n", # date(),
-                 paste(news,collapse="\n"),"",sep="\n")
-     <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-  } else { utils::str(object,...) }
-  invisible(NULL)
-}
-
-@
 <<stelle Nummer von [[relax]] im Suchpfad fest>>=
 which(paste("package",<<relax>>,sep=":")==search())
 
 @
 <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>=
-if(exists("running.function") && running.function==<<relax>>){
+<<schreibe [[news]] ans Ende des Outputfeldes>>
+tcl("update","idletasks") # 090710
+NULL
+@
+<<OLD: schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>=
+if(TRUE){ ## exists("running.function") && running.function==#<relax>#){ ####111103
        <<schreibe [[news]] ans Ende des Outputfeldes>>
 }else{
        <<schreibe [[news]] ans Ende des Arbeitstextes>>
 }
 tcl("update","idletasks") # 090710
+NULL
 
 @
+Dieser Chunk checked, ob relax aktiv ist. Wenn das der Fall ist, soll eine Ausgabe,
+z.B. von cat, print, etc., im relax-Ausgabefenster eingetragen werden. Zunächst sollte
+unterschieden werden, ob eine Ausgabe aus dem Arbeitsfenster veranlasst worden ist oder aber
+von außerhalb kommt. Schwierigkeiten ergeben sich dadurch, dass ja an verschiedenen Stellen
+Fehler-Ausgaben anzuzeigen sind. Aus Gründen der Vereinfachung wird jetzt nur noch 
+untersucht, ob toutwin existiert. Wenn das der Fall ist, wird versucht eine Ausgabe ins
+Ausgabefenster einzutragen.
 <<teste, ob [[relax]] aktiv ist>>=
-"1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
-
+"1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) 
 @
+<<OLD: teste, ob [[relax]] aktiv ist>>=
+&& 5 < length(sys.frames())
+any(sapply(sys.frames(),function(x) identical(x,revive.env))) 
+### ||  any(sapply(sys.frames(),function(x) identical(x,revive.sys))))
 any((h<-'tkwait.variable("tvexit")')==substring(sys.calls(),1,nchar(h))) ||
 0 < length(grep("revive.env",as.character(sys.calls()) ) )
 
@@ -8499,8 +8532,8 @@ myhead.menu<-function(item="Test",code=function()cat("Menu-Test"),
   }
   return(out.msg)
 }
-assign("myhead.menu",myhead.menu, pos=relax.pos)
-
+# assign("myhead.menu",myhead.menu, pos=relax.pos) ### 111103
+assign("myhead.menu",myhead.menu, pos=pos.of.relax.fns)
 
 @
 <<entferne [[myhead.menu]] Nummer [[menu.no]]>>=
@@ -8526,7 +8559,7 @@ tkbind(mrtrevive,"<Leave>",<<relax-zeige-Funktion>>)
 tkpack(mrtrevive,side="left")
 mmyhead.menu<-tkmenu(mrtrevive)
 assign(menu.item.name,mmyhead.menu,envir=revive.sys)
-tkconfigure(mrtrevive, menu=get(menu.item.name,env=revive.sys))
+tkconfigure(mrtrevive, menu=get(menu.item.name,envir=revive.sys))
 out.msg<-c(out.msg, paste("Menue im Kopf eingerichtet!"))
 
 @
@@ -8633,7 +8666,7 @@ generate.1.data<-function(){
 
 @
 <<definiere ggf.\ myscan>>=
-if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 @
@@ -8706,10 +8739,10 @@ ds<-function(pos=1,type,mode="numeric",struc=is.vector){
      exists(o,where=pos,mode="numeric") &&
      eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
   }else{
-   obj<-ls(env=revive.env)
+   obj<-ls(envir=revive.env)
    obj<-obj[unlist(lapply(obj ,function(o)
      exists(o,where=revive.env,mode="numeric") &&
-     eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
+     eval(parse(text=paste("struc(get(\"",o,"\",envir=revive.env))",sep=""))) ))]
   }
   if(0==length(obj)) return(NULL) else return(obj)
 }
@@ -9186,23 +9219,25 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   options(warn=1)
  #      options(warning.expression={cat("WARNING: Warning-Info see Console window")})
   <<stelle Pfad und Position von [[relax]] fest>>
-  running.function<- <<relax>>
-  assign("running.function",<<relax>>, pos=relax.pos)
+  ## running.function<- #<relax>#  assign("running.function",#<relax>#, pos=relax.pos) ##111103
+  <<generiere eine neue Umgebung für die Anwenderdaten>>
   <<definiere [[myhead.menu]]>>
   <<definiere Funktion zur Erleichterung der Fehlersuche>>
-  <<generiere eine neue Umgebung für die Anwenderdaten>>
   <<setze Anwenderkonfiguration um>>
   <<lade das [[Img]]-Paket für [[Tcl/Tk]]>>
   <<definiere Funktionen zum Umgang mit [[Tcl]]-Variablen>>
   <<stelle lokales Coding fest: [[is.UTF]]>>
   <<definiere Input/Output-Funktionen neu>>
+## attach(relax.fns)
   <<ermittle Namen einer temporären Datei>>
   <<ermittle Namen einer Sink-Datei>>
   ##definiere [[SaveAsHtml]]##           
   ##definiere Testknopf\-funktion##
   <<definiere Funktionen allgemeiner Knöpfe>>
-  <<definiere Kopf-Zeilen-Funktionen>>                       ##setze Umgebung für Knopf\-funktionen##
-	  ##setze Umgebung für Testknopf\-funktion##   ##setze Umgebung für Zeilen-Funktionen##
+  <<definiere Kopf-Zeilen-Funktionen>>    
+          ##setze Umgebung für Knopf\-funktionen##
+	  ##setze Umgebung für Testknopf\-funktion## 
+          ##setze Umgebung für Zeilen-Funktionen##
   <<setze Umgebung für sonstige Funktionen>>
   <<definiere Data-Fns-Menü>>
   <<setze einige Konstanten>>
@@ -9238,18 +9273,44 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{
-    cat("initialisation of relax completed!\nrestart relax by: relax()\n")
+    cat("initialisation of relax completed!\nrestart relax by: relax()\n enjoy and relax it!!\n")
   }
 #  tkwait.variable("tvexit")  # version 1.082
   return()
 }
-redit<-function(file.name){
-  if( missing(file.name)) eval(parse(text="relax(but.Wizardry='simple')"),env=.GlobalEnv) else {
+red<-redit<-function(file.name){
+  if( missing(file.name)) eval(parse(text="relax(but.Wizardry='simple')"),envir=.GlobalEnv) else {
     file.name<-as.character(substitute(file.name))
-    eval(parse(text=paste("relax('",file.name,"',but.Wizardry='simple')",sep="")),env=.GlobalEnv)
+    eval(parse(text=paste("relax('",file.name,"',but.Wizardry='simple')",sep="")),envir=.GlobalEnv)
     "redit: starts relax with reduced otions"
   }
 }
+
+@
+Für Version R-2.14.0 ist es nicht mehr zulässig in ein geladenes Paket während der Laufzeit weitere 
+Objekte einzubringen. Auf genau dieser Fähigkeit stellte relax bis Version ... ab. 
+
+Nach library(relax) enthält das relax-Paket folgende 9 Objekte:
+[1] "gslider"    "playground" "red"        "redit"      "relax"
+[6] "slider"     "tangleR"    "weaveR"     "weaveRhtml"
+Durch den Start von relax() wurde die Liste um 11 erweitert auf 20 Objekte: 
+ [1] "cat"              "gslider"          "melde"            "menu"
+ [5] "myhead.menu"      "playground"       "print"            "readline"
+ [9] "red"              "redit"            "relax"            "running.function"
+[13] "scan"             "set.tclvalue"     "slider"           "step"
+[17] "str"              "tangleR"          "weaveR"           "weaveRhtml"
+Hinzugekommen sind also 6 überlagerte Funktionen:
+  cat, menu, print, readline, scan, str, step
+sowie für die eigene Verwaltung:
+  melde, myhead.menu, running.function, set.tclvalue
+
+Maßnahmen:
+  Verkürzte Schreibweise für "env" durch "envir" ersetzt.
+  Es wird eine neue Umgebung eingerichtet: relax.fns
+  Überlagerte Funktionen werden in die Umgebung von relax.fns plaziert
+  revive.fns wird nach letzter Überlagerung "attached"
+  hierdurch Lösung erhofft für: cat, menu, print, readline, scan, str, step
+  für melde, myhead.menu und set.tclvalue wird entsprechender Versuch gemacht
 
 @
 <<stelle Pfad und Position von [[relax]] fest>>=
@@ -9470,25 +9531,25 @@ buffers <- c(buffers,
                     "\\begin{itemize}\n\\item\n\\end{itemize}\n",
                     "\\begin{quote}\n\n\\end{quote}\n",
                     "\\begin{verbatim}\n\n\\end{verbatim}\n","","")[1:8]
-assign("F.buffers",buffers,env=revive.sys)
+assign("F.buffers",buffers,envir=revive.sys)
 tkbind(TopW,"<F1>", function(){
-    news<-get("F.buffers",env=revive.sys)[1];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[1];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F2>", function(){
-    news<-get("F.buffers",env=revive.sys)[2];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[2];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F3>", function(){
-    news<-get("F.buffers",env=revive.sys)[3];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[3];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F4>", function(){
-    news<-get("F.buffers",env=revive.sys)[4];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[4];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F5>", function(){
-    news<-get("F.buffers",env=revive.sys)[5];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[5];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F6>", function(){
-    news<-get("F.buffers",env=revive.sys)[6];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[6];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F7>", function(){
-    news<-get("F.buffers",env=revive.sys)[7];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[7];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F8>", function(){
-    news<-get("F.buffers",env=revive.sys)[8];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[8];    <<schreibe [[news]] hinter Cursorzeile>>  })
 tkbind(TopW,"<F1>", function(){
-    news<-get("F.buffers",env=revive.sys)[1];    <<schreibe [[news]] hinter Cursorzeile>>  })
+    news<-get("F.buffers",envir=revive.sys)[1];    <<schreibe [[news]] hinter Cursorzeile>>  })
 
 @
 <<schreibe [[news]] hinter Cursorzeile>>=
@@ -9524,12 +9585,12 @@ DefineFKeys<-function(){
       .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15");tkpack(tt<-tktext(.newl))
       twin<-tt; <<stelle besondere Zeichen in [[twin]] zur Verfügung>>
       tkwm.title(.newl,paste("contents of function key","Definition by Escape!"))
-      F.buffers<-get("F.buffers",env=revive.sys)
+      F.buffers<-get("F.buffers",envir=revive.sys)
       try(tkinsert(tt,"0.0",paste(F.buffers[F.no],collapse="\n")))
       abbruch<-function(){tkdestroy(.newl); set.tclvalue("tvscandone",2)}
       tkbind(.newl,"<Escape>", function(){
 		 F.buffers[F.no]<-tclvalue(tkget(tt,"0.0","end"))
-		 assign("F.buffers",F.buffers,env=revive.sys)
+		 assign("F.buffers",F.buffers,envir=revive.sys)
                  tkdestroy(.newl); set.tclvalue("tvscandone",2)
 	       })
       tkfocus(.newl);tkwait.variable("tvndone")
@@ -9588,8 +9649,8 @@ if(<<das OS ist Windows>>){
   }
   ### if Img and ghostscript are absent no plot should be made for the report widget!!
   if(!Img.package.found && nchar(ghostscript)<=1) no.plots <- TRUE
-  ### assign("ghostscript",ghostscript,env=get("revive.sys",env=revive.env))
-  assign("no.plots",no.plots,env=get("revive.sys",env=revive.env))
+  ### assign("ghostscript",ghostscript,envir=get("revive.sys",envir=revive.env))
+  assign("no.plots",no.plots,envir=get("revive.sys",envir=revive.env))
 } 
 if(<<das OS ist Linux>>){
   ##setze unter [[Unix]] Pfad in [[Tcl/Tk]] zum Image-Paket##
@@ -9599,11 +9660,11 @@ if(<<das OS ist Linux>>){
     try(tclRequire("Img"))
   }
   if(!Img.package.found && nchar(ghostscript)<=1) no.plots <- TRUE
-  ##assign("ghostscript",ghostscript,env=get("revive.sys",env=revive.env))
-  assign("no.plots",no.plots,env=get("revive.sys",env=revive.env))
+  ##assign("ghostscript",ghostscript,envir=get("revive.sys",envir=revive.env))
+  assign("no.plots",no.plots,envir=get("revive.sys",envir=revive.env))
 }
 ### Img.package.found <- FALSE ####### <----------- activate only for testing
-assign("Img.package.found",Img.package.found,env=get("revive.sys",env=revive.env))
+assign("Img.package.found",Img.package.found,envir=get("revive.sys",envir=revive.env))
 
 @
 Der Tcl/Tk-Suchpfad wird verlängert durch 
@@ -9811,7 +9872,8 @@ get.tclvar<-function(name){
 @
 <<definiere Funktionen zum Umgang mit [[Tcl]]-Variablen>>=
 set.tclvalue<-function(name,value)  tclvalue(name)<-as.character(value)
-assign("set.tclvalue",set.tclvalue, pos=relax.pos)
+# assign("set.tclvalue",set.tclvalue, pos=relax.pos) ### 111103
+assign("set.tclvalue",set.tclvalue, pos=pos.of.relax.fns)
   
 @
 <<setze einige [[tcl]]-Konstanten>>=
@@ -9853,11 +9915,11 @@ if(!missing(file.name)){
    if(0==length(grep(".rev$",file.name))) file.name<-paste(file.name,"rev",sep=".")
    print(file.name)
    workname.sys<-file.name
-   assign("cmds",paste("r",file.name),env=revive.env)
+   assign("cmds",paste("r",file.name),envir=revive.env)
    Execute.cmds()
 }
 if(0<length(cmds) && cmds[1]!="") {
-  assign("cmds",cmds,env=revive.env)
+  assign("cmds",cmds,envir=revive.env)
   Execute.cmds()
 }
 
@@ -10065,7 +10127,8 @@ melde<-function(report.msg,typ=0,...){
   }
   invisible()
 }
-assign("melde",melde, pos=relax.pos)
+# assign("melde",melde, pos=relax.pos) ## 111103
+assign("melde",melde, pos=pos.of.relax.fns)
 
 @
 Zur Erleichtung der Fehlersuche kann mit der Funktion [[relax.debug]]
@@ -10088,8 +10151,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.3.6
-Date: 2010-12-03
+Version: 1.3.7
+Date: 2011-11-11
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -10132,6 +10195,15 @@ alt:
 License: This package was written by Hans Peter Wolf.
    This software is licensed under the GPL (version 2 or newer) terms.
     It is free software and comes with ABSOLUTELY NO WARRANTY.
+
+@
+\subsection{Datei [[NAMESPACE]]}
+ab Version 2.14.0 erforderlich.
+%% exportPattern("^slider.[a-z]+")
+<<define-NAMESPACE>>=
+export(gslider,playground,red,redit,relax,
+       slider,tangleR,weaveR,weaveRhtml)
+
 @
 \subsection{Help-Page von [[relax]]}
 
@@ -10139,15 +10211,18 @@ License: This package was written by Hans Peter Wolf.
 \name{relax}
 \alias{relax}
 \alias{redit}
+\alias{red}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ R editor: relax }
 \description{
   \code{relax} is an editor for doing data analysis with R and writing reports.
   \code{redit} is a simple version of relax offering a reduced set of items in the head menus.
+  \code{red} is an other name for redit.
 }
 \usage{
   relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = "all")
   redit(file.name)
+  red(file.name)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -10309,13 +10384,13 @@ slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
                   no,set.no.value,obj.name,obj.value,
                   reset.function,title){
   # slider, version2, pw 040107
-  if(!missing(no)) return(as.numeric(tclvalue(get(paste("slider",no,sep=""),env=slider.env))))
+  if(!missing(no)) return(as.numeric(tclvalue(get(paste("slider",no,sep=""),envir=slider.env))))
   if(!missing(set.no.value)){ try(eval(parse(text=paste("tclvalue(slider",set.no.value[1],")<-",
-                            set.no.value[2],sep="")),env=slider.env)); return(set.no.value[2]) }
+                            set.no.value[2],sep="")),envir=slider.env)); return(set.no.value[2]) }
   if(!exists("slider.env")) eval(parse(text="slider.env@<<-new.env()"))
   if(!missing(obj.name)){
-    if(!missing(obj.value)) assign(obj.name,obj.value,env=slider.env) else
-      obj.value<-get(obj.name,env=slider.env)
+    if(!missing(obj.value)) assign(obj.name,obj.value,envir=slider.env) else
+      obj.value<-get(obj.name,envir=slider.env)
     return(obj.value)
   }
   if(missing(title)) title<-"slider control widget"
@@ -10323,16 +10398,16 @@ slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
   if(missing(sl.names)) sl.names<-NULL
   if(missing(sl.functions)) sl.functions<-function(...){}
   for(i in seq(sl.names)){
-    eval(parse(text=paste("assign('slider",i,"',tclVar(sl.defaults[i]),env=slider.env)",sep="")))
+    eval(parse(text=paste("assign('slider",i,"',tclVar(sl.defaults[i]),envir=slider.env)",sep="")))
     tkpack(fr<-tkframe(nt));  lab<-tklabel(fr, text=sl.names[i], width="25")
     sc<-tkscale(fr,from=sl.mins[i],to=sl.maxs[i],showvalue=T,resolution=sl.deltas[i],orient="horiz")
-    tkpack(lab,sc,side="right"); assign("sc",sc,env=slider.env)
-    eval(parse(text=paste("tkconfigure(sc,variable=slider",i,")",sep="")),env=slider.env)
+    tkpack(lab,sc,side="right"); assign("sc",sc,envir=slider.env)
+    eval(parse(text=paste("tkconfigure(sc,variable=slider",i,")",sep="")),envir=slider.env)
     sl.fun<-if(length(sl.functions)>1) sl.functions[[i]] else sl.functions
     if(!is.function(sl.fun)) sl.fun<-eval(parse(text=paste("function(...){",sl.fun,"}")))
     tkconfigure(sc,command=sl.fun)
   }
-  assign("slider.values.old",sl.defaults,env=slider.env)
+  assign("slider.values.old",sl.defaults,envir=slider.env)
   tkpack(f.but<-tkframe(nt),fill="x")
   tkpack(tkbutton(f.but, text="Exit", command=function()tkdestroy(nt)),side="right")
   if(missing(reset.function)) reset.function<-function(...) print("relax")
@@ -10340,7 +10415,7 @@ slider<-function(sl.functions,sl.names,sl.mins,sl.maxs,sl.deltas,sl.defaults,
     reset.function<-eval(parse(text=paste("function(...){",reset.function,"}")))
   tkpack(tkbutton(f.but, text="Reset", command=function(){
          for(i in seq(sl.names))
-            eval(parse(text=paste("tclvalue(slider",i,")<-",sl.defaults[i],sep="")),env=slider.env)
+            eval(parse(text=paste("tclvalue(slider",i,")<-",sl.defaults[i],sep="")),envir=slider.env)
          reset.function()  }  ),side="right")
   if(missing(but.names)) but.names<-NULL
   for(i in seq(but.names)){
@@ -10581,11 +10656,11 @@ R.veil.in.the.wind()
   \code{playground} opens a simple text window for testing R code.
 }
 \usage{
-playground(playground.env=NULL,code=NULL)
+playground(playground.envir=NULL,code=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{playground.env}{if not NULL \code{playground.env} is used for evaluation}
+  \item{playground.envir}{if not NULL \code{playground.envir} is used for evaluation}
   \item{code}{if not NULL \code{code} is inserted in the playground}
 }
 \details{
@@ -10650,6 +10725,7 @@ notangle -Rdefine-slider ../slider-function.rev >  relax/R/slider.R
 ### notangle -Rdefine-slider-function ../relax.rev > relax/R/slider.R
 notangle -Rdefine-slider-help   ../relax.rev > relax/man/slider.Rd
 notangle -Rdefine-DESCRIPTION  ../relax.rev > relax/DESCRIPTION
+notangle -Rdefine-NAMESPACE    ../relax.rev > relax/NAMESPACE
 notangle -Rdefine-config-settings ../relax.rev > relax/inst/config/settings.relax
 notangle -Rdefine-config-settings ../relax.rev > relax/inst/config/settings.init
 notangle ../relax.rev > relax/R/relax.R
@@ -10658,16 +10734,16 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.3.6.tar.gz
+R CMD INSTALL --library=lib relax_1.3.7.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
 cd $HOME/R/work/relax/install.dir/lib; 
 # zip aus $HOME/bin mit 7z aus p7zip_9.13 
-zip a -r relax_1.3.6.zip relax
-mv relax_1.3.6.zip ..
+zip a -r relax_1.3.7.zip relax
+mv relax_1.3.7.zip ..
 
 cd ..
-cp relax_1.3.6.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.3.6.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.7.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.7.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 
@@ -10788,7 +10864,7 @@ function(out.file="tmpout.tex",path="",digits=4,escape.symbol="#"){
      ff.out<-NULL
      for(ff.e in ff.eval){
        cat("  expression to be evaluated / replaced:", ff.e, "\n")
-       ff.out<-c(ff.out,eval(parse(text=ff.e),env=revive.env))
+       ff.out<-c(ff.out,eval(parse(text=ff.e),envir=revive.env))
        cat("  evaluation done, result: ",ff.out[length(ff.out)]," \n")
      }
      if(is.numeric(ff.out)) ff.out<-as.character(signif(ff.out,digits))
@@ -10892,18 +10968,18 @@ Ablage in der Systemumgebung: revive.sys
 @
 @<<ermittle Namen einer temporären Datei>>=
 tmp.file.name <- tempfile("rt-tmp")
-assign(tmp.file.name,"tmp.file.name",env=revive.sys)
+assign(tmp.file.name,"tmp.file.name",envir=revive.sys)
 @
 @<<tmp>>=
-get("tmp.file.name",env=revive.sys)
+get("tmp.file.name",envir=revive.sys)
 
 @<<ermittle Namen einer Sink-Datei>>=
 tmp.sink.name <- tempfile("rt-sink")
-assign(tmp.sink.name,"tmp.sink.name",env=revive.sys)
+assign(tmp.sink.name,"tmp.sink.name",envir=revive.sys)
 @
 vorher: "r.tmp"
 @<<tmp.sink>>=
-get("tmp.file.name",env=revive.sys)
+get("tmp.file.name",envir=revive.sys)
 
 tmp.sink wird verwendet in
 fEvalRCode, SaveDiffReport, print, EditReport

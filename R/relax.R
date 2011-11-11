@@ -1,7 +1,7 @@
-playground<-function(playground.env=NULL,code=NULL){
+playground<-function(playground.envir=NULL,code=NULL){
   require(tcltk)
   pg<-tktoplevel(); tkwm.geometry(pg,"+100+100")
-  tkwm.title(pg, "playground for testing R code -- output appears on output device")
+  tkwm.title(pg, "playground for testing R code (error messages appear in the R Console)")
   pgtext<-tktext(pg,height=19,background="#f7fffF",
                  font="-Adobe-courier-Medium-R-Normal--18-180-*")
   tkbind(pgtext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
@@ -20,31 +20,28 @@ playground<-function(playground.env=NULL,code=NULL){
     code<-tclvalue(tkget(pgtext,"0.0","end"))
     code.orig<-code<-unlist(strsplit(code,"\n"))
     if(length(code)==0){ cat("warning: no code found!\n"); return() }    
-    if(!is.null(playground.env)){  ## exists("revive.env") ##
-      if(0 < grep("revive.sys", ls(env=playground.env))){
-        revive.sys <- get("revive.sys",playground.env)
+    if(!is.null(playground.envir)){  ## exists("revive.env") ##
+      if(0 < grep("revive.sys", ls(envir=playground.envir))){
+        revive.sys <- get("revive.sys",playground.envir)
         if(0<length(code)){
           tld <- paste("<","<*>",">=",sep="")
-          rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-          assign("relax.history",rh,env=revive.sys)
+          rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+          assign("relax.history",rh,envir=revive.sys)
         }
    ## stores code in revive.sys
       }
-      result<-try(eval(parse(text=code),envir=playground.env)) 
+      result<-try(eval(parse(text=code),envir=playground.envir)) 
     }else{ 
       result<-try(eval(parse(text=code),envir=pos.to.env(1)))
     }
-    if(is.null(result)||is.na(result)){
-      cat("warning: output of length 0!\n"); return() }
-    if(is.list(result)&& length(names(result))> 0 && 
-                               names(result)[1]=="ID") return()
-    if(is.list(result)&& TRUE) return()
     if(class(result)=="try-error"){
-     class(result)<-"character"
-     cat(result,"\n")
-    }else{
-     print(result)
-    }
+      class(result)<-"character"; cat(result,"\n"); return()
+    } else { 
+      idx <- which("relax.fns"==search())
+      if( 0 < length(idx) ) print <- get("print",pos=idx)
+      print(result) 
+    }  
+    NULL
   }
   exit.function<-function(){
      tkdestroy(pg)
@@ -52,6 +49,7 @@ playground<-function(playground.env=NULL,code=NULL){
   }
   tkconfigure(bexit,command=exit.function)
   tkconfigure(beval,command=eval.code)
+  invisible(NULL)
 }
 
 #.First.lib<-function(lib, pkg) {
@@ -67,10 +65,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 )
   relax.pos<-grep("^package:relax$",search())[1]
 
-  running.function<- "relax"
-
-  assign("running.function","relax"
-, pos=relax.pos)
+  ## running.function<- #<relax>#  assign("running.function",#<relax>#, pos=relax.pos) ##111103
+  revive.env<-"1"; rm(revive.env)
+  if(!exists("revive.env")){
+    revive.env<<-rev.env<-new.env(parent=.GlobalEnv) ### 111103
+  } else {
+    revive.sys<-get("revive.sys",envir=revive.env)
+    rm(list=ls(envir=revive.sys),  envir=revive.sys)
+  }
+  revive.sys<-environment()
+  assign("revive.sys", revive.sys, envir=revive.env)
+  if(0<length(grep("relax.fns",search()))) detach("relax.fns")
+  attach(what=NULL,name="relax.fns")
+  pos.of.relax.fns <- grep("relax.fns",search())
   myhead.menu<-function(item="Test",code=function()cat("Menu-Test"),
                         title="Menue",rm.menu=FALSE,menu.no=1){
     set.tclvalue<-function(name,value)tclvalue(name)<-as.character(value)
@@ -97,7 +104,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       tkpack(mrtrevive,side="left")
       mmyhead.menu<-tkmenu(mrtrevive)
       assign(menu.item.name,mmyhead.menu,envir=revive.sys)
-      tkconfigure(mrtrevive, menu=get(menu.item.name,env=revive.sys))
+      tkconfigure(mrtrevive, menu=get(menu.item.name,envir=revive.sys))
       out.msg<-c(out.msg, paste("Menue im Kopf eingerichtet!"))
 
     }
@@ -123,8 +130,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     return(out.msg)
   }
-  assign("myhead.menu",myhead.menu, pos=relax.pos)
-
+  # assign("myhead.menu",myhead.menu, pos=relax.pos) ### 111103
+  assign("myhead.menu",myhead.menu, pos=pos.of.relax.fns)
 
   DEBUG<-"1"; rm(DEBUG) 
   melde<-function(report.msg,typ=0,...){
@@ -142,17 +149,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     invisible()
   }
-  assign("melde",melde, pos=relax.pos)
-
-  revive.env<-"1"; rm(revive.env)
-  if(!exists("revive.env")){
-    revive.env<<-revive.env<-new.env(parent=.GlobalEnv)
-  } else {
-    revive.sys<-get("revive.sys",envir=revive.env)
-    rm(list=ls(env=revive.sys),  envir=revive.sys)
-  }
-  revive.sys<-environment()
-  assign("revive.sys", revive.sys, envir=revive.env)
+  # assign("melde",melde, pos=relax.pos) ## 111103
+  assign("melde",melde, pos=pos.of.relax.fns)
 
   #############################################
   # configuration file of relax
@@ -346,7 +344,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -363,8 +362,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     ### if Img and ghostscript are absent no plot should be made for the report widget!!
     if(!Img.package.found && nchar(ghostscript)<=1) no.plots <- TRUE
-    ### assign("ghostscript",ghostscript,env=get("revive.sys",env=revive.env))
-    assign("no.plots",no.plots,env=get("revive.sys",env=revive.env))
+    ### assign("ghostscript",ghostscript,envir=get("revive.sys",envir=revive.env))
+    assign("no.plots",no.plots,envir=get("revive.sys",envir=revive.env))
   } 
   if(substring(version$os,1,5)=="linux"
 ){
@@ -375,19 +374,24 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       try(tclRequire("Img"))
     }
     if(!Img.package.found && nchar(ghostscript)<=1) no.plots <- TRUE
-    ##assign("ghostscript",ghostscript,env=get("revive.sys",env=revive.env))
-    assign("no.plots",no.plots,env=get("revive.sys",env=revive.env))
+    ##assign("ghostscript",ghostscript,envir=get("revive.sys",envir=revive.env))
+    assign("no.plots",no.plots,envir=get("revive.sys",envir=revive.env))
   }
   ### Img.package.found <- FALSE ####### <----------- activate only for testing
-  assign("Img.package.found",Img.package.found,env=get("revive.sys",env=revive.env))
+  assign("Img.package.found",Img.package.found,envir=get("revive.sys",envir=revive.env))
 
   set.tclvalue<-function(name,value)  tclvalue(name)<-as.character(value)
-  assign("set.tclvalue",set.tclvalue, pos=relax.pos)
+  # assign("set.tclvalue",set.tclvalue, pos=relax.pos) ### 111103
+  assign("set.tclvalue",set.tclvalue, pos=pos.of.relax.fns)
     
   .Tcl("set XYZ [encoding system]")
   UTF<-is.UTF<- 0<length(grep("utf",tclvalue("XYZ")))
 
   readline<-function(prompt=""){
+    if(! ("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){  ### 111103
+      readline<-get("readline", pos="package:base")
+      return(readline(prompt=prompt))
+    }
     linfo <- get("linfo",revive.sys)
     linfo.tmp <- get("linfo.tmp",revive.sys)
     einfo.tmp <- get("einfo.tmp",revive.sys)
@@ -435,40 +439,17 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(0<nchar(out)){
       news<-if(prompt!="") prompt else "readline Input:"
       news<-paste("\n",news,"\n", out,sep="")
-      if(exists("running.function") && running.function=="relax"
-){
-             if(!exists("toutwin"))
-               toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-             pos.to.insert<-"end"
-             news<-paste(gsub("\n+","\n",news),collapse="\n")
-             try(tkinsert(toutwin,pos.to.insert,news))
-             tksee(toutwin,"end - 0 lines")
-             melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+      if(!exists("toutwin"))
+        toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+      pos.to.insert<-"end"
+      news<-paste(gsub("\n+","\n",news),collapse="\n")
+      try(tkinsert(toutwin,pos.to.insert,news))
+      tksee(toutwin,"end - 0 lines")
+      melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-      }else{
-             if(!exists("tworkwin"))
-               tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-             pos.to.insert<-"end"
-             if(0<length(grep("output-start",news))){
-               tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-               ltail<-length(tail)
-               if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                  any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                  news<-sub(".*output-start\n","",news)
-                  news<-sub("output-end","",news)
-                  h<-seq(along=h)[h][1]
-                  pos.to.insert<-paste("end -",h,"lines")
-               }
-             }
-             try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-             tksee(tworkwin,"end - 0 lines")
-             melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-      }
       tcl("update","idletasks") # 090710
-
+      NULL
     } 
     tkbind(TopW,"<Return>","")
     tkpack("forget",einfo.tmp,linfo.tmp); Sys.sleep(0.01)
@@ -478,14 +459,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
     return(out)
   }
-  assign("readline",readline,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  # assign("readline",readline,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("readline",readline, pos=pos.of.relax.fns)
   melde("readline saved",3)
 
   menu<-function(choices, graphics=FALSE, title=""){
-   if(! ("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
-) ){
+   if(! ("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){
       menu<-get("menu", pos="package:base")
       return(menu(choices=choices,graphics=graphics,title=title))
    }else{
@@ -511,47 +490,23 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     choice<-tclvalue("choice")
     choice<- if(choice==length(choices)) 0 else as.numeric(choice)
     news<-paste("",paste(choices,collapse="\n"),"\nSelection: ",choice, "",sep="")
-    if(exists("running.function") && running.function=="relax"
-){
-           if(!exists("toutwin"))
-             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-           pos.to.insert<-"end"
-           news<-paste(gsub("\n+","\n",news),collapse="\n")
-           try(tkinsert(toutwin,pos.to.insert,news))
-           tksee(toutwin,"end - 0 lines")
-           melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+    if(!exists("toutwin"))
+      toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+    pos.to.insert<-"end"
+    news<-paste(gsub("\n+","\n",news),collapse="\n")
+    try(tkinsert(toutwin,pos.to.insert,news))
+    tksee(toutwin,"end - 0 lines")
+    melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-    }else{
-           if(!exists("tworkwin"))
-             tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-           pos.to.insert<-"end"
-           if(0<length(grep("output-start",news))){
-             tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-             ltail<-length(tail)
-             if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                news<-sub(".*output-start\n","",news)
-                news<-sub("output-end","",news)
-                h<-seq(along=h)[h][1]
-                pos.to.insert<-paste("end -",h,"lines")
-             }
-           }
-           try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-           tksee(tworkwin,"end - 0 lines")
-           melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-    }
     tcl("update","idletasks") # 090710
-
-    tkfocus(get("tworkwin",env=get("revive.sys",env=revive.env))) # wichtig!!
+    NULL
+    tkfocus(get("tworkwin",envir=get("revive.sys",envir=revive.env))) # wichtig!!
     return(choice)
    }
   }
-  assign("menu",menu,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  # assign("menu",menu,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("menu",menu, pos=pos.of.relax.fns)
   melde("menu saved",3)
 
   scan<-function(file="",what=double(0),nmax=-1,n=-1,sep="",
@@ -559,8 +514,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                  fill=FALSE,strip.white=FALSE,quiet=FALSE,blank.lines.skip=TRUE){
       scan<-get("scan",pos="package:base")
 
-      if(file!="" || ! ("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
-) ){
+      if(file!="" || ! ("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){
           if(!missing(n))
             worktext<-scan(file=file,what=what,n=n,sep=sep,quote=quote,dec=dec,
                          skip=skip,nlines=nlines,na.strings=na.strings,
@@ -577,14 +531,13 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         .newl<-tktoplevel(); tkwm.title(.newl, typ); tkwm.geometry(.newl,"+0+15")
         revive.sys<-get("revive.sys",envir=revive.env)
         assign(".newl",.newl,envir=revive.sys)
-        if(exists("running.function") && running.function=="relax"
-){
+        if(TRUE){ ## exists("running.function") && running.function==#<relax>#){ ### 111103
           tkpack(minfo<-tkmessage(.newl,width="1000",justify="left",relief="raised"))
           if(!exists("toutwin"))
             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-
           news<-strsplit(tclvalue(tkget(toutwin,"0.0","end")),"\n")[[1]]
           if(length(news)>10) news<-rev(rev(news)[1:10])
+          # kaum relevant
           if(length(h<-grep("^output", news))>0) news<-news[-h]
           if(length(h<-grep("^@", news))>0)      news<-news[-h]
           if(length(h<-grep("verbatim",news))>0) news<-news[-h]
@@ -603,9 +556,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           if(nchar(worktext)<10000){
             worktext<-strsplit(worktext,"\n")[[1]]
           }else{
-            base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+            base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-            worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+            worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
           }
 
@@ -624,7 +577,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           }
 
         }
-
 
         if(!missing(n)&&n==1){
           sp<-"10"; zei<-"1"
@@ -657,7 +609,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                      tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                      tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
                      renewhighlighting<-function(){
-                       tworkwin<-get("tworkwin",env=revive.sys)
+                       tworkwin<-get("tworkwin",envir=revive.sys)
                        melde("ak texthervor",1)
                        tcl("markclear",tworkwin)
                        tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
@@ -679,40 +631,17 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
         tkfocus(tworkwin); tkdestroy(.newl)
         news<-paste("\nscan-Eingabe:\n",worktext,sep="")
-        if(exists("running.function") && running.function=="relax"
-){
-               if(!exists("toutwin"))
-                 toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-               pos.to.insert<-"end"
-               news<-paste(gsub("\n+","\n",news),collapse="\n")
-               try(tkinsert(toutwin,pos.to.insert,news))
-               tksee(toutwin,"end - 0 lines")
-               melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+        if(!exists("toutwin"))
+          toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+        pos.to.insert<-"end"
+        news<-paste(gsub("\n+","\n",news),collapse="\n")
+        try(tkinsert(toutwin,pos.to.insert,news))
+        tksee(toutwin,"end - 0 lines")
+        melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-        }else{
-               if(!exists("tworkwin"))
-                 tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-               pos.to.insert<-"end"
-               if(0<length(grep("output-start",news))){
-                 tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-                 ltail<-length(tail)
-                 if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                    any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                    news<-sub(".*output-start\n","",news)
-                    news<-sub("output-end","",news)
-                    h<-seq(along=h)[h][1]
-                    pos.to.insert<-paste("end -",h,"lines")
-                 }
-               }
-               try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-               tksee(tworkwin,"end - 0 lines")
-               melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-        }
         tcl("update","idletasks") # 090710
-
+        NULL
              worktext<-strsplit(worktext,"\n")[[1]]
         worktext<-strsplit(paste(worktext,collapse=" ")," ")[[1]]
         worktext<-worktext[worktext!=""]
@@ -728,7 +657,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           }
           if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
             ok<-FALSE
-            cat(error.msg<-unclass(try.res),"\n")
+            error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+            cat(error.msg,"\n")
             if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                cat("A warning message stopped the evaluation!",
                      "If you want to\nevaluate the code anyway",
@@ -744,120 +674,69 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       worktext
   }
-  assign("scan",scan,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  # assign("scan",scan,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("scan",scan, pos=pos.of.relax.fns)
   melde("scan saved",3)
 
   # myscan<-get("scan",pos="package:base"); formals(myscan)$comment.char<-""
   myscan<-function(file,what,sep="\n", blank.lines.skip=FALSE){ readLines(file) } #2.1.0
 
   print<-function(x, ...){ # 050614
-    if( "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
- ){
-      sink(get("tmp.file.name",env=revive.sys)
+    if( "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){
+      sink(get("tmp.file.name",envir=revive.sys)
 ); base::print(x, ...); sink()
-      news<-paste("", # date(),
-                   paste(scan(file=get("tmp.file.name",env=revive.sys)
+      news<-paste("", paste(scan(file=get("tmp.file.name",envir=revive.sys)
 ,what="",sep="\n"),collapse="\n"),
-                   "",sep="\n" )
-      if(exists("running.function") && running.function=="relax"
-){
-             if(!exists("toutwin"))
-               toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-             pos.to.insert<-"end"
-             news<-paste(gsub("\n+","\n",news),collapse="\n")
-             try(tkinsert(toutwin,pos.to.insert,news))
-             tksee(toutwin,"end - 0 lines")
-             melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+                  "",sep="\n" )
+      if(!exists("toutwin"))
+        toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+      pos.to.insert<-"end"
+      news<-paste(gsub("\n+","\n",news),collapse="\n")
+      try(tkinsert(toutwin,pos.to.insert,news))
+      tksee(toutwin,"end - 0 lines")
+      melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-      }else{
-             if(!exists("tworkwin"))
-               tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-             pos.to.insert<-"end"
-             if(0<length(grep("output-start",news))){
-               tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-               ltail<-length(tail)
-               if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                  any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                  news<-sub(".*output-start\n","",news)
-                  news<-sub("output-end","",news)
-                  h<-seq(along=h)[h][1]
-                  pos.to.insert<-paste("end -",h,"lines")
-               }
-             }
-             try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-             tksee(tworkwin,"end - 0 lines")
-             melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-      }
       tcl("update","idletasks") # 090710
-
-    } else base::print(x, ...)
+      NULL
+    } # else
+    base::print(x, ...)
+    NULL
   }
-  assign("print",print,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  ## assign("print",print,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("print",print, pos=pos.of.relax.fns)
   melde("print saved",3)
 
   cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
-    cat<-get("cat",pos="package:base")
-    cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
-    if(file==""&& "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
- ){
-       cat(...,file=get("tmp.file.name",env=revive.sys)
+    ## if(exists("eval.something.for.check")) eval(parse(text=eval.something.for.check)) ###
+    if(file==""&& "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){
+       base::cat(...,file=get("tmp.file.name",envir=revive.sys)
 ,sep=sep,fill=fill,labels=labels,append=append)
-       news<-paste("\n", # date(),
-                   paste(scan(file=get("tmp.file.name",env=revive.sys)
+       news<-paste("\n", paste(scan(file=get("tmp.file.name",envir=revive.sys)
 ,what="",sep="\n"),collapse="\n"),
                    "",sep="\n")
-       if(exists("running.function") && running.function=="relax"
-){
-              if(!exists("toutwin"))
-                toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-              pos.to.insert<-"end"
-              news<-paste(gsub("\n+","\n",news),collapse="\n")
-              try(tkinsert(toutwin,pos.to.insert,news))
-              tksee(toutwin,"end - 0 lines")
-              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+       if(!exists("toutwin"))
+         toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+       pos.to.insert<-"end"
+       news<-paste(gsub("\n+","\n",news),collapse="\n")
+       try(tkinsert(toutwin,pos.to.insert,news))
+       tksee(toutwin,"end - 0 lines")
+       melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-       }else{
-              if(!exists("tworkwin"))
-                tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-              pos.to.insert<-"end"
-              if(0<length(grep("output-start",news))){
-                tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-                ltail<-length(tail)
-                if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                   any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                   news<-sub(".*output-start\n","",news)
-                   news<-sub("output-end","",news)
-                   h<-seq(along=h)[h][1]
-                   pos.to.insert<-paste("end -",h,"lines")
-                }
-              }
-              try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-              tksee(tworkwin,"end - 0 lines")
-              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-       }
        tcl("update","idletasks") # 090710
-
+       NULL
     }
+    base::cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
+    NULL
   }
-  assign("cat",cat,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  # assign("cat",cat,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("cat",cat, pos=pos.of.relax.fns)
   melde("cat saved",3)
 
   str<-function(object,...){
-    if("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))
- ){ 
-       fname <- get("tmp.file.name",env=revive.sys)
+    if("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){ 
+       fname <- get("tmp.file.name",envir=revive.sys)
 ; fname <- gsub("\\\\","/",fname)
        base::cat(file=fname,"")
        if(is.data.frame(object)) 
@@ -877,55 +756,31 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        if(0<length(ind<-grep("^List of",news))) news<-news[-ind]
        news<-paste("\n", # date(),
                    paste(news,collapse="\n"),"",sep="\n")
-       if(exists("running.function") && running.function=="relax"
-){
-              if(!exists("toutwin"))
-                toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
-              pos.to.insert<-"end"
-              news<-paste(gsub("\n+","\n",news),collapse="\n")
-              try(tkinsert(toutwin,pos.to.insert,news))
-              tksee(toutwin,"end - 0 lines")
-              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
+       if(!exists("toutwin"))
+         toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
+       pos.to.insert<-"end"
+       news<-paste(gsub("\n+","\n",news),collapse="\n")
+       try(tkinsert(toutwin,pos.to.insert,news))
+       tksee(toutwin,"end - 0 lines")
+       melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
 
-       }else{
-              if(!exists("tworkwin"))
-                tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
-
-              pos.to.insert<-"end"
-              if(0<length(grep("output-start",news))){
-                tail<-rev(strsplit(tclvalue(tkget(tworkwin,"end - 3 lines","end")),"\n")[[1]])
-                ltail<-length(tail)
-                if( (0==length(grep("<<[*]>>=",tail[1:ltail]))) &&
-                   any(h<-("output-end"==substring(tail[1:ltail],1,11)))){
-                   news<-sub(".*output-start\n","",news)
-                   news<-sub("output-end","",news)
-                   h<-seq(along=h)[h][1]
-                   pos.to.insert<-paste("end -",h,"lines")
-                }
-              }
-              try(tkinsert(tworkwin,pos.to.insert,paste(news,collapse="\n")))
-              tksee(tworkwin,"end - 0 lines")
-              melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
-       }
        tcl("update","idletasks") # 090710
-
+       NULL
     } else { utils::str(object,...) }
     invisible(NULL)
   }
-  assign("str",str,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  # assign("str",str,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("str",str, pos=pos.of.relax.fns)
   melde("str saved",3)
 
   step.dep<-deparse(stats::step)
   step.dep<-gsub("cat[(]", "relax::cat(",step.dep) # ))  
   step.dep<-gsub("print[(]", "relax::print(",step.dep) # ))  
   mystep <- eval(parse(text = step.dep))
-  assign("step",mystep,pos=which(paste("package","relax"
-,sep=":")==search())
-)
+  step<- mystep
+  # assign("step",mystep,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
+  assign("step",step, pos=pos.of.relax.fns)
   melde("step saved",3)
 
   WinToTcl.read<-function(x){
@@ -991,11 +846,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
   }
 
+## attach(relax.fns)
   tmp.file.name <- tempfile("rt-tmp")
-  assign(tmp.file.name,"tmp.file.name",env=revive.sys)
+  assign(tmp.file.name,"tmp.file.name",envir=revive.sys)
 
   tmp.sink.name <- tempfile("rt-sink")
-  assign(tmp.sink.name,"tmp.sink.name",env=revive.sys)
+  assign(tmp.sink.name,"tmp.sink.name",envir=revive.sys)
   ##definiere [[SaveAsHtml]]##           
   ##definiere Testknopf\-funktion##
   fEvalRCode<-function(){
@@ -1008,9 +864,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -1207,8 +1063,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
       if(0<length(code)){
         tld <- paste("<","<*>",">=",sep="")
-        rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-        assign("relax.history",rh,env=revive.sys)
+        rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+        assign("relax.history",rh,envir=revive.sys)
       }
 
       code<-c("options(warn=2)",code)
@@ -1225,7 +1081,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -1242,9 +1099,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           worktext<-TcltoWin.write(tclvalue(tkget(tworkwin,"0.0","end")))
           get("cat","package:base")(worktext,file="report-UnDo-bak.rev")
 
-          sink(get("tmp.file.name",env=revive.sys)
+          sink(get("tmp.file.name",envir=revive.sys)
 );get("print",pos="package:base")(try.res);sink()
-          news<-paste(myscan(get("tmp.file.name",env=revive.sys)
+          news<-paste(myscan(get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n"),collapse="\n")
           if(nchar(news)>maxol.sys){
               news<-paste(substring(news,1,maxol.sys),"...",sep="\n")
@@ -1310,16 +1167,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
         repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
         repl.pat<-paste("([",repl.pat,"])",collapse="")
         such<-gsub(repl.pat,"\\\\\\1",such)
-        assign("string.sys",string.sys,env=revive.sys)
+        assign("string.sys",string.sys,envir=revive.sys)
         if(nchar(such)==0) {
           tcl("findclear",tworkwin); tkfocus(tworkwin); return()
         }
@@ -1525,9 +1382,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -1553,9 +1410,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      if(nchar(worktext)<10000){
        worktext<-strsplit(worktext,"\n")[[1]]
      }else{
-       base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+       base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-       worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+       worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
      }
 
@@ -1601,9 +1458,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      if(nchar(worktext)<10000){
        worktext<-strsplit(worktext,"\n")[[1]]
      }else{
-       base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+       base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-       worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+       worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
      }
 
@@ -1653,9 +1510,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -1736,7 +1593,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -1768,7 +1626,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -1803,7 +1662,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -1824,9 +1684,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -1902,7 +1762,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     ,"$w image create $place -image $imageno"
     ,"}"
   , sep="\n")) 
-  assign("pic.list.sys",NULL,env=revive.sys)
+  assign("pic.list.sys",NULL,envir=revive.sys)
   # --------------------------------------------------------------------
   # show an image 
   try(.Tcl( paste(
@@ -1929,7 +1789,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -1941,8 +1802,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     # update pic list
     if(try.res=="ok"){
       imageno<-tclvalue(.Tcl("set imageno"))
-      pic.list<-rbind(get("pic.list.sys",env=revive.sys),c(picname,imageno))
-      assign("pic.list.sys",pic.list,env=revive.sys)
+      pic.list<-rbind(get("pic.list.sys",envir=revive.sys),c(picname,imageno))
+      assign("pic.list.sys",pic.list,envir=revive.sys)
     }
     melde("createandshow.single.plot",2)
   }
@@ -1955,16 +1816,16 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
       rows   <-grep("<img src=",worktext); if(0==length(rows))return()
       pic.names.report  <-unlist(lapply(strsplit(worktext[rows],"<img src=\""), 
                                function(x){ x<-x[2]; strsplit(x,"\"")[[1]][1] }))
-      pic.list<-get("pic.list.sys",env=revive.sys)
+      pic.list<-get("pic.list.sys",envir=revive.sys)
       ind<-match(sub("....$","",pic.names.report),sub("....$","",pic.list[,1]))
       image.ok<-!is.na(ind); ind<-ind[image.ok]
       if(0==length(ind))return()
@@ -1984,9 +1845,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -2026,7 +1887,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        }
        if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
          ok<-FALSE
-         cat(error.msg<-unclass(try.res),"\n")
+         error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+         cat(error.msg,"\n")
          if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
             cat("A warning message stopped the evaluation!",
                   "If you want to\nevaluate the code anyway",
@@ -2039,7 +1901,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      }
      pic.list<-cbind(picname,image.nos)
      pic.list<-pic.list[pic.list[,2]!="xx",,drop=FALSE]
-     assign("pic.list.sys",pic.list,env=revive.sys)
+     assign("pic.list.sys",pic.list,envir=revive.sys)
      melde("createandshow.all.plots",2)
   } 
 
@@ -2050,9 +1912,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -2122,9 +1984,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -2175,9 +2037,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -2374,8 +2236,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
       if(0<length(code)){
         tld <- paste("<","<*>",">=",sep="")
-        rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-        assign("relax.history",rh,env=revive.sys)
+        rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+        assign("relax.history",rh,envir=revive.sys)
       }
 
       try.res <- try(eval(parse(text=code),envir=revive.env))
@@ -2392,7 +2254,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -2409,9 +2272,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           worktext<-TcltoWin.write(tclvalue(tkget(tworkwin,"0.0","end")))
           get("cat","package:base")(worktext,file="report-UnDo-bak.rev")
 
-          sink(get("tmp.file.name",env=revive.sys)
+          sink(get("tmp.file.name",envir=revive.sys)
 );get("print",pos="package:base")(try.res);sink()
-          news<-paste(myscan(get("tmp.file.name",env=revive.sys)
+          news<-paste(myscan(get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n"),collapse="\n")
           if(nchar(news)>maxol.sys){
               news<-paste(substring(news,1,maxol.sys),"...",sep="\n")
@@ -2457,9 +2320,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -2481,9 +2344,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -2505,7 +2368,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(res=="cancel") return()
     if(res=="no") SaveReport()
     set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
-    remove("print",pos=which(.path.package("relax")==searchpaths()))
+    ## remove("print",pos=which(.path.package("relax")==searchpaths())) ## 111103
     melde("==================================================\n")
     melde("RELAX --- EXIT                    \n")
     # melde("copy of report saved as: \n")
@@ -2545,8 +2408,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         h<-as.numeric(tclvalue("tvinfo"))
-        assign("psdesignwidth.sys",h,env=revive.sys)
-        melde(paste('> assign("psdesignwidth.sys","',psdesignwidth.sys,'",env=revive.sys)',sep="")
+        assign("psdesignwidth.sys",h,envir=revive.sys)
+        melde(paste('> assign("psdesignwidth.sys","',psdesignwidth.sys,'",envir=revive.sys)',sep="")
                   , "cmd.msg")
       }
     )
@@ -2581,8 +2444,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         psheight.sys<-tclvalue("tvinfo")
-        assign("psheight.sys",psheight.sys,env=revive.sys)
-        melde(paste('> assign("psheight.sys","',psheight.sys,'",env=revive.sys)',sep="")
+        assign("psheight.sys",psheight.sys,envir=revive.sys)
+        melde(paste('> assign("psheight.sys","',psheight.sys,'",envir=revive.sys)',sep="")
               ,"cmd.msg")
       }
     )
@@ -2617,8 +2480,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         h<-as.numeric(tclvalue("tvinfo"))
-        assign("psdesignheight.sys",h,env=revive.sys)
-        melde(paste('> assign("psdesignheight.sys","',psdesignheight.sys,'",env=revive.sys)',sep="")
+        assign("psdesignheight.sys",h,envir=revive.sys)
+        melde(paste('> assign("psdesignheight.sys","',psdesignheight.sys,'",envir=revive.sys)',sep="")
                   , "cmd.msg")
       }
     )
@@ -2642,9 +2505,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
     if(choice!=0){
         pshorizontal.sys<-2==choice
-        assign("pshorizontal.sys",pshorizontal.sys,env=revive.sys)
+        assign("pshorizontal.sys",pshorizontal.sys,envir=revive.sys)
         melde(paste(
-             '> assign("pshorizontal.sys","',pshorizontal.sys,'",env=revive.sys)'
+             '> assign("pshorizontal.sys","',pshorizontal.sys,'",envir=revive.sys)'
              ,sep=""),"cmd.msg")
     }
     melde("SetPSRotation",2)
@@ -2679,9 +2542,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         h<-as.numeric(tclvalue("tvinfo"))
-        assign("jpgdesignsize.sys",h,env=revive.sys)
+        assign("jpgdesignsize.sys",h,envir=revive.sys)
         melde(paste(
-    '> assign("jpgdesignsize.sys","',jpgdesignsize.sys,'",env=revive.sys)',
+    '> assign("jpgdesignsize.sys","',jpgdesignsize.sys,'",envir=revive.sys)',
            sep=""), "cmd.msg")
       }
     )
@@ -2707,7 +2570,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       font<-choices[choice]
       tfont.sys<-sub("be-.+-Me",paste("be-",font,"-Me",sep=""),tfont.sys)
       tkconfigure(tworkwin,font=tfont.sys)
-      assign("tfont.sys",tfont.sys,env=revive.sys)
+      assign("tfont.sys",tfont.sys,envir=revive.sys)
       ## if(exists("trevwin")) tkconfigure(trevwin, font=tfont.sys)
     }
     melde(paste("> font type changed"))
@@ -2734,9 +2597,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       size<-sizes[choice]
       tfont.sys<-sub("al--.+-.+-\\*",paste("al--",size,"-*",sep=""),tfont.sys)
       tkconfigure(tworkwin,font=tfont.sys)
-      assign("tfont.sys",tfont.sys,env=revive.sys)
+      assign("tfont.sys",tfont.sys,envir=revive.sys)
       outfont.sys<-sub("al--.+-.+-\\*",paste("al--",size,"-*",sep=""),outfont.sys)
-      assign("outfont.sys",outfont.sys,env=revive.sys)
+      assign("outfont.sys",outfont.sys,envir=revive.sys)
       melde("ak texthervor",1)
       tcl("markclear",tworkwin)
       tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
@@ -2779,7 +2642,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         h<-as.numeric(tclvalue("tvinfo"))
-        if(!is.na(h)) assign("maxol.sys",h,env=revive.sys)
+        if(!is.na(h)) assign("maxol.sys",h,envir=revive.sys)
         melde(paste("> maxol.sys <-",maxol.sys),"cmd.msg")
       }
     )
@@ -2802,7 +2665,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                    tkdestroy(.newl); set.tclvalue("tvscandone",2)
         })
         ReloadOld<-tkbutton(fcmd,width=15,text="reload old",command=function(){
-                   settings<-get("settings",env=revive.sys)
+                   settings<-get("settings",envir=revive.sys)
                    tkdelete(tt,"0.0","end")
                    try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
         })
@@ -2815,7 +2678,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         tkwm.title(.newl,"view and change settings of relax: config/settings.relax")
         filename<-file.path(.path.package("relax"),"config/settings.relax")
         settings<-scan(file=filename,what="",sep="\n")
-        assign("settings",settings,env=revive.sys)
+        assign("settings",settings,envir=revive.sys)
         try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
         tkbind(.newl,"<Escape>", function(){
                    tkdestroy(.newl); set.tclvalue("tvscandone",2)
@@ -2857,7 +2720,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         line<-string.sys<-tclvalue("tvinfo")[1]
-        assign("string.sys",string.sys,env=revive.sys)
+        assign("string.sys",string.sys,envir=revive.sys)
         line<-as.numeric(line)
         if(!is.na(line)){
           tksee(tworkwin,h<-paste(line,".1",sep=""))
@@ -2893,9 +2756,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -2916,7 +2779,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -2962,9 +2826,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -2985,7 +2849,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3029,9 +2894,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3052,7 +2917,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3097,9 +2963,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3120,7 +2986,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3164,9 +3031,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3187,7 +3054,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3231,9 +3099,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3254,7 +3122,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3298,9 +3167,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3321,7 +3190,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3365,9 +3235,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3388,7 +3258,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3432,9 +3303,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -3455,7 +3326,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -3500,9 +3372,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -3516,9 +3388,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -3659,9 +3531,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           if(nchar(worktext)<10000){
             worktext<-strsplit(worktext,"\n")[[1]]
           }else{
-            base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+            base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-            worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+            worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
           }
 
@@ -3682,7 +3554,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           }
           if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
             ok<-FALSE
-            cat(error.msg<-unclass(try.res),"\n")
+            error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+            cat(error.msg,"\n")
             if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                cat("A warning message stopped the evaluation!",
                      "If you want to\nevaluate the code anyway",
@@ -3720,9 +3593,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      if(nchar(worktext)<10000){
        worktext<-strsplit(worktext,"\n")[[1]]
      }else{
-       base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+       base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-       worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+       worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
      }
 
@@ -3767,7 +3640,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          }
        }
      }
-     TcltoWin.write <- get("TcltoWin.write",env=revive.sys)
+     TcltoWin.write <- get("TcltoWin.write",envir=revive.sys)
      worktext<-sub("^<<(.*)>>=(.*)","<<\\1>>=",worktext)
      worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
      worktext<-sub("^output-end","\\\\end{verbatim}",worktext)
@@ -3785,7 +3658,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      }
      if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
        ok<-FALSE
-       cat(error.msg<-unclass(try.res),"\n")
+       error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+       cat(error.msg,"\n")
        if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
           cat("A warning message stopped the evaluation!",
                 "If you want to\nevaluate the code anyway",
@@ -3812,9 +3686,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      if(nchar(worktext)<10000){
        worktext<-strsplit(worktext,"\n")[[1]]
      }else{
-       base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+       base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-       worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+       worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
      }
 
@@ -3850,7 +3724,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      }
      if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
        ok<-FALSE
-       cat(error.msg<-unclass(try.res),"\n")
+       error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+       cat(error.msg,"\n")
        if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
           cat("A warning message stopped the evaluation!",
                 "If you want to\nevaluate the code anyway",
@@ -3887,9 +3762,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -3910,7 +3785,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -3951,7 +3827,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
         set.tclvalue("tvmess","relax")
         sweave.args.sys<-tclvalue("tvinfo")
-        assign("sweave.args.sys",sweave.args.sys,env=revive.sys)
+        assign("sweave.args.sys",sweave.args.sys,envir=revive.sys)
         if(nchar(sweave.args.sys)!=0) {
           sweave.call<-paste("Sweave(\"",workname.Rnw,"\",",sweave.args.sys,")",sep="")
         } else sweave.call<-paste("Sweave(\"",workname.Rnw,"\")",sep="")
@@ -3980,9 +3856,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -4003,7 +3879,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -4043,7 +3920,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
         set.tclvalue("tvmess","relax")
         sweave.args.sys<-tclvalue("tvinfo")
-        assign("sweave.args.sys",sweave.args.sys,env=revive.sys)
+        assign("sweave.args.sys",sweave.args.sys,envir=revive.sys)
         if(nchar(sweave.args.sys)!=0) {
           sweave.call<-paste("Sweave(\"",workname.Rnw,"\",",sweave.args.sys,")",sep="")
         } else sweave.call<-paste("Sweave(\"",workname.Rnw,"\")",sep="")
@@ -4092,9 +3969,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
@@ -4115,7 +3992,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -4358,18 +4236,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   }
 
   assign("relax.history",
-         c(if(0<length(ls(pattern="relax.history",env=revive.sys))) # to extend existing history
-           get("relax.history",env=revive.sys) else NULL,           # to extend existing history
+         c(if(0<length(ls(pattern="relax.history",envir=revive.sys))) # to extend existing history
+           get("relax.history",envir=revive.sys) else NULL,           # to extend existing history
            list(c("@",paste("<","<*>",">=",sep=""),paste("# relax history file --",date())))
          )                                                           # to extend existing history
-         ,env=revive.sys)
+         ,envir=revive.sys)
   ShowHistory<-function(){
     melde("ShowHistory",1)
     # check history
-    if(0==length(grep("relax.history",ls(env=revive.sys)))){ cat("relax warning: no history found"); return() }
+    if(0==length(grep("relax.history",ls(envir=revive.sys)))){ cat("relax warning: no history found"); return() }
     # save history in file
-    relax.history<-get("relax.history",env=revive.sys); txt<-unlist(relax.history)
-    workname<-sub(".rev$",".history.rev",get("workname.sys",env=revive.sys))
+    relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
+    workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
     base::cat(txt,file=workname,sep="\n")
     # tangle history file
     try(tangleR(workname)); workname<-sub(".rev$",".R",workname); cat(workname,"generated\n")
@@ -4586,7 +4464,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     # print viewer function during debugging
     melde(paste(txt,collapse="\n"),2)
     # start of history viewer
-    try(eval(parse(text=txt),env=revive.env))
+    try(eval(parse(text=txt),envir=revive.env))
     melde("ShowHistory",2)
   }
 
@@ -4598,9 +4476,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -4630,9 +4508,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        if(nchar(worktext)<10000){
          worktext<-strsplit(worktext,"\n")[[1]]
        }else{
-         base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+         base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-         worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+         worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
        }
 
@@ -4678,9 +4556,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          if(nchar(worktext)<10000){
            worktext<-strsplit(worktext,"\n")[[1]]
          }else{
-           base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+           base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-           worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+           worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
          }
 
@@ -4705,9 +4583,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -4744,9 +4622,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        if(nchar(worktext)<10000){
          worktext<-strsplit(worktext,"\n")[[1]]
        }else{
-         base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+         base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-         worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+         worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
        }
 
@@ -4765,7 +4643,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     doc<-c("=================================================",
            "RELAX -- R Editor for Literate Analysis and lateX",
            "=================================================","",
-           paste("version:","relax 1.3.6 - 110927"),"",
+           paste("version:","relax 1.3.7 - 111111"),"",
   "relax() is designed to support the process of data analysis, report writing,",
                  "presentation, and programming. On start it creates a new window for writing",
                  "code and text at the same time. You are allowed to evaluate R code chunks",
@@ -4926,9 +4804,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -4981,9 +4859,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5040,8 +4918,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
   ReloadReportWidget<-function(){
     melde("ReloadReportWidget",1)
-    revive.sys<-get("revive.sys",env=revive.env)
-    tworkwin<-get("tworkwin",env=revive.sys); fworkwin<-get("fworkwin",env=revive.sys)
+    revive.sys<-get("revive.sys",envir=revive.env)
+    tworkwin<-get("tworkwin",envir=revive.sys); fworkwin<-get("fworkwin",envir=revive.sys)
     del<-0.02; tkpack.forget(tworkwin); Sys.sleep(del)
     tkpack(tworkwin,expand="yes",fill="both"); Sys.sleep(del)
     .Tcl(paste("place ",fworkwin$ID," -relheight 0.35")); Sys.sleep(del)
@@ -5057,9 +4935,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5099,9 +4977,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5158,9 +5036,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5217,9 +5095,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5237,9 +5115,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5264,9 +5142,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5477,9 +5355,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -5525,7 +5403,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5552,8 +5431,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(filename=="") return("cancel")
 
     noenv<-TRUE # ignore environments 
-    objlist<-ls(env=revive.env) 
-    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-ls(envir=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,envir=revive.env)))]
     objlist<-objlist[substring(objlist,1,6)!="revive"]
     if(length(objlist)==0){
       cat("WARNING: no objects found for saving!!!\n")
@@ -5562,10 +5441,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
       
 
-    assign("list.of.env.obj",objlist,env=revive.env)
+    assign("list.of.env.obj",objlist,envir=revive.env)
     try.res<-try(eval(parse(text=
-                    paste(sep="","dump(list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
-    try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+                    paste(sep="","dump(list.of.env.obj,file=\"",filename,"\")")),envir=revive.env))
+    try(eval(parse(text="remove(\"list.of.env.obj\")"),envir=revive.env))
     if(is.function(try.res)){
       ok <- "OK"
     } else {
@@ -5576,7 +5455,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5602,8 +5482,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(filename=="") return("cancel")
 
     noenv<-FALSE # do not ignore environments 
-    objlist<-ls(env=revive.env) 
-    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-ls(envir=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,envir=revive.env)))]
     objlist<-objlist[substring(objlist,1,6)!="revive"]
     if(length(objlist)==0){
       cat("WARNING: no objects found for saving!!!\n")
@@ -5612,10 +5492,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     cat("list of objects:\n"); print(objlist); Sys.sleep(.5)
       
 
-    assign("list.of.env.obj",objlist,env=revive.env)
+    assign("list.of.env.obj",objlist,envir=revive.env)
     try.res<-try(eval(parse(text=
-                    paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),env=revive.env))
-    try(eval(parse(text="remove(\"list.of.env.obj\")"),env=revive.env))
+                    paste(sep="","save(list=list.of.env.obj,file=\"",filename,"\")")),envir=revive.env))
+    try(eval(parse(text="remove(\"list.of.env.obj\")"),envir=revive.env))
     if(is.function(try.res)){
       ok <- "OK"
     } else {
@@ -5626,7 +5506,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5655,11 +5536,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(filename=="") return("cancel")
 
     if(0<length(grep("bin-relax-env$",filename))){
-      try.res<-try(load(filename,env=revive.env))
+      try.res<-try(load(filename,envir=revive.env))
     } else {
       obj<-scan(filename,""); ind<-grep("<-",obj)-1   
       obj[ind]<-paste(";",obj[ind]); obj<-sub("^;","",paste(obj,collapse=""))
-      try.res<-try(eval(parse(text=obj),env=revive.env))
+      try.res<-try(eval(parse(text=obj),envir=revive.env))
     }
     if(is.function(try.res)){
       ok <- "OK"
@@ -5671,7 +5552,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5683,8 +5565,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(ok){
       cat(paste("Objects of file:",filename,"\nloaded into environment!\n"))
       noenv<-FALSE # do not ignore environments 
-      objlist<-ls(env=revive.env) 
-      if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+      objlist<-ls(envir=revive.env) 
+      if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,envir=revive.env)))]
       objlist<-objlist[substring(objlist,1,6)!="revive"]
       if(length(objlist)==0){
         cat("WARNING: no objects found for saving!!!\n")
@@ -5701,8 +5583,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   CleanEnvironment<-function(){
     melde("CleanEnvironment",1)
     noenv<-FALSE # do not ignore environments 
-    objlist<-ls(env=revive.env) 
-    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,env=revive.env)))]
+    objlist<-ls(envir=revive.env) 
+    if(noenv) objlist<-objlist[sapply(objlist,function(x)!is.environment(get(x,envir=revive.env)))]
     objlist<-objlist[substring(objlist,1,6)!="revive"]
     if(length(objlist)==0){
       cat("WARNING: no objects found for saving!!!\n")
@@ -5719,8 +5601,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         title="Clean Environment?",icon="warning",type="yesnocancel",default="no")
     res<-tclvalue(res)
     if(res=="yes"){    
-      objlist<-c(objlist,"objlist"); assign("objlist",objlist,env=revive.env)
-      try.res<-try(eval(parse(text="remove(list=objlist)"),env=revive.env))
+      objlist<-c(objlist,"objlist"); assign("objlist",objlist,envir=revive.env)
+      try.res<-try(eval(parse(text="remove(list=objlist)"),envir=revive.env))
       cat("Objects of environment have been deleted!\n")
       # print(try.res)
     }
@@ -5741,9 +5623,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5764,7 +5646,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5831,9 +5714,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5854,7 +5737,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -5927,9 +5811,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -5956,7 +5840,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6028,7 +5913,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6058,7 +5944,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -6093,7 +5980,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6166,13 +6054,13 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
-    try.res <-try(cat(worktext,file=get("tmp.file.name",env=revive.sys)
+    try.res <-try(cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 ,sep="\n"))
     if(is.function(try.res)){
       ok <- "OK"
@@ -6184,7 +6072,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6195,10 +6084,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
     if(!ok) return()
     # stelle Differenzen fest
-    system(paste("diff ",workname.sys," ",get("tmp.file.name",env=revive.sys)
-," | grep \"^[0-9]\" > ",get("tmp.file.name",env=revive.sys)
+    system(paste("diff ",workname.sys," ",get("tmp.file.name",envir=revive.sys)
+," | grep \"^[0-9]\" > ",get("tmp.file.name",envir=revive.sys)
 ))
-    difflines<-scan(get("tmp.file.name",env=revive.sys)
+    difflines<-scan(get("tmp.file.name",envir=revive.sys)
 ,"",blank.lines.skip=FALSE,sep="\n")
     difflines<-sub("^([0-9]*)[a-z]","",difflines)
     difflines<-sub(",",":",difflines)
@@ -6249,7 +6138,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6301,9 +6191,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -6370,7 +6260,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6432,9 +6323,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -6500,7 +6391,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6601,14 +6493,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
     worktext<-TcltoWin.write(worktext)
-    try.res <-try(cat(worktext,file=get("tmp.file.name",env=revive.sys)
+    try.res <-try(cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 ,sep="\n"))
     if(is.function(try.res)){
       ok <- "OK"
@@ -6620,7 +6512,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
       ok<-FALSE
-      cat(error.msg<-unclass(try.res),"\n")
+      error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+      cat(error.msg,"\n")
       if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
@@ -6631,7 +6524,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
     if(ok){
       ##  try.res <- try(system(paste(editor.sys, ..tmp..)))
-      cmd<-paste(editor.sys, get("tmp.file.name",env=revive.sys)
+      cmd<-paste(editor.sys, get("tmp.file.name",envir=revive.sys)
 )
       if((version$os=="Win32" || version$os=="mingw32")
 ){
@@ -6649,7 +6542,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       }
       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
         ok<-FALSE
-        cat(error.msg<-unclass(try.res),"\n")
+        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+        cat(error.msg,"\n")
         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
@@ -6659,7 +6553,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
       if(ok){
-      try.res<-worktext<-try(myscan(get("tmp.file.name",env=revive.sys)
+      try.res<-worktext<-try(myscan(get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE))
         if(is.function(try.res)){
           ok <- "OK"
@@ -6671,7 +6565,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         }
         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
           ok<-FALSE
-          cat(error.msg<-unclass(try.res),"\n")
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
@@ -6756,9 +6651,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -6790,9 +6685,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -6843,7 +6738,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           code <- paste(collapse="",sexpr[1:n.sexpr])
           melde("werte Sexpr aus",2,code)
           # if(identical(revive.env,"")) ... else -> gegenüber weaveR vereinfacht
-          result <- try(eval(parse(text=code),env=revive.env))
+          result <- try(eval(parse(text=code),envir=revive.env))
           # wenn nichts rauskommt, ist nichts zu modifizieren
           if(0!=length(result)&&!identical(result,"")) { 
             # 101217 auch leere Ergebnisse ersetzen Sexpr!
@@ -7109,8 +7004,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              code <- sub("^ *cat","base::cat",code)
              if(0<length(code)){
                tld <- paste("<","<*>",">=",sep="")
-               rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-               assign("relax.history",rh,env=revive.sys)
+               rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+               assign("relax.history",rh,envir=revive.sys)
              }
 
              code<-c("options(warn=2)",code)
@@ -7127,7 +7022,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7164,7 +7060,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7196,7 +7093,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7231,7 +7129,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                }
                if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                  ok<-FALSE
-                 cat(error.msg<-unclass(try.res),"\n")
+                 error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                 cat(error.msg,"\n")
                  if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                     cat("A warning message stopped the evaluation!",
                           "If you want to\nevaluate the code anyway",
@@ -7261,9 +7160,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          if(EVAL && RESULTS != "hide"){ #<unused: Trash R Output>#
            if(0 < length(try.res <- EVAL.RESULT)){        
              if(!is.null(try.res)&&0<length(try.res)){
-               sink(get("tmp.file.name",env=revive.sys)
+               sink(get("tmp.file.name",envir=revive.sys)
 );get("print",pos="package:base")(try.res);sink()
-               news<-paste(myscan(get("tmp.file.name",env=revive.sys)
+               news<-paste(myscan(get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n"),collapse="\n")
              } else news <- NULL
              melde("231...write result",2,news)
@@ -7358,9 +7257,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -7427,7 +7326,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           code <- paste(collapse="",sexpr[1:n.sexpr])
           melde("werte Sexpr aus",2,code)
           # if(identical(revive.env,"")) ... else -> gegenüber weaveR vereinfacht
-          result <- try(eval(parse(text=code),env=revive.env))
+          result <- try(eval(parse(text=code),envir=revive.env))
           # wenn nichts rauskommt, ist nichts zu modifizieren
           if(0!=length(result)&&!identical(result,"")) { 
             # 101217 auch leere Ergebnisse ersetzen Sexpr!
@@ -7693,8 +7592,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              code <- sub("^ *cat","base::cat",code)
              if(0<length(code)){
                tld <- paste("<","<*>",">=",sep="")
-               rh <- c( get("relax.history",env=revive.sys), list(c("@",tld,code)) )
-               assign("relax.history",rh,env=revive.sys)
+               rh <- c( get("relax.history",envir=revive.sys), list(c("@",tld,code)) )
+               assign("relax.history",rh,envir=revive.sys)
              }
 
              code<-c("options(warn=2)",code)
@@ -7711,7 +7610,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7748,7 +7648,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7780,7 +7681,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              }
              if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                ok<-FALSE
-               cat(error.msg<-unclass(try.res),"\n")
+               error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+               cat(error.msg,"\n")
                if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
@@ -7815,7 +7717,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                }
                if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                  ok<-FALSE
-                 cat(error.msg<-unclass(try.res),"\n")
+                 error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                 cat(error.msg,"\n")
                  if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                     cat("A warning message stopped the evaluation!",
                           "If you want to\nevaluate the code anyway",
@@ -7845,9 +7748,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          if(EVAL && RESULTS != "hide"){ #<unused: Trash R Output>#
            if(0 < length(try.res <- EVAL.RESULT)){        
              if(!is.null(try.res)&&0<length(try.res)){
-               sink(get("tmp.file.name",env=revive.sys)
+               sink(get("tmp.file.name",envir=revive.sys)
 );get("print",pos="package:base")(try.res);sink()
-               news<-paste(myscan(get("tmp.file.name",env=revive.sys)
+               news<-paste(myscan(get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n"),collapse="\n")
              } else news <- NULL
              melde("231...write result",2,news)
@@ -7972,9 +7875,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -8105,7 +8008,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                   tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
                   renewhighlighting<-function(){
-                    tworkwin<-get("tworkwin",env=revive.sys)
+                    tworkwin<-get("tworkwin",envir=revive.sys)
                     melde("ak texthervor",1)
                     tcl("markclear",tworkwin)
                     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
@@ -8118,12 +8021,12 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   tkbind(twin,"<Return>",renewhighlighting)
 
         tkwm.title(.newl,paste("contents of function key","Definition by Escape!"))
-        F.buffers<-get("F.buffers",env=revive.sys)
+        F.buffers<-get("F.buffers",envir=revive.sys)
         try(tkinsert(tt,"0.0",paste(F.buffers[F.no],collapse="\n")))
         abbruch<-function(){tkdestroy(.newl); set.tclvalue("tvscandone",2)}
         tkbind(.newl,"<Escape>", function(){
                    F.buffers[F.no]<-tclvalue(tkget(tt,"0.0","end"))
-                   assign("F.buffers",F.buffers,env=revive.sys)
+                   assign("F.buffers",F.buffers,envir=revive.sys)
                    tkdestroy(.newl); set.tclvalue("tvscandone",2)
                  })
         tkfocus(.newl);tkwait.variable("tvndone")
@@ -8132,8 +8035,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     )
     melde("DefineFKeys",2)
   }
-                       ##setze Umgebung für Knopf\-funktionen##
-          ##setze Umgebung für Testknopf\-funktion##   ##setze Umgebung für Zeilen-Funktionen##
+    
+          ##setze Umgebung für Knopf\-funktionen##
+          ##setze Umgebung für Testknopf\-funktion## 
+          ##setze Umgebung für Zeilen-Funktionen##
   environment(myhead.menu)<-revive.sys
 
   loadwwwdata<-function(){
@@ -8203,7 +8108,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     choice<-listboxmenu(DS,"Items:")
     if(0==length(choice)||is.na(choice)||0==choice) return()
     choice<-DS[choice]
-    if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+    if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8214,9 +8119,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -8259,10 +8164,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          exists(o,where=pos,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
       }else{
-       obj<-ls(env=revive.env)
+       obj<-ls(envir=revive.env)
        obj<-obj[unlist(lapply(obj ,function(o)
          exists(o,where=revive.env,mode="numeric") &&
-         eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
+         eval(parse(text=paste("struc(get(\"",o,"\",envir=revive.env))",sep=""))) ))]
       }
       if(0==length(obj)) return(NULL) else return(obj)
     }
@@ -8312,7 +8217,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     choice<-listboxmenu(DS,"Items:")
     if(0==length(choice)||is.na(choice)||0==choice) return()
     choice<-DS[choice]
-    if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+    if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8323,9 +8228,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -8368,10 +8273,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          exists(o,where=pos,mode="numeric") &&
          eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
       }else{
-       obj<-ls(env=revive.env)
+       obj<-ls(envir=revive.env)
        obj<-obj[unlist(lapply(obj ,function(o)
          exists(o,where=revive.env,mode="numeric") &&
-         eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
+         eval(parse(text=paste("struc(get(\"",o,"\",envir=revive.env))",sep=""))) ))]
       }
       if(0==length(obj)) return(NULL) else return(obj)
     }
@@ -8422,7 +8327,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     choice<-listboxmenu(DS,"Items:")
     if(0==length(choice)||is.na(choice)||0==choice) return()
     choice<-DS[choice]
-    if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+    if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8433,9 +8338,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -8472,7 +8377,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   removenafromvecx<-function(){
     (function(){
       cmd<-"x<-x[!is.na(x)]"
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -8481,9 +8386,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8519,7 +8424,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   removenafrommatxy<-function(){
     (function(){
       cmd<-"xy<-xy[!apply(is.na(xy),1,any),,drop=FALSE]"
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
       if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -8528,9 +8433,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8573,10 +8478,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            exists(o,where=pos,mode="numeric") &&
            eval(parse(text=paste("struc(get(\"",o,"\",pos=",pos,"))",sep=""))),pos))]
         }else{
-         obj<-ls(env=revive.env)
+         obj<-ls(envir=revive.env)
          obj<-obj[unlist(lapply(obj ,function(o)
            exists(o,where=revive.env,mode="numeric") &&
-           eval(parse(text=paste("struc(get(\"",o,"\",env=revive.env))",sep=""))) ))]
+           eval(parse(text=paste("struc(get(\"",o,"\",envir=revive.env))",sep=""))) ))]
         }
         if(0==length(obj)) return(NULL) else return(obj)
       }
@@ -8627,7 +8532,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       choice<-listboxmenu(DS,"Items:")
       if(0==length(choice)||is.na(choice)||0==choice) return()
       choice<-DS[choice]
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8669,9 +8574,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8753,7 +8658,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       choice<-listboxmenu(DS,"Items:")
       if(0==length(choice)||is.na(choice)||0==choice) return()
       choice<-DS[choice]
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8764,9 +8669,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8840,7 +8745,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       choice<-listboxmenu(DS,"Items:")
       if(0==length(choice)||is.na(choice)||0==choice) return()
       choice<-DS[choice]
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8851,9 +8756,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8921,7 +8826,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       choice<-listboxmenu(DS,"Items:")
       if(0==length(choice)||is.na(choice)||0==choice) return()
       choice<-DS[choice]
-      if(!exists("myscan")) myscan<-get("myscan",env=revive.sys)
+      if(!exists("myscan")) myscan<-get("myscan",envir=revive.sys)
 
 
 
@@ -8932,9 +8837,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(nchar(worktext)<10000){
         worktext<-strsplit(worktext,"\n")[[1]]
       }else{
-        base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+        base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-        worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+        worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
       }
 
@@ -8983,13 +8888,13 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   }
 
   LAST.WARNING<-"no warnings"
-  assign("LAST.WARNING",LAST.WARNING,env=revive.sys)
+  assign("LAST.WARNING",LAST.WARNING,envir=revive.sys)
   Rversion<-as.numeric(R.version$major)*100+as.numeric(R.version$minor)
 
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.3.6 - 110927"
+  relax.version.sys<- "relax 1.3.7 - 111111"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -9143,7 +9048,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkwm.title(TopW,paste(
                if(but.Wizardry=="simple") "redit -- simple Report EDITor for statistical analysis:" else
                                           "relax -- Report Editor for Literate Analysis and lateX:",
-                        "relax 1.3.6 - 110927"))
+                        "relax 1.3.7 - 111111"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -9268,13 +9173,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           label="ShowShortCuts:   show short cuts for text field")
   }
   tkadd(mbEdit.menu, "command", command=function(){
-                                          res<-tkmessageBox(message=if(language=="german") "Soll das interaktive Icon aktiert werden?"
-                                                    else "Do you want to activate interactive icon?",
-                                                            title="RELAX-ICON",icon="warning",type="yesnocancel",default="no")
-                                          if("externalptr"==mode(res))  res<-tclvalue(res)
-                                          if(res=="cancel") return()
-                                          if(res=="no") return()
-
+                                          if(FALSE){
+                                            res<-tkmessageBox(message=if(language=="german") "Soll das interaktive Icon aktiert werden?"
+                                                                      else "Do you want to activate interactive icon?",
+                                                              title="RELAX-ICON",icon="warning",type="yesnocancel",default="no")
+                                            if("externalptr"==mode(res))  res<-tclvalue(res)
+                                            if(res=="cancel") return()
+                                            if(res=="no") return()
+                                          }
                                         chair<-function(xcenter=1.2,xspread=1,ycenter=1.2,yspread=1,lwd=4){
                                           # cat("chair: ", xcenter,xspread,ycenter,yspread)
                                           x<-seq(0,1.6,length=(n<-40))
@@ -9327,12 +9233,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                           h<-slider(obj.name="chair.center"); xchcenter<-h[1]; ychcenter<-h[2]
                                           a<-par(family="mono")
                                           plot(-2:2,-2:2,type="n",axes=FALSE,xlab="",ylab=""); # text(.6,1.8,"relax",cex=4)
-                                          polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA)
-                                          polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)
+                                          #polygon(2*c(-2,-2,2,2),c(hori,-3,-3,hori),col="#fcf1a2",border=NA,xpd=NA) # strand
+                                          #polygon(2*c(-2,-2,2,2),c(hori,3,3,hori),col="#c8e6f2",border=NA,xpd=NA)   # air
+                                          n <- 1000; xa<-rep(-4,n); xb <- xa + 8
+                                          y <- seq(hori,-3.5,length=n); segments(xa,y,xb,y,col=rainbow(n,start=0.11,end=0.18),xpd=NA)
+                                          y <- seq(hori, 3.5,length=n); segments(xa,y,xb,y,col=rainbow(n,start=0.53,end=0.70),xpd=NA)
                                           b<-as.numeric(unlist(strsplit(sub(".*([0-9][0-9]:[0-9][0-9]:).*","\\1",date()),":")))
-                                          b[2]<-b[2]/60; b[1] <- b[1]+6; b <- (sum(b)%%12)/12
+                                          b[2]<-b[2]/60; bb<-b; b[1] <- b[1]+6; b <- (sum(b)%%12)/12
                                           cen <- c(-2*cos(pi*b),sin(pi*b)*(2-hori)+hori+.5)
                                           points(cen[1],cen[2],cex=15,col=heat.colors(18)[6+floor(abs(20*min(b,1-b)))],pch=16,xpd=NA)
+                                          h <- 2*pi*(sum(bb)/12); h <- cen + c(sin(h),cos(h))*0.3
+                                          arrows(cen[1],cen[2],h[1],h[2],.08,col="blue",lwd=4,xpd=NA)
+                                          h <- 2*pi*(bb[2]); h <- cen + c(sin(h),cos(h))*0.4
+                                          arrows(cen[1],cen[2],h[1],h[2],.08,col="blue",lwd=4,xpd=NA)
                                           text(0.5,-.5,"relax",cex=4)
                                           tree(xcenter=xtrcenter,xspread=xtrsc,n=n.leafs,n.l=leaf.sty,
                                                ycenter=ytrcenter,yspread=ytrsc,lwd=3)
@@ -9354,16 +9267,17 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                             slider(obj.name="chair.center",obj.value=xy)
                                             redo()
                                           }
-                                          slider(redo,
+                                          if("tkrplot" %in% list.files(.libPaths())) sl <- gslider else sl <- slider
+                                          sl(redo,
                                             c("tree scale factor", "x scale chair",
                                               "design of chair", "size of beach",
                                               "number of leafs", "style of leafs"),
                                             c(.1,.1,.1,-2,7,5),c(5,2.4,2.4,2,17,30),
                                             c(.1,.1,.1,.1,1,1),c(3.5,1.2,1.2,-0.7,9,12),
-                                            list(set.tree,set.chair),
-                                            but.names=c("tree location","new chair location")
+                                            list(set.tree,set.chair,redo),
+                                            but.names=c("tree location","new chair location","update clock")
                                           )
-                                          redo()
+                                          if("tkrplot" %in% list.files(.libPaths())) "relax" else redo()
                                           "relax"
                                         }
 ,
@@ -9649,9 +9563,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
        if(news=="empty") return()
        try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
-              base::cat(news,file=get("tmp.file.name",env=revive.sys)
+              base::cat(news,file=get("tmp.file.name",envir=revive.sys)
 )
-              system(paste("pbcopy < ",get("tmp.file.name",env=revive.sys)
+              system(paste("pbcopy < ",get("tmp.file.name",envir=revive.sys)
 ))
               .Tcl("clipboard append hello")
               .Tcl("clipboard clear")})
@@ -9675,7 +9589,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   if((version$os=="Win32" || version$os=="mingw32")
 ) #{}
   { # 110505
-  # fout<-get("fout",env=revive.sys); toutwin<-get("toutwin",env=revive.sys)
+  # fout<-get("fout",envir=revive.sys); toutwin<-get("toutwin",envir=revive.sys)
    tkbind(fout,"<Configure>","")
    config.fns<-function(...){
     if("1"==tclvalue(tkwinfo("ismapped",toutwin))){
@@ -9779,7 +9693,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        fname<-tclvalue(tkget(tworkwin,paste(line,"0",sep="."),paste(line,"40",sep=".")))
        fname<-sub("^.*img src..","",fname)
        fname<-sub("(.jpg).*$","\\1",fname)
-       browser.sys<-get("browser.sys",env=revive.sys)
+       browser.sys<-get("browser.sys",envir=revive.sys)
        cat(fname, "will be displayed by browser in a few seconds!\n")
        if( (version$os=="Win32" || version$os=="mingw32")
  ){
@@ -9873,24 +9787,24 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkbind(TopW, "<<FindReportText>>", FindReportText)
   tkbind(TopW,"<F3>", function(){  # 050628
         set.tclvalue("tvmess","relax")
-        if(!exists("string.sys",env=revive.sys)) return()
-        such.orig<-such<-get("string.sys",env=revive.sys)
+        if(!exists("string.sys",envir=revive.sys)) return()
+        such.orig<-such<-get("string.sys",envir=revive.sys)
         if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
         tworkwin<-get("tworkwin",envir=revive.sys)
         worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
         if(nchar(worktext)<10000){
           worktext<-strsplit(worktext,"\n")[[1]]
         }else{
-          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
         }
 
         repl.pat<-gsub("(.)","\\\\\\1","^!$%&/()=?{}}+*#,.-;:\\_[") ## 070830
         repl.pat<-paste("([",repl.pat,"])",collapse="")
         such<-gsub(repl.pat,"\\\\\\1",such)
-        assign("string.sys",string.sys,env=revive.sys)
+        assign("string.sys",string.sys,envir=revive.sys)
         if(nchar(such)==0) {
           tcl("findclear",tworkwin); tkfocus(tworkwin); return()
         }
@@ -9977,7 +9891,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   tkbind(twin,"<<Pipe>>",    f.sonderzeichen("|"))
                   tkbind(twin,"<<Backsl>>",  f.sonderzeichen("\\"))
                   renewhighlighting<-function(){
-                    tworkwin<-get("tworkwin",env=revive.sys)
+                    tworkwin<-get("tworkwin",envir=revive.sys)
                     melde("ak texthervor",1)
                     tcl("markclear",tworkwin)
                     tktag.configure(tworkwin,"output",foreground="#111222999", font=outfont.sys)
@@ -10008,7 +9922,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   .Tcl(paste(proc,collapse="\n"))
   tktag.configure(tworkwin,"secondbracket",background="#000dddfff",relief="raised")
   MarkSecondBracket<-function(){
-    tworkwin<-get("tworkwin",env=revive.sys)
+    tworkwin<-get("tworkwin",envir=revive.sys)
     left.of.cursor<-tclvalue(tkget(tworkwin,"insert - 1 chars"))
     open<-0
     if(left.of.cursor %in% c("{","[","(")){ ## print("Klammer auf")
@@ -10055,7 +9969,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   )
 
    tkbind(tworkwin,"<Tab><KeyRelease>", function() {
-    #  tworkwin<-get("tworkwin",env=revive.sys)
+    #  tworkwin<-get("tworkwin",envir=revive.sys)
    ## check, ob Leerzeichen oder nicht vorm Cursor steht
     if(1==length(grep("[a-zA-Z._\\(]", #)
                       tclvalue(tkget(tworkwin,"insert - 2 char")))))
@@ -10066,9 +9980,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(nchar(worktext)<10000){
       worktext<-strsplit(worktext,"\n")[[1]]
     }else{
-      base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+      base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-      worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+      worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
     }
 
@@ -10083,7 +9997,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         paste(rev(substring(anfang,1:h,1:h)),collapse="")
     suchstring<-paste("^",anfang,sep="")
 
-    objekt<-grep(suchstring,ls(env=revive.env),ignore.case=FALSE,value=TRUE)
+    objekt<-grep(suchstring,ls(envir=revive.env),ignore.case=FALSE,value=TRUE)
     objekt<-c(objekt,apropos(suchstring,ignore.case=FALSE))
     if(length(objekt)==0) return();  if(length(objekt)>40) return()
 
@@ -10091,7 +10005,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(klammer) objekt<-substring(suchstring,2) # ohne ^
       objtail<-sub(suchstring,"",objekt)
       objtail<-substring(objekt,nchar(suchstring)) # because of "^", 1+(nchar(.)-1)
-      if(0==length(find(objekt))) h<-get(objekt,env=revive.env) else h<-get(objekt)
+      if(0==length(find(objekt))) h<-get(objekt,envir=revive.env) else h<-get(objekt)
       # cat("h"); print(h); cat("objtail"); print(objtail) # der angefuegt werden muss
       if(is.function(h)){
         h<-paste(deparse(args(h)),collapse=" ")[1]
@@ -10133,7 +10047,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           melde("beginn repeat",1)
           if(length(cmds) == 0) break
           cmd <- substring(cmds[1],1,1); choice<-substring(cmds[1],2)
-          cmds<-cmds[-1]; assign("cmds",cmds,env=revive.env)
+          cmds<-cmds[-1]; assign("cmds",cmds,envir=revive.env)
           switch(cmd
             ,"s" = {
                      if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -10142,9 +10056,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                      if(nchar(worktext)<10000){
                        worktext<-strsplit(worktext,"\n")[[1]]
                      }else{
-                       base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+                       base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-                       worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+                       worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
                      }
 
@@ -10201,7 +10115,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         }
                         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                           ok<-FALSE
-                          cat(error.msg<-unclass(try.res),"\n")
+                          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                          cat(error.msg,"\n")
                           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                              cat("A warning message stopped the evaluation!",
                                    "If you want to\nevaluate the code anyway",
@@ -10233,7 +10148,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         }
                         if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                           ok<-FALSE
-                          cat(error.msg<-unclass(try.res),"\n")
+                          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                          cat(error.msg,"\n")
                           if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                              cat("A warning message stopped the evaluation!",
                                    "If you want to\nevaluate the code anyway",
@@ -10268,7 +10184,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                           }
                           if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                             ok<-FALSE
-                            cat(error.msg<-unclass(try.res),"\n")
+                            error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                            cat(error.msg,"\n")
                             if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                                cat("A warning message stopped the evaluation!",
                                      "If you want to\nevaluate the code anyway",
@@ -10289,9 +10206,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         if(nchar(worktext)<10000){
                           worktext<-strsplit(worktext,"\n")[[1]]
                         }else{
-                          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+                          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-                          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+                          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
                         }
 
@@ -10352,7 +10269,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                       }
                       if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
                         ok<-FALSE
-                        cat(error.msg<-unclass(try.res),"\n")
+                        error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+                        cat(error.msg,"\n")
                         if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
                            cat("A warning message stopped the evaluation!",
                                  "If you want to\nevaluate the code anyway",
@@ -10400,9 +10318,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         if(nchar(worktext)<10000){
                           worktext<-strsplit(worktext,"\n")[[1]]
                         }else{
-                          base::cat(worktext,file=get("tmp.file.name",env=revive.sys)
+                          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
 )
-                          worktext<-myscan(file=get("tmp.file.name",env=revive.sys)
+                          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
 ,"",sep="\n",blank.lines.skip=FALSE)
                         }
 
@@ -10468,30 +10386,30 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
      if(0==length(grep(".rev$",file.name))) file.name<-paste(file.name,"rev",sep=".")
      print(file.name)
      workname.sys<-file.name
-     assign("cmds",paste("r",file.name),env=revive.env)
+     assign("cmds",paste("r",file.name),envir=revive.env)
      Execute.cmds()
   }
   if(0<length(cmds) && cmds[1]!="") {
-    assign("cmds",cmds,env=revive.env)
+    assign("cmds",cmds,envir=revive.env)
     Execute.cmds()
   }
 
   ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
   ReloadReportWidget() # to repair defect report widget
-  cat( "relax 1.3.6 - 110927" ,"\n")
+  cat( "relax 1.3.7 - 111111" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{
-    cat("initialisation of relax completed!\nrestart relax by: relax()\n")
+    cat("initialisation of relax completed!\nrestart relax by: relax()\n enjoy and relax it!!\n")
   }
 #  tkwait.variable("tvexit")  # version 1.082
   return()
 }
-redit<-function(file.name){
-  if( missing(file.name)) eval(parse(text="relax(but.Wizardry='simple')"),env=.GlobalEnv) else {
+red<-redit<-function(file.name){
+  if( missing(file.name)) eval(parse(text="relax(but.Wizardry='simple')"),envir=.GlobalEnv) else {
     file.name<-as.character(substitute(file.name))
-    eval(parse(text=paste("relax('",file.name,"',but.Wizardry='simple')",sep="")),env=.GlobalEnv)
+    eval(parse(text=paste("relax('",file.name,"',but.Wizardry='simple')",sep="")),envir=.GlobalEnv)
     "redit: starts relax with reduced otions"
   }
 }

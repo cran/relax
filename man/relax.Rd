@@ -1,15 +1,18 @@
 \name{relax}
 \alias{relax}
 \alias{redit}
+\alias{red}
 %- Also NEED an '\alias' for EACH other topic documented here.
 \title{ R editor: relax }
 \description{
   \code{relax} is an editor for doing data analysis with R and writing reports.
   \code{redit} is a simple version of relax offering a reduced set of items in the head menus.
+  \code{red} is an other name for redit.
 }
 \usage{
   relax(file.name, no.plots = FALSE, cmds = "", but.Wizardry = "all")
   redit(file.name)
+  red(file.name)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{

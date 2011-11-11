@@ -2727,16 +2727,28 @@ if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
 
 
 @
-
-@
 Achtung: Falls diese Dinge im Code vorkommen, wird es einen Fehler geben.
+Insbesondere können in regulären Ausdrücken schon mal gehäuft Rückstriche auftauchen.
+Für diese wird eine geschaut, ob sie aus einem Text-Chunk kommen (111006)
 <<entferne unbrauchbare Makros [[weaveRhtml]]>>=
 input<-gsub("\\\\newpage","",input)
 input<-gsub("\\\\tableofcontents","",input)
 input<-gsub("\\\\raggedright","",input)
-input<-gsub("\\\\\\\\","<br>",input)
+#  input<-gsub("\\\\\\\\","<br>",input) # brute force
+cand.line <- grep("\\\\",input)
+if(0<length(cand.line)){ 
+  cand <- input[cand.line]
+  no.text <- c(grep("\\(.*\".*\\.*\"",cand),grep("\\(.*'.*\\.*'",cand)) # ))
+  idx <- seq(along=cand); idx <- idx[ !(idx %in% no.text)]
+  if(0<length(idx)) cand[idx] <- gsub("\\\\\\\\","<br>",cand[idx])
+  input[cand.line] <- cand
+}
 h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",input)
 if(0<length(h)) input<-input[-h]
+@
+  #no.text <- c(grep("\\(.*\".*\\.*\"",cand),grep("\\(.*'.*\\.*'",cand)) # ))
+  #idx <- seq(along=cand); idx <- idx[ !(idx %in% no.text)]
+  #if(0<length(idx)) cand[idx] <- gsub("\\\\\\\\","<br>",cand[idx])
 
 @
 Die Rweb-Funktionalität ist entstanden in Anlehnung an Seiten 

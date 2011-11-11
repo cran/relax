@@ -6,11 +6,11 @@
   \code{playground} opens a simple text window for testing R code.
 }
 \usage{
-playground(playground.env=NULL,code=NULL)
+playground(playground.envir=NULL,code=NULL)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
-  \item{playground.env}{if not NULL \code{playground.env} is used for evaluation}
+  \item{playground.envir}{if not NULL \code{playground.envir} is used for evaluation}
   \item{code}{if not NULL \code{code} is inserted in the playground}
 }
 \details{

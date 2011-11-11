@@ -646,10 +646,17 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   input<-gsub("\\\\newpage","",input)
   input<-gsub("\\\\tableofcontents","",input)
   input<-gsub("\\\\raggedright","",input)
-  input<-gsub("\\\\\\\\","<br>",input)
+  #  input<-gsub("\\\\\\\\","<br>",input) # brute force
+  cand.line <- grep("\\\\",input)
+  if(0<length(cand.line)){ 
+    cand <- input[cand.line]
+    no.text <- c(grep("\\(.*\".*\\.*\"",cand),grep("\\(.*'.*\\.*'",cand)) # ))
+    idx <- seq(along=cand); idx <- idx[ !(idx %in% no.text)]
+    if(0<length(idx)) cand[idx] <- gsub("\\\\\\\\","<br>",cand[idx])
+    input[cand.line] <- cand
+  }
   h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",input)
   if(0<length(h)) input<-input[-h]
-
     txt<-input
     ind.Rweb<-grep("^<a name=\"codechunk.*<i>&lt;Rweb",txt) ; txt[ind.Rweb]
     ind.p   <-grep(paste("^<","p>",sep=""),txt) ; txt[ind.p]
