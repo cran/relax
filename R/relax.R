@@ -1,16 +1,582 @@
+ConstructDemo <- function(file=""){
+  require(tcltk)
+  if(file==""){ cat("sorry, please call ConstructDemo with name of R-, rev- or a Snw-file\n");            
+                return() } 
+  if(  ( 0 == length(grep(".R$",file))) || !file.exists(file) ){ 
+      # .R must be generated&   
+      file <- sub("\\.R$",".rev",file)  # rev name of not existing file if .R file
+      if(!file.exists(file)){
+        file <- sub("\\.rev$","",file)  # base name of file if .rev file
+        if(!file.exists(file)) file <- paste(file,".rev",sep="")  
+        if(!file.exists(file)) file <- sub("\\.rev$",".Snw",file)  
+        if(!file.exists(file)) file <- sub("\\.Snw$",".snw",file) 
+        if(!file.exists(file)) file <- sub("\\.snw$",".nw",file)   
+        if(!file.exists(file)) file <- sub("\\.nw$",".SNW",file)  
+        if(!file.exists(file)) file <- sub("\\.SNW$","",file)   
+        if(!file.exists(file)){
+          cat(paste("sorry, error: File",file,"not found!!!"));return()
+        }
+      } 
+      cat("function will work on file",file,"\n") 
+      # construct a .R file
+      try(tangleR(file))
+      # file <- sub(".rev$","",file); file <- sub(".[sS]{0,1}[nN][wW]$","",file)
+      file <- sub("\\.[a-zA-Z]+$","",file)
+      file <- paste(file,".R",sep=""); cat(file,"generated\n")
+  }
+
+
+  workname <- file; chunks <- where <- ""
+  txt <- scan(workname,"",sep="\n")
+  fh<-function(file,no=1,start=TRUE){
+    # initial code of demo function
+    require("tcltk"); where<-environment()
+  }
+; fh <- deparse(fh); fh<-fh[-length(fh)]; ft<-function(){
+                                                                  # end of code of demo function
+                                                                  ## activate start chunk
+                                                                  if(start==TRUE){
+                                                                    no.0<-"0"
+                                                                    no.start.0<-grep(paste("^#",no.0,":$",sep=""),chunks)
+                                                                    no.end.0<-grep(paste("^#:",no.0,"$",sep=""),chunks)
+                                                                    code.0<-chunks[no.start.0:no.end.0]
+                                                                    eval(parse(text=code.0),envir=where)
+                                                                  }
+                                                                  ## activate chunk no
+                                                                  # eval(parse(text=code),envir=where)
+                                                                  secno<-tclVar("1") # 0
+                                                                  show.next.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno))+1)
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                    }
+                                                                  }
+                                                                  show.back.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno))-1)
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                   }
+                                                                  }
+                                                                  show.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno)))
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                   }
+                                                                  }
+                                                                  eval.code<-function(...){
+                                                                    code<-tclvalue(tkget(ttext,"0.0","end"))
+                                                                    code.orig<-code<-unlist(strsplit(code,"\n"))
+                                                                    code<-code[!substring(code,1,1)=="#"]
+                                                                    ##?## code<-unlist(strsplit(code,";"))  ##110429 Fehler bei sep=";"
+                                                                    if(length(code)==0){ cat("ok\n"); return() }
+                                                                    result<-try(eval(parse(text=code),envir=where))
+                                                                    code.orig<-sub("#([0-9]+):","##wnt-Code-Chunk:\\1-begin#",code.orig)
+                                                                    code.orig<-sub("#:([0-9]+)","##wnt-Code-Chunk:\\1-end#",code.orig)
+                                                                    h<-get("allcodechunks",envir=where)
+                                                                    h<-c(h,paste("<","<*>",">=",sep=""),code.orig,"\n@\n")
+                                                                    assign("allcodechunks",h,envir=where)
+                                                                    code<-sub("^ *","",code)
+                                                                    code<-code[nchar(code)>0]
+                                                                    lexpr<-rev(code)[1]; lexpr<-substring(lexpr,1,4)
+                                                                    if(length(code)==0||is.null(lexpr)||is.na(lexpr)) return()
+                                                                    plot.res<-c("plot","boxp","par(","abli","pie(","hist","axis","show",
+                                                                           "lsfi","pair","ylab","help",
+                                                                           "qqli","qqno","qqpl","rug(","lege","segm","text","xlab", 
+                                                                           "poin","line","titl","eda(","imag","vgl.","curv")
+                                                                    if(any(plot.res==lexpr)){
+                                                                       cat("Plot erstellt\n"); return()
+                                                                    }
+                                                                    if(is.null(result)||is.na(result)||lexpr=="prin"||lexpr=="cat("){
+                                                                      cat("ok\n"); return() }
+                                                                    if(is.list(result)&& length(names(result))> 0 && 
+                                                                                               names(result)[1]=="ID") return()
+                                                                    ## if(is.list(result)&& TRUE) return()
+                                                                    no<-as.character(as.numeric(tclvalue(secno)))
+                                                                    cat("Result of code chunk",no,":\n") 
+                                                                   if(class(result)=="try-error"){
+                                                                     class(result)<-"character"
+                                                                     cat(result,"\n")
+                                                                   }else{
+                                                                    print(result)
+                                                                   }
+                                                                   cat("ok\n")
+                                                                   }
+                                                                  exit.function<-function(){
+                                                                     tkdestroy(top)
+                                                                     filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
+                                                                                                           title="Do you want to save the activated R statements?")
+                                                                     if(!is.character(filename)) filename<-tclvalue(filename)
+                                                                     if(filename==""){
+                                                                       cat("Demo function stopped without saving\n")
+                                                                       return()
+                                                                     }
+                                                                     if(0==length(grep("rev$",filename))) filename<-paste(filename,".rev",sep="")
+                                                                     h<-get("allcodechunks",envir=where)
+                                                                     try(cat(h,sep="\n",file=filename))
+                                                                     cat(paste("Remark: activated statements saved in\n   ",filename,"\n"))
+                                                                     return()
+                                                                  }
+                                                                  allcodechunks<-paste(
+                                                                          "@\nReport of activated R-chunks from: ",date(),
+                                                                          "\n(demo function constructed by relax (c) Peter Wolf 2007)\n\n  ", sep="")
+                                                                  no<-0
+                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                       is.nan(no.end)||is.nan(no.start)){
+                                                                       cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                  }
+                                                                  ### cat("# aktueller chunk:",no,"\n")
+                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                       is.nan(no.end)||is.nan(no.start)){
+                                                                       cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                  }
+                                                                  ### cat("# aktueller chunk:",no,"\n")
+                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                  h<-paste(rep("#",60),collapse="")
+                                                                  code<-sub("#0:",h,code); code<-sub("#:0",h,code)
+                                                                  allcodechunks<-c(allcodechunks,"\n@\n<<start>>=",code,"\n@")
+                                                                  assign("allcodechunks",allcodechunks,envir=where)
+                                                                  top<-tktoplevel()
+                                                                  ttext<-tktext(top,height=19,background="#f7fffF",
+                                                                                font="-Adobe-courier-Medium-R-Normal--18-180-*")
+                                                                  tf<-tkframe(top) 
+                                                                  tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
+                                                                  tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
+                                                                  tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                ## ok:  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                if(substring(version$os,1,6)=="darwin"  ){
+                                                                  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+                                                                     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+                                                                          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+                                                                          tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+                                                                          tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+                                                                  } 
+                                                                  tkbind(ttext,"<Control_L><v>",mac.paste)
+                                                                  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+                                                                     news<-""
+                                                                     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+                                                                     if(news=="empty") return()
+                                                                     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+                                                                          tmp.file.name <- tempfile("rt-tmp")
+                                                                          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+                                                                          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+                                                                  }
+                                                                  tkbind(ttext,"<Control_L><c>",mac.copy)
+                                                                  tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+                                                                  tkbind(ttext,"<<extract>>",mac.copy)
+                                                                }else{
+                                                                  tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                }
+
+
+                                                                  bexit<-tkbutton(tf,text="QUIT",width=9)
+                                                                  beval<-tkbutton(tf,text="EVALUATE",width=9)
+                                                                  bnext<-tkbutton(tf,text="NEXT",width=9)
+                                                                  bback<-tkbutton(tf,text="BACK",width=9)
+                                                                  tkbind(top, "<<EvalRCode>>", eval.code)
+                                                                  if( ! substring(version$os,1,6)=="darwin"  ) {
+                                                                    tkbind(top, "<<Next>>", show.next.number)
+                                                                    tkbind(top, "<<Back>>", show.back.number)
+                                                                  }
+                                                                  lno  <-tkentry(tf,textvariable=secno,width=9)
+                                                                  linfo<-tklabel(tf,text="chunk number:")
+                                                                  tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
+                                                                  tkconfigure(bexit,command=exit.function)
+                                                                  tkconfigure(bnext,command=show.next.number)
+                                                                  tkconfigure(bback,command=show.back.number)
+                                                                  tkconfigure(beval,command=eval.code)
+                                                                  # tkbind(lno,"<Return>",show.number)
+                                                                  tkbind(lno,"<KeyRelease>",show.number)
+                                                                  tclvalue(secno)<-as.character(no)
+                                                                  show.number()
+                                                                  ### tkwait.window(top)
+                                                                }
+
+  ft <- deparse(ft)[-(1:2)]; ft <- sub("WoRkNaMe",workname,ft)
+  fns.name <- gsub("[^A-Za-z]","",sub(".R$",".demo",workname))
+  txt <- gsub("\\\\","\\\\\\\\",txt); txt <- gsub("\"","\\\\\"",txt)
+  txt <- paste(',"',txt,'"',sep=""); txt[1]<-substring(txt[1],2)
+  txt <- c(paste(fns.name,"<-"),fh,"chunks<-c(",txt,")",ft
+           ,paste("cat(\"Demo will be started by > ",fns.name,"()\\n\")",sep="")
+           ,paste(fns.name,"()\n",sep="")
+      ) 
+  workname<-sub(".R$",".demo.R",workname)
+  cat(txt,file=workname,sep="\n")
+  cat("Demo saved in file ",workname,", load demo by source(\"",workname,"\") \n",sep="")
+}
+
+CodeChunkPlayer<-function(file=""){
+  require(tcltk)
+  if(file==""){ cat("sorry, please call player with name of R-, rev- or a Snw-file\n");            
+                return() } 
+  if(  ( 0 == length(grep(".R$",file))) || !file.exists(file) ){ 
+      # .R must be generated&   
+      file <- sub("\\.R$",".rev",file)  # rev name of not existing file if .R file
+      if(!file.exists(file)){
+        file <- sub("\\.rev$","",file)  # base name of file if .rev file
+        if(!file.exists(file)) file <- paste(file,".rev",sep="")  
+        if(!file.exists(file)) file <- sub("\\.rev$",".Snw",file)  
+        if(!file.exists(file)) file <- sub("\\.Snw$",".snw",file) 
+        if(!file.exists(file)) file <- sub("\\.snw$",".nw",file)   
+        if(!file.exists(file)) file <- sub("\\.nw$",".SNW",file)  
+        if(!file.exists(file)) file <- sub("\\.SNW$","",file)   
+        if(!file.exists(file)){
+          cat(paste("sorry, error: File",file,"not found!!!"));return()
+        }
+      } 
+      cat("function will work on file",file,"\n") 
+      # construct a .R file
+      try(tangleR(file))
+      # file <- sub(".rev$","",file); file <- sub(".[sS]{0,1}[nN][wW]$","",file)
+      file <- sub("\\.[a-zA-Z]+$","",file)
+      file <- paste(file,".R",sep=""); cat(file,"generated\n")
+  }
+
+  if( !file.exists(file) ){
+    cat("sorry, .R-file not found or unable to construct .R-file\n");return() 
+  } 
+  workname <- file; chunks<-""; where<-""
+  txt<-scan(workname,"",sep="\n")
+  # construct structure of function
+  fh<-function(file,no=1,start=TRUE){
+    # initial code of demo function
+    require("tcltk"); where<-environment()
+  }
+; fh<-deparse(fh); fh<-fh[-length(fh)]; ft<-function(){
+                                                                # end of code of demo function
+                                                                ## activate start chunk
+                                                                if(start==TRUE){
+                                                                  no.0<-"0"
+                                                                  no.start.0<-grep(paste("^#",no.0,":$",sep=""),chunks)
+                                                                  no.end.0<-grep(paste("^#:",no.0,"$",sep=""),chunks)
+                                                                  code.0<-chunks[no.start.0:no.end.0]
+                                                                  eval(parse(text=code.0),envir=where)
+                                                                }
+                                                                ## activate chunk no
+                                                                # eval(parse(text=code),envir=where)
+                                                                secno<-tclVar("1") # 0
+                                                                show.next.number<-function(...){
+                                                                 no<-as.character(as.numeric(tclvalue(secno))+1)
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 if(0<length(code)) {
+                                                                  tkdelete(ttext,"0.0","end")  
+                                                                  tkinsert(ttext,"0.0",code)
+                                                                  tclvalue(secno)<-as.character(no)
+                                                                  }
+                                                                }
+                                                                show.back.number<-function(...){
+                                                                 no<-as.character(as.numeric(tclvalue(secno))-1)
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 if(0<length(code)) {
+                                                                  tkdelete(ttext,"0.0","end")  
+                                                                  tkinsert(ttext,"0.0",code)
+                                                                  tclvalue(secno)<-as.character(no)
+                                                                 }
+                                                                }
+                                                                show.number<-function(...){
+                                                                 no<-as.character(as.numeric(tclvalue(secno)))
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                      is.nan(no.end)||is.nan(no.start)){
+                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                 }
+                                                                 ### cat("# aktueller chunk:",no,"\n")
+                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                 if(0<length(code)) {
+                                                                  tkdelete(ttext,"0.0","end")  
+                                                                  tkinsert(ttext,"0.0",code)
+                                                                  tclvalue(secno)<-as.character(no)
+                                                                 }
+                                                                }
+                                                                eval.code<-function(...){
+                                                                  code<-tclvalue(tkget(ttext,"0.0","end"))
+                                                                  code.orig<-code<-unlist(strsplit(code,"\n"))
+                                                                  code<-code[!substring(code,1,1)=="#"]
+                                                                  ##?## code<-unlist(strsplit(code,";"))  ##110429 Fehler bei sep=";"
+                                                                  if(length(code)==0){ cat("ok\n"); return() }
+                                                                  result<-try(eval(parse(text=code),envir=where))
+                                                                  code.orig<-sub("#([0-9]+):","##wnt-Code-Chunk:\\1-begin#",code.orig)
+                                                                  code.orig<-sub("#:([0-9]+)","##wnt-Code-Chunk:\\1-end#",code.orig)
+                                                                  h<-get("allcodechunks",envir=where)
+                                                                  h<-c(h,paste("<","<*>",">=",sep=""),code.orig,"\n@\n")
+                                                                  assign("allcodechunks",h,envir=where)
+                                                                  code<-sub("^ *","",code)
+                                                                  code<-code[nchar(code)>0]
+                                                                  lexpr<-rev(code)[1]; lexpr<-substring(lexpr,1,4)
+                                                                  if(length(code)==0||is.null(lexpr)||is.na(lexpr)) return()
+                                                                  plot.res<-c("plot","boxp","par(","abli","pie(","hist","axis","show",
+                                                                         "lsfi","pair","ylab","help",
+                                                                         "qqli","qqno","qqpl","rug(","lege","segm","text","xlab", 
+                                                                         "poin","line","titl","eda(","imag","vgl.","curv")
+                                                                  if(any(plot.res==lexpr)){
+                                                                     cat("Plot erstellt\n"); return()
+                                                                  }
+                                                                  if(is.null(result)||is.na(result)||lexpr=="prin"||lexpr=="cat("){
+                                                                    cat("ok\n"); return() }
+                                                                  if(is.list(result)&& length(names(result))> 0 && 
+                                                                                             names(result)[1]=="ID") return()
+                                                                  ## if(is.list(result)&& TRUE) return()
+                                                                  no<-as.character(as.numeric(tclvalue(secno)))
+                                                                  cat("Result of code chunk",no,":\n") 
+                                                                 if(class(result)=="try-error"){
+                                                                   class(result)<-"character"
+                                                                   cat(result,"\n")
+                                                                 }else{
+                                                                  print(result)
+                                                                 }
+                                                                 cat("ok\n")
+                                                                 }
+                                                                exit.function<-function(){
+                                                                   tkdestroy(top)
+                                                                   filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
+                                                                                                         title="Do you want to save the activated R statements?")
+                                                                   if(!is.character(filename)) filename<-tclvalue(filename)
+                                                                   if(filename==""){
+                                                                     cat("Demo function stopped without saving\n")
+                                                                     return()
+                                                                   }
+                                                                   if(0==length(grep("rev$",filename))) filename<-paste(filename,".rev",sep="")
+                                                                   h<-get("allcodechunks",envir=where)
+                                                                   try(cat(h,sep="\n",file=filename))
+                                                                   cat(paste("Remark: activated statements saved in\n   ",filename,"\n"))
+                                                                   return()
+                                                                }
+                                                                allcodechunks<-paste(
+                                                                        "@\nReport of activated R-chunks from: ",date(),
+                                                                        "\n(demo function constructed by relax (c) Peter Wolf 2007)\n\n  ", sep="")
+                                                                no<-0
+                                                                no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                     is.nan(no.end)||is.nan(no.start)){
+                                                                     cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                }
+                                                                ### cat("# aktueller chunk:",no,"\n")
+                                                                code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                     is.nan(no.end)||is.nan(no.start)){
+                                                                     cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                }
+                                                                ### cat("# aktueller chunk:",no,"\n")
+                                                                code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                h<-paste(rep("#",60),collapse="")
+                                                                code<-sub("#0:",h,code); code<-sub("#:0",h,code)
+                                                                allcodechunks<-c(allcodechunks,"\n@\n<<start>>=",code,"\n@")
+                                                                assign("allcodechunks",allcodechunks,envir=where)
+                                                                top<-tktoplevel()
+                                                                ttext<-tktext(top,height=19,background="#f7fffF",
+                                                                              font="-Adobe-courier-Medium-R-Normal--18-180-*")
+                                                                tf<-tkframe(top) 
+                                                                tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
+                                                                tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
+                                                                tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                              ## ok:  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                              if(substring(version$os,1,6)=="darwin"  ){
+                                                                mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+                                                                   try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+                                                                        news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+                                                                        tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+                                                                        tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+                                                                } 
+                                                                tkbind(ttext,"<Control_L><v>",mac.paste)
+                                                                mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+                                                                   news<-""
+                                                                   try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+                                                                   if(news=="empty") return()
+                                                                   try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+                                                                        tmp.file.name <- tempfile("rt-tmp")
+                                                                        base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+                                                                        .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+                                                                }
+                                                                tkbind(ttext,"<Control_L><c>",mac.copy)
+                                                                tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+                                                                tkbind(ttext,"<<extract>>",mac.copy)
+                                                              }else{
+                                                                tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                              }
+
+
+                                                                bexit<-tkbutton(tf,text="QUIT",width=9)
+                                                                beval<-tkbutton(tf,text="EVALUATE",width=9)
+                                                                bnext<-tkbutton(tf,text="NEXT",width=9)
+                                                                bback<-tkbutton(tf,text="BACK",width=9)
+                                                                tkbind(top, "<<EvalRCode>>", eval.code)
+                                                                if( ! substring(version$os,1,6)=="darwin"  ) {
+                                                                  tkbind(top, "<<Next>>", show.next.number)
+                                                                  tkbind(top, "<<Back>>", show.back.number)
+                                                                }
+                                                                lno  <-tkentry(tf,textvariable=secno,width=9)
+                                                                linfo<-tklabel(tf,text="chunk number:")
+                                                                tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
+                                                                tkconfigure(bexit,command=exit.function)
+                                                                tkconfigure(bnext,command=show.next.number)
+                                                                tkconfigure(bback,command=show.back.number)
+                                                                tkconfigure(beval,command=eval.code)
+                                                                # tkbind(lno,"<Return>",show.number)
+                                                                tkbind(lno,"<KeyRelease>",show.number)
+                                                                tclvalue(secno)<-as.character(no)
+                                                                show.number()
+                                                                ### tkwait.window(top)
+                                                              }
+
+  ft<-deparse(ft)[-(1:2)]; ft<-sub("WoRkNaMe",workname,ft)
+  # modify function
+  txt<-c("CCPlayer<-",fh,"    chunks<-readLines(file)",ft,"CCPlayer()")
+  # set file argument
+  txt[2] <- sub("file",paste("file = '",workname,"'",sep=""),txt[2]) 
+  # set no argument as start chunk number
+  idx <- grep("^    no .. 0",txt); txt[idx] <- sub("0","no #set start chunk",txt[idx])
+  # modify title
+  idx <- grep("tkwm.title",txt); txt[idx] <- sub("Peter Wolf.","",txt[idx])
+  txt[idx] <- sub("demo of file","Code-Chunk-Player, file:",txt[idx])
+  # modify exit message
+  idx <- grep("Demo function stopped",txt); 
+  txt[idx] <- sub("Demo function stopped without","Code-Chunk-Player stopped without",txt[idx])
+  # print viewer function for debugging:    print(txt)
+  # start of Code-Chunk-Player
+  try(eval(parse(text=txt)))
+  invisible(NULL)
+}
+
 playground<-function(playground.envir=NULL,code=NULL){
   require(tcltk)
   pg<-tktoplevel(); tkwm.geometry(pg,"+100+100")
   tkwm.title(pg, "playground for testing R code (error messages appear in the R Console)")
   pgtext<-tktext(pg,height=19,background="#f7fffF",
                  font="-Adobe-courier-Medium-R-Normal--18-180-*")
+  ## ok: tkbind(pgtext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+if(substring(version$os,1,6)=="darwin"  ){
+  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+          tkinsert(pgtext,"insert",paste(news,collapse="\n"))})
+          tksee(pgtext,"insert - 7 lines");  tksee(pgtext,"insert + 7 lines") #090706 
+  } 
+  tkbind(pgtext,"<Control_L><v>",mac.paste)
+  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+     news<-""
+     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+     if(news=="empty") return()
+     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+          tmp.file.name <- tempfile("rt-tmp")
+          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+  }
+  tkbind(pgtext,"<Control_L><c>",mac.copy)
+  tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+  tkbind(pgtext,"<<extract>>",mac.copy)
+}else{
+  tkevent.add("<<Paste>>",   "<Control_L><v>")
   tkbind(pgtext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+}
+
   pgbutfr<-tkframe(pg)
   tkpack(pgtext, side="top",fill="both",expand="y")
   tkpack(pgbutfr,side="top",fill="both")
   
-  bexit<-tkbutton(pgbutfr,text="EXIT",width=9)
-  beval<-tkbutton(pgbutfr,text="ACTIVATE",width=9)
+  bexit<-tkbutton(pgbutfr,text="QUIT",width=9)
+  beval<-tkbutton(pgbutfr,text="EVALUATE",width=9)
   tkpack(beval,side="left")
   tkpack(bexit,side="right")
 
@@ -43,6 +609,7 @@ playground<-function(playground.envir=NULL,code=NULL){
     }  
     NULL
   }
+  tkbind(pg, "<<EvalRCode>>", eval.code)
   exit.function<-function(){
      tkdestroy(pg)
      return()
@@ -442,11 +1009,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(!exists("toutwin"))
         toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
       pos.to.insert<-"end"
-      news<-paste(gsub("\n+","\n",news),collapse="\n")
+      ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+      news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
       try(tkinsert(toutwin,pos.to.insert,news))
       tksee(toutwin,"end - 0 lines")
       melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
       tcl("update","idletasks") # 090710
       NULL
@@ -493,11 +1060,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(!exists("toutwin"))
       toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
     pos.to.insert<-"end"
-    news<-paste(gsub("\n+","\n",news),collapse="\n")
+    ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+    news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
     try(tkinsert(toutwin,pos.to.insert,news))
     tksee(toutwin,"end - 0 lines")
     melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
     tcl("update","idletasks") # 090710
     NULL
@@ -634,11 +1201,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(!exists("toutwin"))
           toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
         pos.to.insert<-"end"
-        news<-paste(gsub("\n+","\n",news),collapse="\n")
+        ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+        news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
         try(tkinsert(toutwin,pos.to.insert,news))
         tksee(toutwin,"end - 0 lines")
         melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
         tcl("update","idletasks") # 090710
         NULL
@@ -682,26 +1249,27 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   myscan<-function(file,what,sep="\n", blank.lines.skip=FALSE){ readLines(file) } #2.1.0
 
   print<-function(x, ...){ # 050614
-    if( "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){
+    if( "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  && !is.null(x) ){
       sink(get("tmp.file.name",envir=revive.sys)
 ); base::print(x, ...); sink()
-      news<-paste("", paste(scan(file=get("tmp.file.name",envir=revive.sys)
+      news<-paste(# "", # 111123
+                  paste(scan(file=get("tmp.file.name",envir=revive.sys)
 ,what="",sep="\n"),collapse="\n"),
                   "",sep="\n" )
       if(!exists("toutwin"))
         toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
       pos.to.insert<-"end"
-      news<-paste(gsub("\n+","\n",news),collapse="\n")
+      ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+      news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
       try(tkinsert(toutwin,pos.to.insert,news))
       tksee(toutwin,"end - 0 lines")
       melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
 
-
       tcl("update","idletasks") # 090710
       NULL
-    } # else
-    base::print(x, ...)
-    NULL
+      if(class(x) != "help_files_with_topic") base::print(x, ...)
+    }  else base::print(x, ...)
+    invisible(NULL)
   }
   ## assign("print",print,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
   assign("print",print, pos=pos.of.relax.fns)
@@ -712,17 +1280,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(file==""&& "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){
        base::cat(...,file=get("tmp.file.name",envir=revive.sys)
 ,sep=sep,fill=fill,labels=labels,append=append)
-       news<-paste("\n", paste(scan(file=get("tmp.file.name",envir=revive.sys)
-,what="",sep="\n"),collapse="\n"),
-                   "",sep="\n")
+       news<-paste( # "\n", # 111123
+                   paste(scan(file=get("tmp.file.name",envir=revive.sys)
+,what="",sep="\n"),collapse="\n"), "", # 111123
+                   sep="\n")
        if(!exists("toutwin"))
          toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
        pos.to.insert<-"end"
-       news<-paste(gsub("\n+","\n",news),collapse="\n")
+       ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+       news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
        try(tkinsert(toutwin,pos.to.insert,news))
        tksee(toutwin,"end - 0 lines")
        melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
        tcl("update","idletasks") # 090710
        NULL
@@ -741,29 +1310,31 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        base::cat(file=fname,"")
        if(is.data.frame(object)) 
           base::cat(file=fname,
-             paste("'data.frame':  ", 
-             paste(dim(object)[1],"obs. of",dim(object)[2],"variables:\n")))
+                    paste("'data.frame':  ", 
+                          paste(dim(object)[1],"obs. of",
+                                dim(object)[2],"variables:\n")))
        a <- deparse(getS3method("str", "default"))
        a <- gsub("cat[(]", paste("base::cat(file=\"", fname, 
                  "\",append=TRUE,", sep = ""), a) # ))
        a <- sub(" str[(]", " mystr(", a) # ))
        mystr <- eval(parse(text = a))
-       mystr(object)
+       mystr(object,...)  # 111123
        news <- scan(file = fname,
                     what = "", sep = "\n")
        news <- sub("chr .data.frame.", "", news)
        if(0<length(ind<-grep("^ -",news))) news<-news[-ind]
-       if(0<length(ind<-grep("^List of",news))) news<-news[-ind]
+       ## in data frames additional "List of ?" appear and should be removed
+       if(is.data.frame(object) && 0<length(ind<-grep("^List of",news))) news<-news[-ind]
        news<-paste("\n", # date(),
                    paste(news,collapse="\n"),"",sep="\n")
        if(!exists("toutwin"))
          toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
        pos.to.insert<-"end"
-       news<-paste(gsub("\n+","\n",news),collapse="\n")
+       ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+       news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
        try(tkinsert(toutwin,pos.to.insert,news))
        tksee(toutwin,"end - 0 lines")
        melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
        tcl("update","idletasks") # 090710
        NULL
@@ -1110,11 +1681,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           if(!exists("toutwin"))
             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
           pos.to.insert<-"end"
-          news<-paste(gsub("\n+","\n",news),collapse="\n")
+          ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+          news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
           try(tkinsert(toutwin,pos.to.insert,news))
           tksee(toutwin,"end - 0 lines")
           melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
           ##zeige Ergebnisse in neuem Fenster an>>
         }
@@ -1276,7 +1847,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           } else args <- NULL
           path <- .path.package(package)
           alias <- file.path(path,"help","aliases.rds")
-          rds <- base::.readRDS(file.path(path,"help","aliases.rds"))
+          ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
+          ## 120110 function reconstructed because of change of name 
+          readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
+                                      .Internal(unserializeFromConn(con, NULL)) }
+          rds <- readRDS(file.path(path,"help","aliases.rds"))
           help.name <- rds[which(names(rds)==topic)]
           help.text <- utils:::.getHelpFile(
             file.path(.path.package(package),"help",help.name)
@@ -1307,11 +1882,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           if(!exists("toutwin"))
             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
           pos.to.insert<-"end"
-          news<-paste(gsub("\n+","\n",news),collapse="\n")
+          ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+          news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
           try(tkinsert(toutwin,pos.to.insert,news))
           tksee(toutwin,"end - 0 lines")
           melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
         }
     })
@@ -2283,11 +2858,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           if(!exists("toutwin"))
             toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
           pos.to.insert<-"end"
-          news<-paste(gsub("\n+","\n",news),collapse="\n")
+          ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+          news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
           try(tkinsert(toutwin,pos.to.insert,news))
           tksee(toutwin,"end - 0 lines")
           melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
           ##zeige Ergebnisse in neuem Fenster an>>
         }
@@ -2611,6 +3186,45 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       melde(paste("> font size changed"))
     }
     melde("SetFontSize",2)
+  }
+
+  SetRelaxWinSize<-function(){
+    melde("SetRelaxWinSize",1)
+    frage<-"Size of relax window (width x height)?"
+    set.tclvalue("tvinfo",paste(tclvalue(tkwinfo("width",TopW)),tclvalue(tkwinfo("height",TopW)),sep="x"))
+    tkconfigure(linfo.tmp,text=frage)
+    # tkpack("forget",linfo.name,linfo); Sys.sleep(0.01)
+    tkpack("forget",linfo); Sys.sleep(0.01)
+    tkpack(linfo.tmp,einfo.tmp,side="left"); Sys.sleep(0.01)
+    tkfocus(einfo.tmp)
+    tkselection.range(einfo.tmp,"0","end") ## 051219
+    tkbind(TopW,"<Escape>",function(){
+        tkbind(TopW,"<Return>","")
+        tkpack("forget",einfo.tmp,linfo.tmp); Sys.sleep(0.01)
+        # tkpack(linfo.name,linfo,side="left",fill="x",expand="yes")
+        tkpack(linfo,side="left",fill="x",expand="yes")
+
+
+      }
+    )
+
+
+    tkbind(TopW,"<Return>",
+      function(){
+        tkbind(TopW,"<Return>","")
+        tkpack("forget",einfo.tmp,linfo.tmp); Sys.sleep(0.01)
+        # tkpack(linfo.name,linfo,side="left",fill="x",expand="yes")
+        tkpack(linfo,side="left",fill="x",expand="yes")
+
+
+        h<-tclvalue("tvinfo"); h <- gsub("[^0-9x]*","",h); h <- unlist(strsplit(h,"x"))
+        if(2!=length(h) || any(0==nchar(h)) ) return()
+        h <- try(as.numeric(h)); if(class(h)=="try-error") return(); h <- paste(pmax(h,250),collapse="x")
+        tkwm.geometry(TopW,h); cat("relax window set to size",h)
+        melde(paste("> maxol.sys <-",maxol.sys),"cmd.msg")
+      }
+    )
+    melde("SetRelaxWinSize",2)
   }
 
   SetOutputLength<-function(){
@@ -3694,14 +4308,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
      line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
+       worktext <- sub("%.*$","",worktext)
        doc.start   <- grep("^.begin.document.",worktext)
-       if(0 == doc.start) { cat("relax warning: no begin document found"); return()}
-       env.start <- grep("^\\\\begin",worktext) ; env.start <- env.start[env.start != doc.start]
-       env.end   <- grep("^\\\\end",worktext)
+       if(0 == length(doc.start)) { cat("relax warning: no begin document found"); return()}
+       env.start <- grep("\\\\begin\\{",worktext) ; env.start <- env.start[env.start != doc.start] # } for symmetry
+       env.end   <- grep("\\\\end\\{",worktext)  # } for symmetry
        idx.start <- idx.end <- rep(0,length(worktext))
        idx.start[env.start] <- 1; idx.end  [env.end  ] <- 1
-       counter <- cumsum(idx.start) - cumsum(idx.end)
-       extract.start <- which(counter == 0 & seq(along=counter) <= line)
+       counter <- 0*idx.start; depth <- 0
+       for( i in 1:length(counter)){
+         counter[i] <- depth <- max(0, depth - idx.end[i] + idx.start[i])
+       }
+       #  counter <- cumsum(idx.start) - cumsum(idx.end) # fail if there are too much ends
+       extract.start <- which(counter == 0 & seq(along=counter) < line)
        extract.start <- if(0 < length(extract.start)) max(extract.start) + 1 else doc.start + 1
        extract.end   <- which(counter == 0 & seq(along=counter) >= line)
        extract.end   <- if(0 < length(extract.start)) min(extract.end)       else length(worktext)  
@@ -3938,11 +4557,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(!exists("toutwin"))
           toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
         pos.to.insert<-"end"
-        news<-paste(gsub("\n+","\n",news),collapse="\n")
+        ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+        news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
         try(tkinsert(toutwin,pos.to.insert,news))
         tksee(toutwin,"end - 0 lines")
         melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
         Sys.sleep(0.5); LatexReport()
         cat("check R-window for messages!\n")
@@ -4199,12 +4818,42 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
       tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
       tkevent.add("<<Paste>>",   "<Control_L><v>")
+    ## ok:  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+    if(substring(version$os,1,6)=="darwin"  ){
+      mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+         try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+              news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+              tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+              tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+      } 
+      tkbind(ttext,"<Control_L><v>",mac.paste)
+      mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+         news<-""
+         try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+         if(news=="empty") return()
+         try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+              tmp.file.name <- tempfile("rt-tmp")
+              base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+              .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+      }
+      tkbind(ttext,"<Control_L><c>",mac.copy)
+      tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+      tkbind(ttext,"<<extract>>",mac.copy)
+    }else{
+      tkevent.add("<<Paste>>",   "<Control_L><v>")
       tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+    }
 
-      bexit<-tkbutton(tf,text="EXIT",width=9)
-      beval<-tkbutton(tf,text="ACTIVATE",width=9)
+
+      bexit<-tkbutton(tf,text="QUIT",width=9)
+      beval<-tkbutton(tf,text="EVALUATE",width=9)
       bnext<-tkbutton(tf,text="NEXT",width=9)
       bback<-tkbutton(tf,text="BACK",width=9)
+      tkbind(top, "<<EvalRCode>>", eval.code)
+      if( ! substring(version$os,1,6)=="darwin"  ) {
+        tkbind(top, "<<Next>>", show.next.number)
+        tkbind(top, "<<Back>>", show.back.number)
+      }
       lno  <-tkentry(tf,textvariable=secno,width=9)
       linfo<-tklabel(tf,text="chunk number:")
       tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
@@ -4233,6 +4882,319 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     cat(txt,file=workname,sep="\n")
     cat("Demo in file ",workname," saved, load demo by source(\"",workname,"\") \n",sep="")
     melde("ConstructDemoFunction",2)
+  }
+
+  StartCodeChunkPlayer<-function(){
+    melde("StartCodeChunkPlayer",1)
+    cat("Code-Chunk-Player saves actual version of",workname.sys,"\n") 
+        if(file.exists(filename<-file.path(getwd(),workname.sys))){
+          res<-tkmessageBox(message=
+                     if(language=="german") 
+                        paste("Datei",filename,"existiert. Soll sie ersetzt werden?")
+                     else paste(filename,"exists. Do you want to replace it?"),
+                   title="Save File",icon="warning",type="yesnocancel",default="yes")
+          if("externalptr"==mode(res))  res<-tclvalue(res)
+          if(res=="cancel")return()
+          if(res=="no"){msg<-SaveReport(); if(msg=="cancel") return()}  #050607
+        }
+        if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
+        tworkwin<-get("tworkwin",envir=revive.sys)
+        worktext<-tclvalue(tkget(tworkwin,"0.0","end"))
+        if(nchar(worktext)<10000){
+          worktext<-strsplit(worktext,"\n")[[1]]
+        }else{
+          base::cat(worktext,file=get("tmp.file.name",envir=revive.sys)
+)
+          worktext<-myscan(file=get("tmp.file.name",envir=revive.sys)
+,"",sep="\n",blank.lines.skip=FALSE)
+        }
+
+        worktext<-sub("^<<(.*)>>=(.*)","<<\\1>>=",worktext)
+        worktext<-sub("^output-start","\\\\begin{verbatim}",worktext)
+        worktext<-sub("^output-end","\\\\end{verbatim}",worktext)
+        if(0==length(grep("\\\\end\\{document\\}",worktext))) #2.1.0
+           worktext<-c(worktext,"@\n\\end{document}")
+        worktext<-TcltoWin.write(worktext)
+        try.res <- try(cat(worktext,file=filename,sep="\n"))
+        if(is.function(try.res)){
+          ok <- "OK"
+        } else {
+          if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
+          ok<-try.res[1]
+          if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
+          if(!is.character(ok)) { ok <- "OK" }
+        }
+        if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
+          ok<-FALSE
+          error.msg<-unclass(try.res); error.msg<-sub("options.warn.2.","",error.msg)
+          cat(error.msg,"\n")
+          if(0<length(grep("Warnung",error.msg))||0<length(grep("warning",error.msg)))
+             cat("A warning message stopped the evaluation!",
+                   "If you want to\nevaluate the code anyway",
+                   "evaluate code by:\n>WarnEval<")
+          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        } else { ok<-TRUE }
+
+
+        if(ok){ cat(paste("file",filename,"saved\n")) }
+
+        if(ok){
+          melde(paste("report file",filename,"saved\n"),0)
+          melde(paste("w",workname.sys),"cmd.msg")
+        } else {
+          cat("ERROR: write operation failed!!!\n"); return()
+        }
+
+
+
+
+
+    try(tangleR(workname.sys)); workname<-sub(".rev$",".R",workname.sys); cat(workname,"generated\n")
+    chunks<-where<-""; txt<-scan(workname,"",sep="\n")
+    # construct structure of function
+    fh<-function(file,no=1,start=TRUE){
+      # initial code of demo function
+      require("tcltk"); where<-environment()
+    }
+; fh<-deparse(fh); fh<-fh[-length(fh)]; ft<-function(){
+                                                                  # end of code of demo function
+                                                                  ## activate start chunk
+                                                                  if(start==TRUE){
+                                                                    no.0<-"0"
+                                                                    no.start.0<-grep(paste("^#",no.0,":$",sep=""),chunks)
+                                                                    no.end.0<-grep(paste("^#:",no.0,"$",sep=""),chunks)
+                                                                    code.0<-chunks[no.start.0:no.end.0]
+                                                                    eval(parse(text=code.0),envir=where)
+                                                                  }
+                                                                  ## activate chunk no
+                                                                  # eval(parse(text=code),envir=where)
+                                                                  secno<-tclVar("1") # 0
+                                                                  show.next.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno))+1)
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                    }
+                                                                  }
+                                                                  show.back.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno))-1)
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                   }
+                                                                  }
+                                                                  show.number<-function(...){
+                                                                   no<-as.character(as.numeric(tclvalue(secno)))
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                        is.nan(no.end)||is.nan(no.start)){
+                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                   }
+                                                                   ### cat("# aktueller chunk:",no,"\n")
+                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                   if(0<length(code)) {
+                                                                    tkdelete(ttext,"0.0","end")  
+                                                                    tkinsert(ttext,"0.0",code)
+                                                                    tclvalue(secno)<-as.character(no)
+                                                                   }
+                                                                  }
+                                                                  eval.code<-function(...){
+                                                                    code<-tclvalue(tkget(ttext,"0.0","end"))
+                                                                    code.orig<-code<-unlist(strsplit(code,"\n"))
+                                                                    code<-code[!substring(code,1,1)=="#"]
+                                                                    ##?## code<-unlist(strsplit(code,";"))  ##110429 Fehler bei sep=";"
+                                                                    if(length(code)==0){ cat("ok\n"); return() }
+                                                                    result<-try(eval(parse(text=code),envir=where))
+                                                                    code.orig<-sub("#([0-9]+):","##wnt-Code-Chunk:\\1-begin#",code.orig)
+                                                                    code.orig<-sub("#:([0-9]+)","##wnt-Code-Chunk:\\1-end#",code.orig)
+                                                                    h<-get("allcodechunks",envir=where)
+                                                                    h<-c(h,paste("<","<*>",">=",sep=""),code.orig,"\n@\n")
+                                                                    assign("allcodechunks",h,envir=where)
+                                                                    code<-sub("^ *","",code)
+                                                                    code<-code[nchar(code)>0]
+                                                                    lexpr<-rev(code)[1]; lexpr<-substring(lexpr,1,4)
+                                                                    if(length(code)==0||is.null(lexpr)||is.na(lexpr)) return()
+                                                                    plot.res<-c("plot","boxp","par(","abli","pie(","hist","axis","show",
+                                                                           "lsfi","pair","ylab","help",
+                                                                           "qqli","qqno","qqpl","rug(","lege","segm","text","xlab", 
+                                                                           "poin","line","titl","eda(","imag","vgl.","curv")
+                                                                    if(any(plot.res==lexpr)){
+                                                                       cat("Plot erstellt\n"); return()
+                                                                    }
+                                                                    if(is.null(result)||is.na(result)||lexpr=="prin"||lexpr=="cat("){
+                                                                      cat("ok\n"); return() }
+                                                                    if(is.list(result)&& length(names(result))> 0 && 
+                                                                                               names(result)[1]=="ID") return()
+                                                                    ## if(is.list(result)&& TRUE) return()
+                                                                    no<-as.character(as.numeric(tclvalue(secno)))
+                                                                    cat("Result of code chunk",no,":\n") 
+                                                                   if(class(result)=="try-error"){
+                                                                     class(result)<-"character"
+                                                                     cat(result,"\n")
+                                                                   }else{
+                                                                    print(result)
+                                                                   }
+                                                                   cat("ok\n")
+                                                                   }
+                                                                  exit.function<-function(){
+                                                                     tkdestroy(top)
+                                                                     filename<-tkgetSaveFile(filetypes="{{Paper Files} {.rev}}",
+                                                                                                           title="Do you want to save the activated R statements?")
+                                                                     if(!is.character(filename)) filename<-tclvalue(filename)
+                                                                     if(filename==""){
+                                                                       cat("Demo function stopped without saving\n")
+                                                                       return()
+                                                                     }
+                                                                     if(0==length(grep("rev$",filename))) filename<-paste(filename,".rev",sep="")
+                                                                     h<-get("allcodechunks",envir=where)
+                                                                     try(cat(h,sep="\n",file=filename))
+                                                                     cat(paste("Remark: activated statements saved in\n   ",filename,"\n"))
+                                                                     return()
+                                                                  }
+                                                                  allcodechunks<-paste(
+                                                                          "@\nReport of activated R-chunks from: ",date(),
+                                                                          "\n(demo function constructed by relax (c) Peter Wolf 2007)\n\n  ", sep="")
+                                                                  no<-0
+                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                       is.nan(no.end)||is.nan(no.start)){
+                                                                       cat("# sorry, chunk number '",no,"' wrong!\n"); return()
+                                                                  }
+                                                                  ### cat("# aktueller chunk:",no,"\n")
+                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
+                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
+                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
+                                                                       is.nan(no.end)||is.nan(no.start)){
+                                                                       cat("# versuchte Chunk-Nummer falsch\n"); return()
+                                                                  }
+                                                                  ### cat("# aktueller chunk:",no,"\n")
+                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
+                                                                  h<-paste(rep("#",60),collapse="")
+                                                                  code<-sub("#0:",h,code); code<-sub("#:0",h,code)
+                                                                  allcodechunks<-c(allcodechunks,"\n@\n<<start>>=",code,"\n@")
+                                                                  assign("allcodechunks",allcodechunks,envir=where)
+                                                                  top<-tktoplevel()
+                                                                  ttext<-tktext(top,height=19,background="#f7fffF",
+                                                                                font="-Adobe-courier-Medium-R-Normal--18-180-*")
+                                                                  tf<-tkframe(top) 
+                                                                  tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
+                                                                  tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
+                                                                  tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                ## ok:  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                if(substring(version$os,1,6)=="darwin"  ){
+                                                                  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+                                                                     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+                                                                          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+                                                                          tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+                                                                          tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+                                                                  } 
+                                                                  tkbind(ttext,"<Control_L><v>",mac.paste)
+                                                                  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+                                                                     news<-""
+                                                                     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+                                                                     if(news=="empty") return()
+                                                                     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+                                                                          tmp.file.name <- tempfile("rt-tmp")
+                                                                          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+                                                                          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+                                                                  }
+                                                                  tkbind(ttext,"<Control_L><c>",mac.copy)
+                                                                  tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+                                                                  tkbind(ttext,"<<extract>>",mac.copy)
+                                                                }else{
+                                                                  tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                }
+
+
+                                                                  bexit<-tkbutton(tf,text="QUIT",width=9)
+                                                                  beval<-tkbutton(tf,text="EVALUATE",width=9)
+                                                                  bnext<-tkbutton(tf,text="NEXT",width=9)
+                                                                  bback<-tkbutton(tf,text="BACK",width=9)
+                                                                  tkbind(top, "<<EvalRCode>>", eval.code)
+                                                                  if( ! substring(version$os,1,6)=="darwin"  ) {
+                                                                    tkbind(top, "<<Next>>", show.next.number)
+                                                                    tkbind(top, "<<Back>>", show.back.number)
+                                                                  }
+                                                                  lno  <-tkentry(tf,textvariable=secno,width=9)
+                                                                  linfo<-tklabel(tf,text="chunk number:")
+                                                                  tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
+                                                                  tkconfigure(bexit,command=exit.function)
+                                                                  tkconfigure(bnext,command=show.next.number)
+                                                                  tkconfigure(bback,command=show.back.number)
+                                                                  tkconfigure(beval,command=eval.code)
+                                                                  # tkbind(lno,"<Return>",show.number)
+                                                                  tkbind(lno,"<KeyRelease>",show.number)
+                                                                  tclvalue(secno)<-as.character(no)
+                                                                  show.number()
+                                                                  ### tkwait.window(top)
+                                                                }
+
+    ft<-deparse(ft)[-(1:2)]; ft<-sub("WoRkNaMe",workname,ft)
+    # modify function for StartCodeChunkPlayer
+    txt<-c("CCPlayer<-",fh,"    chunks<-readLines(file)",ft,"CCPlayer()")
+    # set file argument
+    txt[2] <- sub("file",paste("file = '",workname,"'",sep=""),txt[2]) 
+    # use argument no as start chunk number
+    idx <- grep("^    no .. 0",txt); txt[idx] <- sub("0","no #set start chunk",txt[idx])
+    # modify title
+    idx <- grep("tkwm.title",txt); txt[idx] <- sub("Peter Wolf.","",txt[idx])
+    txt[idx] <- sub("demo of file","Code-Chunk-Player, file:",txt[idx])
+    # modify exit message
+    idx <- grep("Demo function stopped",txt); 
+    txt[idx] <- sub("Demo function stopped without","Code-Chunk-Player stopped without",txt[idx])
+    # set evaluation should take place in revive.env
+    idx <- grep("environment",txt); txt[idx] <- sub("environment..","revive.env",txt[idx])
+    # print viewer function for debugging
+    melde(paste(txt,collapse="\n"),2)
+    # start of history viewer
+    try(eval(parse(text=txt),envir=revive.env))
+    melde("StartCodeChunkPlayer",2)
   }
 
   assign("relax.history",
@@ -4426,12 +5388,42 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                   tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
                                                                   tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
                                                                   tkevent.add("<<Paste>>",   "<Control_L><v>")
+                                                                ## ok:  tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                if(substring(version$os,1,6)=="darwin"  ){
+                                                                  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+                                                                     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+                                                                          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+                                                                          tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+                                                                          tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+                                                                  } 
+                                                                  tkbind(ttext,"<Control_L><v>",mac.paste)
+                                                                  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+                                                                     news<-""
+                                                                     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+                                                                     if(news=="empty") return()
+                                                                     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+                                                                          tmp.file.name <- tempfile("rt-tmp")
+                                                                          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+                                                                          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+                                                                  }
+                                                                  tkbind(ttext,"<Control_L><c>",mac.copy)
+                                                                  tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+                                                                  tkbind(ttext,"<<extract>>",mac.copy)
+                                                                }else{
+                                                                  tkevent.add("<<Paste>>",   "<Control_L><v>")
                                                                   tkbind(ttext,"<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+                                                                }
 
-                                                                  bexit<-tkbutton(tf,text="EXIT",width=9)
-                                                                  beval<-tkbutton(tf,text="ACTIVATE",width=9)
+
+                                                                  bexit<-tkbutton(tf,text="QUIT",width=9)
+                                                                  beval<-tkbutton(tf,text="EVALUATE",width=9)
                                                                   bnext<-tkbutton(tf,text="NEXT",width=9)
                                                                   bback<-tkbutton(tf,text="BACK",width=9)
+                                                                  tkbind(top, "<<EvalRCode>>", eval.code)
+                                                                  if( ! substring(version$os,1,6)=="darwin"  ) {
+                                                                    tkbind(top, "<<Next>>", show.next.number)
+                                                                    tkbind(top, "<<Back>>", show.back.number)
+                                                                  }
                                                                   lno  <-tkentry(tf,textvariable=secno,width=9)
                                                                   linfo<-tklabel(tf,text="chunk number:")
                                                                   tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
@@ -4540,8 +5532,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        if(!is.na(choice) && any(choice==1:6)){
          news<-c("\\begin{center}\n\n\\end{center}\n",
                         "\\begin{quote}\n\n\\end{quote}\n",
-                        "\\begin{itemize}\n\\item\n\\item\n\n\\end{itemize}\n",
-                        "\\begin{enumerate}\n\\item\n\\item\n\n\\end{enumerate}\n",
+                        "\\begin{itemize}\n\\item \n\\item \n\n\\end{itemize}\n",
+                        "\\begin{enumerate}\n\\item \n\\item \n\n\\end{enumerate}\n",
                         "\\begin{eqnarray*}\n\n\\end{eqnarray*}\n",
                         "\\begin{verbatim}\n\n\\end{verbatim}\n")[choice]
          line <-floor(as.numeric(tkindex(tworkwin,"insert")))
@@ -4643,7 +5635,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     doc<-c("=================================================",
            "RELAX -- R Editor for Literate Analysis and lateX",
            "=================================================","",
-           paste("version:","relax 1.3.7 - 111111"),"",
+           paste("version:","relax 1.3.8 - 120127"),"",
   "relax() is designed to support the process of data analysis, report writing,",
                  "presentation, and programming. On start it creates a new window for writing",
                  "code and text at the same time. You are allowed to evaluate R code chunks",
@@ -4687,20 +5679,40 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   ShowShortCuts<-function(){
     melde("ShowShortCuts",1)
     keys<-c("Shortcuts of relax:","",
-                  "Alt-D:  move cursor one code chunk DOWN",
+            if((version$os=="Win32" || version$os=="mingw32")
+ | substring(version$os,1,5)=="linux"
+)
+                c("Alt-D:  move cursor one code chunk DOWN",
                   "Alt-U:  move cursor one code chunk UP",
                   "Alt-P:  plan new code chunk",
                   "Alt-E:  eval code chunk",
-                  "Alt-T:  delete output of text field",
+                  "Alt-W:  eval code chunk / ignore warnings",
+                  "Alt-I:  insert output into report",
                   "Alt-S:  copy plot and generate postscript / JPEG file",
                   "Alt-R:  clear output field",
+                  "Alt-T:  delete inserted output from report",
                   "Alt-H:  R help",
-                  "Crtl-F:  Find text in report field",
-                  "<F3>:  Find text in report field again",
-                  "Crtl-S:  Save Report",
-                  "Crtl-P:  Process Report: save, weave, and latex Report",
-          #       "Crtl-Page-down:  copy code chunk to end", -- abgeschaltet
-                  "","Shortcuts of tcltk, may depend on tcl/tk version:","",
+                  "Alt-F, Crtl-F:  Find text in report field"),
+            if(substring(version$os,1,6)=="darwin" )
+                c(#"Alt-D:  move cursor one code chunk DOWN",
+                  #"Alt-U:  move cursor one code chunk UP",
+                  "Apple-P:  plan new code chunk",
+                  "Apple-E:  eval code chunk",
+                  # "Apple-W:  eval code chunk / ignore warnings", # will destroy relax window
+                  "Apple-I:  insert output into report",
+                  "Apple-S:  copy plot and generate postscript / JPEG file",
+                  "Apple-R:  clear output field",
+                  "Apple-T:  delete output of text field",
+                  # "Alt-H:  R help",
+                  "Crtl-G:  Goto line number",
+                  "<Fn><F3>:  Find text in report field again",
+                  "Alt-F, Crtl-F:  Find text in report field") 
+             else
+                c("Crtl-G:  Goto line number",
+                  "<F3>:  Find text in report field again"),  ## end of if
+            "Crtl-S:  Save Report",
+            "Crtl-P:  Process Report: save, weave, and latex Report",
+                  "","Shortcuts of tcltk, may depend on OS / tcl/tk version:","",
                   "Crtl-Z:  UNDO",
                   "Crtl-C:  copy marked text",
                   "Crtl-V:  paste marked text",
@@ -6617,11 +7629,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(!exists("toutwin"))
       toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
     pos.to.insert<-"end"
-    news<-paste(gsub("\n+","\n",news),collapse="\n")
+    ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+    news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
     try(tkinsert(toutwin,pos.to.insert,news))
     tksee(toutwin,"end - 0 lines")
     melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
     news<-paste("\n@\n<<RunAllStartsAndStars>>=\n<<start>>\n<<*>>\n@")
     if(!exists("tworkwin"))
@@ -7265,14 +8277,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
     line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
+      worktext <- sub("%.*$","",worktext)
       doc.start   <- grep("^.begin.document.",worktext)
-      if(0 == doc.start) { cat("relax warning: no begin document found"); return()}
-      env.start <- grep("^\\\\begin",worktext) ; env.start <- env.start[env.start != doc.start]
-      env.end   <- grep("^\\\\end",worktext)
+      if(0 == length(doc.start)) { cat("relax warning: no begin document found"); return()}
+      env.start <- grep("\\\\begin\\{",worktext) ; env.start <- env.start[env.start != doc.start] # } for symmetry
+      env.end   <- grep("\\\\end\\{",worktext)  # } for symmetry
       idx.start <- idx.end <- rep(0,length(worktext))
       idx.start[env.start] <- 1; idx.end  [env.end  ] <- 1
-      counter <- cumsum(idx.start) - cumsum(idx.end)
-      extract.start <- which(counter == 0 & seq(along=counter) <= line)
+      counter <- 0*idx.start; depth <- 0
+      for( i in 1:length(counter)){
+        counter[i] <- depth <- max(0, depth - idx.end[i] + idx.start[i])
+      }
+      #  counter <- cumsum(idx.start) - cumsum(idx.end) # fail if there are too much ends
+      extract.start <- which(counter == 0 & seq(along=counter) < line)
       extract.start <- if(0 < length(extract.start)) max(extract.start) + 1 else doc.start + 1
       extract.end   <- which(counter == 0 & seq(along=counter) >= line)
       extract.end   <- if(0 < length(extract.start)) min(extract.end)       else length(worktext)  
@@ -7841,11 +8858,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(!exists("toutwin"))
       toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
     pos.to.insert<-"end"
-    news<-paste(gsub("\n+","\n",news),collapse="\n")
+    ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+    news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
     try(tkinsert(toutwin,pos.to.insert,news))
     tksee(toutwin,"end - 0 lines")
     melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
     news<-paste("\n@\n<<RunStarts>>=\n<<start>>\n@")
     if(!exists("tworkwin"))
@@ -8894,7 +9911,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.3.7 - 111111"
+  relax.version.sys<- "relax 1.3.8 - 120127"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -8920,37 +9937,31 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   if((version$os=="Win32" || version$os=="mingw32")
  | substring(version$os,1,5)=="linux"
 ){
-    tkevent.add("<<FindText>>",  "<Alt_L><f>")
-    tkevent.add("<<EvalRCode>>",  "<Alt_L><e>")
-    tkevent.add("<<WarnEval>>",  "<Alt_L><w>")
-    tkevent.add("<<Down>>",  "<Alt_L><d>")
-    tkevent.add("<<Up>>",  "<Alt_L><u>")
-    tkevent.add("<<AdvanceNo>>", "<Alt_L><a>")
-    tkevent.add("<<TrashROutput>>","<Alt_L><t>")
-    tkevent.add("<<Next>>",      "<Alt_L><n>")
-    tkevent.add("<<Help.R>>",   "<Alt_L><h>")
-    tkevent.add("<<Modify>>",    "<Alt_L><m>")
+    tkevent.add("<<Down>>",        "<Alt_L><d>")
+    tkevent.add("<<Up>>",          "<Alt_L><u>")
     tkevent.add("<<PlanRCode>>",   "<Alt_L><p>")
-    tkevent.add("<<FindReportText>>",   "<Control_L><f>")
-    tkevent.add("<<GoToLine>>",   "<Control_L><g>")
-    tkevent.add("<<SaveReport>>",   "<Control_L><s>")
-    tkevent.add("<<ProcessReport>>",   "<Control_L><p>")
+    tkevent.add("<<EvalRCode>>",   "<Alt_L><e>")
+    tkevent.add("<<WarnEval>>",    "<Alt_L><w>")
+    tkevent.add("<<Insert>>",      "<Alt_L><i>")
+    tkevent.add("<<SavePlot>>",    "<Alt_L><s>")
     tkevent.add("<<RemoveOut>>",   "<Alt_L><r>")
-    tkevent.add("<<Insert>>",   "<Alt_L><i>")
-    tkevent.add("<<SavePlot>>","<Alt_L><s>")
-    tkevent.add("<<CopyToEnd>>",   "<Alt_L><c>")
-    tkevent.add("<<CopyOld>>",   "<Alt_L><x>")
-    tkevent.add("<<RunNo>>",     "<Alt_L><r>")
-    tkevent.add("<<SetNo>>",     "<Alt_L><s>")
-    tkevent.add("<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
-    tkevent.add("<<RKgeschw>>",  "<Alt_L><0>")
-    tkevent.add("<<LKgeschw>>",  "<Alt_L><7>")
-    tkevent.add("<<RKeckig>>",   "<Alt_L><9>")
-    tkevent.add("<<LKeckig>>",   "<Alt_L><8>")
-    tkevent.add("<<Tilde>>",     "<Alt_L><plus>")
-    tkevent.add("<<Klammera>>",  "<Alt_L><q>")
-    #tkevent.add("<<Backsl>>",    "<Alt_L><ssharp>")
-    tkevent.add("<<Pipe>>",      "<Alt_L><less>")
+    tkevent.add("<<TrashROutput>>","<Alt_L><t>")
+    tkevent.add("<<Help.R>>",      "<Alt_L><h>")
+    tkevent.add("<<FindText>>",    "<Alt_L><f>") ## <F3> without virtual event
+    tkevent.add("<<FindReportText>>",   "<Control_L><f>")
+    tkevent.add("<<GoToLine>>",         "<Control_L><g>")
+    tkevent.add("<<SaveReport>>",       "<Control_L><s>")
+    tkevent.add("<<ProcessReport>>",    "<Control_L><p>")
+    tkevent.add("<<Next>>",        "<Alt_L><n>")
+    tkevent.add("<<Back>>",        "<Alt_L><b>")
+    ## important for special characters
+    tkevent.add("<<RKgeschw>>",    "<Alt_L><0>")
+    tkevent.add("<<LKgeschw>>",    "<Alt_L><7>")
+    tkevent.add("<<RKeckig>>",     "<Alt_L><9>")
+    tkevent.add("<<LKeckig>>",     "<Alt_L><8>")
+    tkevent.add("<<Tilde>>",       "<Alt_L><plus>")
+    tkevent.add("<<Klammera>>",    "<Alt_L><q>")
+    tkevent.add("<<Pipe>>",        "<Alt_L><less>")
     tkevent.add("<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
     tkevent.add("<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
     tkevent.add("<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
@@ -8958,62 +9969,33 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     tkevent.add("<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
     tkevent.add("<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
     tkevent.add("<<szumlaut>>",      "<ssharp><KeyRelease>")
-    tkevent.add("<<Backsl>>",    "<Alt_L><ssharp>")
-  #  tkevent.add("<<Klammeraffe>>",  
-  #                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
-  } else {                                               #f <hpguilder>
-    tkevent.add("<<WarnEval>>",  "<ae>")
-    tkevent.add("<<AdvanceNo>>", "<aring>")
-    tkevent.add("<<TrashROutput>>","<hpmute_acute>") # vorher Drop:<eth>  #u <hpmute_diaeresis>
-    tkevent.add("<<InsertPlot>>","<hpmute_asciitilde>") #c <ccedilla>
-    tkevent.add("<<Next>>",      "<ordfeminine>")
-    tkevent.add("<<Help.R>>",   "<yen>")
-    tkevent.add("<<Modify>>",    "<mu>")
-    tkevent.add("<<PlanRCode>>",   "<thorn>")
-    tkevent.add("<<CopyOld>>",   "<ccedilla>")                #a aring
-    tkevent.add("<<RunNo>>",     "<hpmute_acute>")
-    tkevent.add("<<SetNo>>",     "<ssharp>")
-    tkevent.add("<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
-    tkevent.add("<<RKgeschw>>",  "<braceright>")
-    tkevent.add("<<LKgeschw>>",  "<braceleft>")
-    tkevent.add("<<RKeckig>>",   "<bracketright>")
-    tkevent.add("<<LKeckig>>",   "<bracketleft>")
-    tkevent.add("<<Tilde>>",     "<asciitilde>")
-    tkevent.add("<<Klammera>>",  "<at>")
-    tkevent.add("<<Backsl>>",    "<Alt_R><backslash>")
-    tkevent.add("<<Pipe>>",      "<Alt_R><bar>")
-  }
+    tkevent.add("<<Backsl>>",      "<Alt_L><ssharp>")
+    #tkevent.add("<<Klammeraffe>>", "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>") unused
+  } 
   if(substring(version$os,1,6)=="darwin" ){
-    tkevent.add("<<FindText>>",  "<Meta_L><f>")
-    tkevent.add("<<EvalRCode>>",  "<Meta_L><e>")
-    tkevent.add("<<WarnEval>>",  "<Meta_L><w>")
-    tkevent.add("<<Down>>",  "<Meta_L><d>")
-    tkevent.add("<<Up>>",  "<Meta_L><u>")
-    tkevent.add("<<AdvanceNo>>", "<Meta_L><a>")
-    tkevent.add("<<TrashROutput>>","<Meta_L><t>")
-    tkevent.add("<<Next>>",      "<Meta_L><n>")
-    tkevent.add("<<Help.R>>",   "<Meta_L><h>")
-    tkevent.add("<<Modify>>",    "<Meta_L><m>")
+    tkevent.add("<<Down>>",        "<Meta_L><d>") # don't work: deletes characters after Cursor 
+    tkevent.add("<<Up>>",          "<Meta_L><u>")
     tkevent.add("<<PlanRCode>>",   "<Meta_L><p>")
-    tkevent.add("<<FindReportText>>",   "<Control_L><f>")
-    tkevent.add("<<GoToLine>>",   "<Control_L><g>")
-    tkevent.add("<<SaveReport>>",   "<Control_L><s>")
-    tkevent.add("<<ProcessReport>>",   "<Control_L><p>")
+    tkevent.add("<<EvalRCode>>",   "<Meta_L><e>")
+    tkevent.add("<<Insert>>",      "<Meta_L><i>")
+    tkevent.add("<<SavePlot>>",    "<Meta_L><s>")
     tkevent.add("<<RemoveOut>>",   "<Meta_L><r>")
-    tkevent.add("<<Insert>>",   "<Meta_L><i>")
-    tkevent.add("<<SavePlot>>","<Meta_L><s>")
-    tkevent.add("<<CopyToEnd>>",   "<Alt_L><c>")
-    tkevent.add("<<CopyOld>>",   "<Alt_L><x>")
-    tkevent.add("<<RunNo>>",     "<Meta_L><r>")
-    tkevent.add("<<SetNo>>",     "<Meta_L><s>")
-    #tkevent.add("<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
+    tkevent.add("<<TrashROutput>>","<Meta_L><t>")
+    tkevent.add("<<Help.R>>",      "<Meta_L><h>") # don't work: hide relax window
+    tkevent.add("<<FindText>>",    "<Meta_L><f>")
+    tkevent.add("<<FindReportText>>",  "<Control_L><f>")
+    tkevent.add("<<GoToLine>>",        "<Control_L><g>")
+    tkevent.add("<<SaveReport>>",      "<Control_L><s>")
+    tkevent.add("<<ProcessReport>>",   "<Control_L><p>")
+    tkevent.add("<<Next>>",        "<Meta_L><n>") # Meta_L n opens new window
+    tkevent.add("<<Back>>",        "<Meta_L><b>") 
+    # tkevent.add("<<WarnEval>>",    "<Meta_L><w>") # willl destroy relax window
+    ## important for special characters, aeoe...will work 
     tkevent.add("<<RKgeschw>>",  "<Meta_L><0>")
     tkevent.add("<<LKgeschw>>",  "<Meta_L><7>")
     tkevent.add("<<RKeckig>>",   "<Meta_L><9>")
     tkevent.add("<<LKeckig>>",   "<Meta_L><8>")
-    #tkevent.add("<<Tilde>>",     "<Meta_L><plus>")
     tkevent.add("<<Klammera>>",  "<Meta_L><q>")
-    #tkevent.add("<<Backsl>>",    "<Meta_L><ssharp>")
     tkevent.add("<<Pipe>>",      "<Meta_L><less>")
     #tkevent.add("<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
     #tkevent.add("<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
@@ -9022,9 +10004,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     #tkevent.add("<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
     #tkevent.add("<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
     #tkevent.add("<<szumlaut>>",      "<ssharp><KeyRelease>")
-    #tkevent.add("<<Backsl>>",    "<Meta_L><ssharp>")
-  #  tkevent.add("<<Klammeraffe>>",  
-  #                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
+    #tkevent.add("<<Backsl>>",        "<Meta_L><ssharp>")
+    #tkevent.add("<<Tilde>>",    "<Meta_L><plus>")
+    #tkevent.add("<<Klammeraffe>>", "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>") unused
   } 
          ##definiere Testknopf-Ereignis>>
   implement.but<-
@@ -9048,7 +10030,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkwm.title(TopW,paste(
                if(but.Wizardry=="simple") "redit -- simple Report EDITor for statistical analysis:" else
                                           "relax -- Report Editor for Literate Analysis and lateX:",
-                        "relax 1.3.7 - 111111"))
+                        "relax 1.3.8 - 120127"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -9327,6 +10309,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         label="SetFontSize:   define font size")
   if(but.Wizardry!="simple") {
     tkadd(mbOptions.menu, "separator")
+    tkadd(mbOptions.menu,"command", command=SetRelaxWinSize,
+          label="SetRelaxWinSize:  redefine width x height of relax window")
+    tkadd(mbOptions.menu, "separator")
     tkadd(mbOptions.menu,"command", command=SetPlotHeight,
           label="SetPlotHeight:  define height of plot (-> latex)")
     tkadd(mbOptions.menu,"command", command=SetPSDesignWidth,
@@ -9448,6 +10433,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkadd(mbFile.menu,"command", command=ShowHistory,
         label="ShowHistory:   show history of evaluation in a separate window")
   if(but.Wizardry!="simple") {
+    tkadd(mbFile.menu,"command", command=StartCodeChunkPlayer,
+        label="StartCodeChunkPlayer:     call code chunk player (without saving report field)")
     tkadd(mbFile.menu,"command", command=ConstructDemoFunction,
         label="ConstructDemoFunction:   save, construct demo showing code chunks")
     tkadd(mbFile.menu, "separator")
@@ -9544,35 +10531,27 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkpack(tworkwin,fill="both",expand="yes")
   tkinsert(tworkwin,"0.0",paste("% New Report:",date(),"\n"))
   ### CLIPBOARD-Funktion PASTE a la windows / clipboard
-  if(substring(version$os,1,6)=="darwin"  ){
-    # mac-PASTE, ctrl-v
-    mac.paste<-function(...){
-       try({.Tcl("clipboard append hello")
-              .Tcl("clipboard clear")
-              news<-base::scan(file=pipe("pbpaste","r"),what="",
-                                           sep="\n",blank.lines.skip=FALSE)
-              tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
-       #      tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
-              tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706 
-    }
     ### tkevent.add("<<Paste>>", "<Control_L><v>")
+  if(substring(version$os,1,6)=="darwin"  ){
+    mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+       try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+            news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+            tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+            tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706 
+    }  #  for shifting view:  tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
     tkbind(tworkwin,"<Control_L><v>",mac.paste)
-    # mac-COPY
-    mac.copy<-function(...){  ## Ctrl-C
+    mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
        news<-""
        try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
        if(news=="empty") return()
        try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
-              base::cat(news,file=get("tmp.file.name",envir=revive.sys)
-)
-              system(paste("pbcopy < ",get("tmp.file.name",envir=revive.sys)
+            base::cat(news,file=get("tmp.file.name",envir=revive.sys)
+); system(paste("pbcopy < ",get("tmp.file.name",envir=revive.sys)
 ))
-              .Tcl("clipboard append hello")
-              .Tcl("clipboard clear")})
+            .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
     }
     tkbind(tworkwin,"<Control_L><c>",mac.copy)
-    # mac-extract
-    tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")
+    tkevent.add("<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
     tkbind(tworkwin,"<<extract>>",mac.copy)
   }else{
     tkevent.add("<<Paste>>",   "<Control_L><v>")
@@ -9837,11 +10816,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkbind(TopW, "<<ProcessReport>>", ProcessReport)
 
   # tkconfigure(Help.R,command=fHelp.R)
-  tkbind(TopW, "<<Help.R>>", fHelp.R)
+  if( ! substring(version$os,1,6)=="darwin"  ) tkbind(TopW, "<<Help.R>>", fHelp.R) #120111
   # tkconfigure(Up,command=fUp)
   tkbind(TopW, "<<Up>>", fUp)
   # tkconfigure(Down,command=fDown)
-  tkbind(TopW, "<<Down>>", fDown)
+  if( ! substring(version$os,1,6)=="darwin"  ) tkbind(TopW, "<<Down>>", fDown) #120111
 
   # tkconfigure(PlanRCode,command=fPlanRCode)
   tkbind(TopW, "<<PlanRCode>>", fPlanRCode)
@@ -10014,11 +10993,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         if(!exists("toutwin"))
           toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
         pos.to.insert<-"end"
-        news<-paste(gsub("\n+","\n",news),collapse="\n")
+        ## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+        news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
         try(tkinsert(toutwin,pos.to.insert,news))
         tksee(toutwin,"end - 0 lines")
         melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
       }
       try(tkinsert(tworkwin,line.orig,objtail));    return()
@@ -10397,7 +11376,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
   ReloadReportWidget() # to repair defect report widget
-  cat( "relax 1.3.7 - 111111" ,"\n")
+  cat( "relax 1.3.8 - 120127" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{

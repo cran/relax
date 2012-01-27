@@ -1,7 +1,5 @@
-% SavePlot:  Neuerstellung: show.single.plot,  Aktualisieren unter Edit eintragen, sonst  
-%                                              Aufrufparameter beachten
-% to do: Leerzeile als Trennzeichen nach CODE?
-% done: xtable bei output, sliderfns neu, log-Ausschnitt ins gelbe Fenster?, tcl(update)
+% RELAX: R Editor for Literate Analysis and lateX / Copyright (C) 2005 Hans Peter Wolf
+% --------------------------------------------------------------------------
 % steps to create a new relax-version: 
 % a) Datum/Version in RELAX-Chunk: "Version von [[relax]]" 
 % b) "Nr" UND "DATUM" in RELAX-Chunk: "define-DESCRIPTION", 
@@ -9,12 +7,51 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) [[ cp install.dir/relax_1.3.7.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.7.*
-% g) upload to cran
-%     ftp ftp://cran.R-project.org/incoming/
-%     ftp> put relax_1.3.7.tar.gz
-%     ftp> bye   % 
+% f) cp install.dir/relax_1.3.8.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.8.*
+% g) upload to cran:
+%    1. mailto:  cran@r-project.org
+%    2a. upload by konquerer!! 
+%          ftp://CRAN.R-project.org/incoming/ 
+%    2b. upload by ftp
+%          ftp ftp://cran.R-project.org/incoming/
+%          ftp> put relax_1.3.8.tar.gz
+%          ftp> bye   
+% ==========================================================
+% Paketverteilung fuer Rechner: 138/20/21/102: 
+%   cd /usr/lib/R/library/relax; 
+%   cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
+% ==========================================================
+% Pakettest:
+%   cd /home/wiwi/pwolf/work/relax
+%   echo "library(relax,,,'lib'); relax()" | R --vanilla
+%   library(relax,lib.loc="/home/wiwi/pwolf/R/work/relax/install.dir/lib");relax()
+% Paketerstellung:
+%   cd /home/wiwi/pwolf/work/relax
+%   notangle relax.rev > $HOME/work/relax/install.dir/relax/R/relax.R
+%   R CMD check relax;  R CMD build relax
+%   R CMD INSTALL --library=lib relax_0.991.tar.gz
+%   cd lib; zip -r relax.zip relax
+% Paketbeschaffung über Netz:
+%   download.file(
+%     "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.8.tar.gz",
+%     "relax_1.3.8.tar.gz")
+% Dokumentationserstellung:
+%   cd /home/wiwi/pwolf/work/relax
+%   noweave -delay -index relax.rev > relax.tex; latex relax
+%   save.window data; save.window wizardry; save.window options; save.window edit; save.window file
+%   convert file.jpg file.ps; convert edit.jpg edit.ps; convert options.jpg options.ps; convert data.jpg data.ps
+%   convert methods.jpg methods.ps; convert wizardry.jpg wizardry.ps
+% Vorarbeiten:
+%   notangle -RLaTeX-head relax.rev > $HOME/work/relax/install.dir/relax/inst/lib/LaTeX-head.tex
+% Kommentare zu Changes
+% SavePlot:  Neuerstellung: show.single.plot,  Aktualisieren unter Edit eintragen, sonst  
+%                                              Aufrufparameter beachten
+% to do: Leerzeile als Trennzeichen nach CODE?
+% done: xtable bei output, sliderfns neu, log-Ausschnitt ins gelbe Fenster?, tcl(update)
+% Mai 2006:  Umlaute und UTF-8 fuer relax ok, weaven: zu tun!
+% Jan 2006: 1. TcltoWin.write, 2. Sweave-Test-Knopf (Argumente noch fraglich)
+% fuer R-2.3.0: tkcmd() gegen tcl(...) getauscht
 % Problem: MAC: Zwischenspeicher nicht mit Tcl/Tk kompatibel?? ok
 % Problem: MAC: Klicks nicht immer erfolgreich, erst nach Bereichswechsel ok
 % Codeausblendmechanismus??
@@ -26,53 +63,6 @@
 % Klammernmatchanzeige 4.7.2006
 % Objektnamensexpansion 30.6.2006
 % Sweave mit LaTeX und ueberschreiben von filename.rnw
-% upload by konquerer!! 18.5.2006 10.00:
-%   ftp://CRAN.R-project.org/incoming/ 
-%   mailto:  cran@r-project.org
-% upload by konquerer!! 17.6.2005 19.00; 
-% Mai 2006:  Umlaute und UTF-8 fuer relax ok, weaven: zu tun!
-% Jan 2006: 1. TcltoWin.write, 2. Sweave-Test-Knopf (Argumente noch fraglich)
-% fuer R-2.3.0: tkcmd() gegen tcl(...) getauscht
-%
-% Copyright (C) 2005 Hans Peter Wolf
-% --------------------------------------------------------------------------
-% RELAX: R Editor for Literate Analysis and lateX
-% former name:
-% RWINED --- eine full screen Oberflaeche fuer R,  ab VERSION R-2.0.0
-% --------------------------------------------------------------------------
-%
-% Paketerstellung:
-% cd /home/wiwi/pwolf/work/relax
-% notangle relax.rev > $HOME/work/relax/install.dir/relax/R/relax.R
-% R CMD check relax;  R CMD build relax
-% R CMD INSTALL --library=lib relax_0.991.tar.gz
-% cd lib; zip -r relax.zip relax
-%
-% Pakettest:
-% cd /home/wiwi/pwolf/work/relax
-% echo "library(relax,,,'lib'); relax()" | R --vanilla
-% ==========================================================
-% Paketverteilung fuer Rechner: 138/20/21/102: 
-%  cd /usr/lib/R/library/relax; 
-%  cp -rp $HOME/R/work/relax/install.dir/lib/relax/* .
-%
-% library(relax,lib.loc="/home/wiwi/pwolf/R/work/relax/install.dir/lib");relax()
-%
-% Paketbeschaffung über Netz:
-% download.file(
-%  "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.7.tar.gz",
-%  "relax_1.3.7.tar.gz")
-%
-% Dokumentationserstellung:
-% cd /home/wiwi/pwolf/work/relax
-% noweave -delay -index relax.rev > relax.tex; latex relax
-% save.window data; save.window wizardry; save.window options; save.window edit; save.window file
-% convert file.jpg file.ps; convert edit.jpg edit.ps; convert options.jpg options.ps; convert data.jpg data.ps
-% convert methods.jpg methods.ps; convert wizardry.jpg wizardry.ps
-%
-% Vorarbeiten:
-% notangle -RLaTeX-head relax.rev > $HOME/work/relax/install.dir/relax/inst/lib/LaTeX-head.tex
-% --------------------------------------------------------------------------
 %
 % Changes:
 % 051219: selection in entry widget; webR: undefined chunks
@@ -105,11 +95,16 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.3.7 - 111111"
+"relax 1.3.8 - 120127"
 @
 <<relax>>=
 "relax"
 
+@
+<<testerei>>=
+R --vanilla
+library(relax,lib.loc="/home/wiwi/pwolf/R/work/relax/install.dir/lib")
+relax()
 @
 \tableofcontents
 %% library(relax,lib.loc="lib"); relax()
@@ -1292,6 +1287,9 @@ tkadd(mbOptions.menu,"command", command=SetFontSize,
       label="SetFontSize:   define font size")
 if(but.Wizardry!="simple") {
   tkadd(mbOptions.menu, "separator")
+  tkadd(mbOptions.menu,"command", command=SetRelaxWinSize,
+        label="SetRelaxWinSize:  redefine width x height of relax window")
+  tkadd(mbOptions.menu, "separator")
   tkadd(mbOptions.menu,"command", command=SetPlotHeight,
         label="SetPlotHeight:  define height of plot (-> latex)")
   tkadd(mbOptions.menu,"command", command=SetPSDesignWidth,
@@ -1632,33 +1630,25 @@ tkpack(workbar ,side="right",fill="y")
 tkpack(tworkwin,fill="both",expand="yes")
 tkinsert(tworkwin,"0.0",paste("% New Report:",date(),"\n"))
 ### CLIPBOARD-Funktion PASTE a la windows / clipboard
-if(<<OS ist Mac-Mini-Tiger>> ){
-  # mac-PASTE, ctrl-v
-  mac.paste<-function(...){
-     try({.Tcl("clipboard append hello")
-            .Tcl("clipboard clear")
-            news<-base::scan(file=pipe("pbpaste","r"),what="",
-                                         sep="\n",blank.lines.skip=FALSE)
-            tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
-     #      tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
-            tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706 
-  }
   ### tkevent.add("@<<Paste>>", "<Control_L><v>")
+if(<<OS ist Mac-Mini-Tiger>> ){
+  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+          tkinsert(tworkwin,"insert",paste(news,collapse="\n"))})
+          tksee(tworkwin,"insert - 7 lines");  tksee(tworkwin,"insert + 7 lines") #090706 
+  }  #  for shifting view:  tclvalue(tkyview(tworkwin,"scroll","-1","pages"))
   tkbind(tworkwin,"<Control_L><v>",mac.paste)
-  # mac-COPY
-  mac.copy<-function(...){  ## Ctrl-C
+  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
      news<-""
      try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
      if(news=="empty") return()
      try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
-            base::cat(news,file=<<tmp>>)
-            system(paste("pbcopy < ",<<tmp>>))
-            .Tcl("clipboard append hello")
-            .Tcl("clipboard clear")})
+          base::cat(news,file=<<tmp>>); system(paste("pbcopy < ",<<tmp>>))
+          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
   }
   tkbind(tworkwin,"<Control_L><c>",mac.copy)
-  # mac-extract
-  tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")
+  tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
   tkbind(tworkwin,"@<<extract>>",mac.copy)
 }else{
   tkevent.add("@<<Paste>>",   "<Control_L><v>")
@@ -2285,6 +2275,31 @@ SetFontSize<-function(){
     melde(paste("> font size changed"))
   }
   melde("SetFontSize",2)
+}
+
+@
+\subsubsection{Kopfzeile: [[Optionen]] --- [[SetRelaxWinSize]]}
+\paragraph{[[SetRelaxWinSize]] nicht interaktive Fenstergrößenveränderung.}
+Unter Windows sträubt sich manchmal die Fensterverwaltung dagegen, dass man per Maus
+die Größe des Relax-Fensters verändern kann. Deshalb wird alternativ eine
+Menüoption angeboten.
+<<definiere Kopf-Zeilen-Funktionen>>=
+SetRelaxWinSize<-function(){
+  melde("SetRelaxWinSize",1)
+  frage<-"Size of relax window (width x height)?"
+  set.tclvalue("tvinfo",paste(tclvalue(tkwinfo("width",TopW)),tclvalue(tkwinfo("height",TopW)),sep="x"))
+  <<frage [[frage]], biete [[tvinfo]] als Antwort an>>
+  tkbind(TopW,"<Return>",
+    function(){
+      <<setze Manager nach {\sc Return} in Normalzustand>>
+      h<-tclvalue("tvinfo"); h <- gsub("[^0-9x]*","",h); h <- unlist(strsplit(h,"x"))
+      if(2!=length(h) || any(0==nchar(h)) ) return()
+      h <- try(as.numeric(h)); if(class(h)=="try-error") return(); h <- paste(pmax(h,250),collapse="x")
+      tkwm.geometry(TopW,h); cat("relax window set to size",h)
+      melde(paste("> maxol.sys <-",maxol.sys),"cmd.msg")
+    }
+  )
+  melde("SetRelaxWinSize",2)
 }
 
 @
@@ -2986,16 +3001,21 @@ ProcessBeginEndEnv<-function(){
 
 @
 Für das relax-eigene Sweave von Dokumentteilen wird die Extraktion der Umgebung, in der 
-sich der Cursor aufhält als eigener Chunk formuliert.
+sich der Cursor aufhält als eigener Chunk formuliert.  
 <<extrahiere Begin-End-Umgebung in [[worktext]] mittels Cursor-Zeile [[line]]>>=
+  worktext <- sub("%.*$","",worktext)
   doc.start   <- grep("^.begin.document.",worktext)
-  if(0 == doc.start) { cat("relax warning: no begin document found"); return()}
-  env.start <- grep("^\\\\begin",worktext) ; env.start <- env.start[env.start != doc.start]
-  env.end   <- grep("^\\\\end",worktext)
+  if(0 == length(doc.start)) { cat("relax warning: no begin document found"); return()}
+  env.start <- grep("\\\\begin\\{",worktext) ; env.start <- env.start[env.start != doc.start] # } for symmetry
+  env.end   <- grep("\\\\end\\{",worktext)  # } for symmetry
   idx.start <- idx.end <- rep(0,length(worktext))
   idx.start[env.start] <- 1; idx.end  [env.end  ] <- 1
-  counter <- cumsum(idx.start) - cumsum(idx.end)
-  extract.start <- which(counter == 0 & seq(along=counter) <= line)
+  counter <- 0*idx.start; depth <- 0
+  for( i in 1:length(counter)){
+    counter[i] <- depth <- max(0, depth - idx.end[i] + idx.start[i])
+  }
+  #  counter <- cumsum(idx.start) - cumsum(idx.end) # fail if there are too much ends
+  extract.start <- which(counter == 0 & seq(along=counter) < line)
   extract.start <- if(0 < length(extract.start)) max(extract.start) + 1 else doc.start + 1
   extract.end   <- which(counter == 0 & seq(along=counter) >= line)
   extract.end   <- if(0 < length(extract.start)) min(extract.end)       else length(worktext)  
@@ -3052,6 +3072,159 @@ ConstructDemoFunction<-function(){
 }
 
 @
+Natürlich könnte es auch hilfreich sein, unabhängig von [[relax()]] eine
+Demo-Funktion auf Basis eines [[rev]] oder [[snw]]-Files zu erstellen.
+Durch Ersetzung des Anfangs von [[ConstructDemoFunction]] ist diese kein
+Problem.
+<<*>>=
+ConstructDemo <- function(file=""){
+  require(tcltk)
+  if(file==""){ cat("sorry, please call ConstructDemo with name of R-, rev- or a Snw-file\n");            
+                return() } 
+  <<checke, ob .R-file existent oder probiere .R-file zu generieren>>
+
+  workname <- file; chunks <- where <- ""
+  txt <- scan(workname,"",sep="\n")
+  <<DemoFunctionHead>>; fh <- deparse(fh); fh<-fh[-length(fh)]; <<DemoFunctionTail>>
+  ft <- deparse(ft)[-(1:2)]; ft <- sub("WoRkNaMe",workname,ft)
+  fns.name <- gsub("[^A-Za-z]","",sub(".R$",".demo",workname))
+  txt <- gsub("\\\\","\\\\\\\\",txt); txt <- gsub("\"","\\\\\"",txt)
+  txt <- paste(',"',txt,'"',sep=""); txt[1]<-substring(txt[1],2)
+  txt <- c(paste(fns.name,"<-"),fh,"chunks<-c(",txt,")",ft
+           ,paste("cat(\"Demo will be started by > ",fns.name,"()\\n\")",sep="")
+           ,paste(fns.name,"()\n",sep="")
+      ) 
+  workname<-sub(".R$",".demo.R",workname)
+  cat(txt,file=workname,sep="\n")
+  cat("Demo saved in file ",workname,", load demo by source(\"",workname,"\") \n",sep="")
+}
+
+@
+Der Mechanismus wiederholt sich, jedoch gibt es verschiedene Aufrufsituationen. Deshalb werden
+hier ein paar Aufrufe zum Testen aufgelistet.
+<<teste ConstructDemo und CodeChunkPlayer>>=
+#  R --vanilla
+library(relax,lib.loc="/home/wiwi/pwolf/R/work/relax/install.dir/lib")
+CodeChunkPlayer()
+file.remove("out.R"); CodeChunkPlayer("out.R")
+file.remove("out.R"); CodeChunkPlayer("out.rev")
+file.remove("out.R"); CodeChunkPlayer("out")
+file.remove("out.R"); file.copy("out.rev","out.SNW"); CodeChunkPlayer("out.SNW")
+file.remove("out.R"); file.copy("out.rev","out.xxxxx.hallo"); CodeChunkPlayer("out.xxxxx.hallo")
+file.remove("out.demo2.R"); file.copy("out.rev","out2.nw"); CodeChunkPlayer("out2.nw")
+ConstructDemo()
+file.remove("out.demo.R"); ConstructDemo("out.R"); source("out.demo.R")
+file.remove("out.demo.R"); ConstructDemo("out.rev"); source("out.demo.R")
+file.remove("out.demo.R"); ConstructDemo("out"); source("out.demo.R")
+file.remove("out.demo.R"); file.copy("out.rev","out.SNW"); ConstructDemo("out.SNW"); source("out.demo.R")
+file.remove("out.xxxxx.demo.R"); 
+file.copy("out.rev","out.xxxxx.hallo"); ConstructDemo("out.xxxxx.hallo"); source("out.xxxxx.demo.R")
+file.remove("out.demo2.R"); 
+file.copy("out.rev","out2.nw"); ConstructDemo("out2.nw"); source("out2.demo.R")
+
+@
+\paragraph{StartCodeChunkPlayer.}
+[[ConstructDemoFunktion()]] konstruiert eine neue Demo-Funktion, 
+mit der dann unabhängig von relax die einzelnen Chunks aktiviert werden können. 
+Innerhalb von relax kann eine solche Funktion ebenfalls hilfreich sein, 
+um in einen anderen Arbeitsmodus zu gelangen.
+Beispielsweise kann ausgehend von dem Papier aus relax heraus, die Konzentration rein auf die Code-Chunks, 
+deren Aktivierung sowie die Auswertung der Ergebnisse gelenkt werden: 
+Present And Start Code And Look: PASCAL!
+Diese Möglichkeit wird von [[StartCodeChunkPlayer()]] umgesetzt.
+<<definiere Kopf-Zeilen-Funktionen>>=
+StartCodeChunkPlayer<-function(){
+  melde("StartCodeChunkPlayer",1)
+  cat("Code-Chunk-Player saves actual version of",workname.sys,"\n") 
+  <<speichere Report als rev-Datei>>
+  try(tangleR(workname.sys)); workname<-sub(".rev$",".R",workname.sys); cat(workname,"generated\n")
+  chunks<-where<-""; txt<-scan(workname,"",sep="\n")
+  # construct structure of function
+  <<DemoFunctionHead>>; fh<-deparse(fh); fh<-fh[-length(fh)]; <<DemoFunctionTail>>
+  ft<-deparse(ft)[-(1:2)]; ft<-sub("WoRkNaMe",workname,ft)
+  # modify function for StartCodeChunkPlayer
+  txt<-c("CCPlayer<-",fh,"    chunks<-readLines(file)",ft,"CCPlayer()")
+  # set file argument
+  txt[2] <- sub("file",paste("file = '",workname,"'",sep=""),txt[2]) 
+  # use argument no as start chunk number
+  idx <- grep("^    no .. 0",txt); txt[idx] <- sub("0","no #set start chunk",txt[idx])
+  # modify title
+  idx <- grep("tkwm.title",txt); txt[idx] <- sub("Peter Wolf.","",txt[idx])
+  txt[idx] <- sub("demo of file","Code-Chunk-Player, file:",txt[idx])
+  # modify exit message
+  idx <- grep("Demo function stopped",txt); 
+  txt[idx] <- sub("Demo function stopped without","Code-Chunk-Player stopped without",txt[idx])
+  # set evaluation should take place in revive.env
+  idx <- grep("environment",txt); txt[idx] <- sub("environment..","revive.env",txt[idx])
+  # print viewer function for debugging
+  melde(paste(txt,collapse="\n"),2)
+  # start of history viewer
+  try(eval(parse(text=txt),envir=revive.env))
+  melde("StartCodeChunkPlayer",2)
+}
+
+@
+Ein Code-Chunk-Player soll auch als eigenständige Funktion zur Verfügung stehen. 
+Für diesen Fall wird eine leicht modifizierte Version gegenüber der Menüfunktion Code-Chunk-Player geschaffen. Für den Fall, dass ein .R-file übergeben wird, wird dieser verwendet.
+Zum Testen con CodeChunkPlayer siehe: [[<teste ConstructDemo und CodeChunkPlayer>]].
+<<*>>=
+CodeChunkPlayer<-function(file=""){
+  require(tcltk)
+  if(file==""){ cat("sorry, please call player with name of R-, rev- or a Snw-file\n");            
+                return() } 
+  <<checke, ob .R-file existent oder probiere .R-file zu generieren>>
+  if( !file.exists(file) ){
+    cat("sorry, .R-file not found or unable to construct .R-file\n");return() 
+  } 
+  workname <- file; chunks<-""; where<-""
+  txt<-scan(workname,"",sep="\n")
+  # construct structure of function
+  <<DemoFunctionHead>>; fh<-deparse(fh); fh<-fh[-length(fh)]; <<DemoFunctionTail>>
+  ft<-deparse(ft)[-(1:2)]; ft<-sub("WoRkNaMe",workname,ft)
+  # modify function
+  txt<-c("CCPlayer<-",fh,"    chunks<-readLines(file)",ft,"CCPlayer()")
+  # set file argument
+  txt[2] <- sub("file",paste("file = '",workname,"'",sep=""),txt[2]) 
+  # set no argument as start chunk number
+  idx <- grep("^    no .. 0",txt); txt[idx] <- sub("0","no #set start chunk",txt[idx])
+  # modify title
+  idx <- grep("tkwm.title",txt); txt[idx] <- sub("Peter Wolf.","",txt[idx])
+  txt[idx] <- sub("demo of file","Code-Chunk-Player, file:",txt[idx])
+  # modify exit message
+  idx <- grep("Demo function stopped",txt); 
+  txt[idx] <- sub("Demo function stopped without","Code-Chunk-Player stopped without",txt[idx])
+  # print viewer function for debugging:    print(txt)
+  # start of Code-Chunk-Player
+  try(eval(parse(text=txt)))
+  invisible(NULL)
+}
+
+@
+<<checke, ob .R-file existent oder probiere .R-file zu generieren>>=
+if(  ( 0 == length(grep(".R$",file))) || !file.exists(file) ){ 
+    # .R must be generated&   
+    file <- sub("\\.R$",".rev",file)  # rev name of not existing file if .R file
+    if(!file.exists(file)){
+      file <- sub("\\.rev$","",file)  # base name of file if .rev file
+      if(!file.exists(file)) file <- paste(file,".rev",sep="")  
+      if(!file.exists(file)) file <- sub("\\.rev$",".Snw",file)  
+      if(!file.exists(file)) file <- sub("\\.Snw$",".snw",file) 
+      if(!file.exists(file)) file <- sub("\\.snw$",".nw",file)   
+      if(!file.exists(file)) file <- sub("\\.nw$",".SNW",file)  
+      if(!file.exists(file)) file <- sub("\\.SNW$","",file)   
+      if(!file.exists(file)){
+        cat(paste("sorry, error: File",file,"not found!!!"));return()
+      }
+    } 
+    cat("function will work on file",file,"\n") 
+    # construct a .R file
+    try(tangleR(file))
+    # file <- sub(".rev$","",file); file <- sub(".[sS]{0,1}[nN][wW]$","",file)
+    file <- sub("\\.[a-zA-Z]+$","",file)
+    file <- paste(file,".R",sep=""); cat(file,"generated\n")
+}
+
+@
 \paragraph{Historie-Funktion.}
 Manchmal hat man diverse Chunks aktiviert, hat jedoch die Übersicht verloren, was so alles
 passiert ist. Deshalb ist es hilfreich, wenn man sich durch die vergangenen Evaluierungen
@@ -3061,6 +3234,8 @@ Weiter wird eine Funktion konstruiert, die das getanglte Ergebnis einliest und w
 Demofunktion eine kleine Oberfläche zum Durchklicken bereitstellt, und startet sie zum Abschluss.
 Das kleine neue Fenster besitzt auch einen Aktivierungsknopf, der zu einer Aktivierung 
 in der Umgebung [[revive.env]] führt.
+
+Hinweis: Beim Evaluieren werden Ausdrücke, die zu Warnungen führen, ohne den Hinweis auf diese Warnungen evaluiert!
 <<definiere Kopf-Zeilen-Funktionen>>=
 assign("relax.history",
        c(if(0<length(ls(pattern="relax.history",envir=revive.sys))) # to extend existing history
@@ -3157,6 +3332,7 @@ fh<-function(file,no=1,start=TRUE){
 }
 
 @
+Die Logik für das CLIPBOARD ist angepasst entnommen von: [[<definiere Report-Text-Frame>]].
 <<DemoFunctionTail>>=
 ft<-function(){
   # end of code of demo function
@@ -3267,12 +3443,42 @@ ft<-function(){
   tkwm.title(top, "demo of file WoRkNaMe, constructed by relax (c) Peter Wolf 2011")
   tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
   tkevent.add("@<<Paste>>",   "<Control_L><v>")
+## ok:  tkbind(ttext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+if(<<OS ist Mac-Mini-Tiger>> ){
+  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+          tkinsert(ttext,"insert",paste(news,collapse="\n"))})
+          tksee(ttext,"insert - 7 lines");  tksee(ttext,"insert + 7 lines") #090706 
+  } 
+  tkbind(ttext,"<Control_L><v>",mac.paste)
+  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+     news<-""
+     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+     if(news=="empty") return()
+     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+          tmp.file.name <- tempfile("rt-tmp")
+          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+  }
+  tkbind(ttext,"<Control_L><c>",mac.copy)
+  tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+  tkbind(ttext,"@<<extract>>",mac.copy)
+}else{
+  tkevent.add("@<<Paste>>",   "<Control_L><v>")
   tkbind(ttext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+}
 
-  bexit<-tkbutton(tf,text="EXIT",width=9)
-  beval<-tkbutton(tf,text="ACTIVATE",width=9)
+
+  bexit<-tkbutton(tf,text="QUIT",width=9)
+  beval<-tkbutton(tf,text="EVALUATE",width=9)
   bnext<-tkbutton(tf,text="NEXT",width=9)
   bback<-tkbutton(tf,text="BACK",width=9)
+  tkbind(top, "@<<EvalRCode>>", eval.code)
+  if( ! <<OS ist Mac-Mini-Tiger>> ) {
+    tkbind(top, "@<<Next>>", show.next.number)
+    tkbind(top, "@<<Back>>", show.back.number)
+  }
   lno  <-tkentry(tf,textvariable=secno,width=9)
   linfo<-tklabel(tf,text="chunk number:")
   tkpack(linfo,lno,beval,bnext,bback,bexit,side="left")
@@ -3487,8 +3693,8 @@ InsertLaTeXEnv<-function(){
      if(!is.na(choice) && any(choice==1:6)){
        news<-c("\\begin{center}\n\n\\end{center}\n",
                       "\\begin{quote}\n\n\\end{quote}\n",
-		      "\\begin{itemize}\n\\item\n\\item\n\n\\end{itemize}\n",
-		      "\\begin{enumerate}\n\\item\n\\item\n\n\\end{enumerate}\n",
+		      "\\begin{itemize}\n\\item \n\\item \n\n\\end{itemize}\n",
+		      "\\begin{enumerate}\n\\item \n\\item \n\n\\end{enumerate}\n",
 		      "\\begin{eqnarray*}\n\n\\end{eqnarray*}\n",
 		      "\\begin{verbatim}\n\n\\end{verbatim}\n")[choice]
        <<bestimme Cursorzeile [[line]] von [[tworkwin]]>>
@@ -3636,20 +3842,38 @@ ShowAboutRelax<-function(){
 ShowShortCuts<-function(){
   melde("ShowShortCuts",1)
   keys<-c("Shortcuts of relax:","",
-                "Alt-D:  move cursor one code chunk DOWN",
+          if(<<das OS ist Windows>> | <<das OS ist Linux>>)
+              c("Alt-D:  move cursor one code chunk DOWN",
                 "Alt-U:  move cursor one code chunk UP",
                 "Alt-P:  plan new code chunk",
                 "Alt-E:  eval code chunk",
-                "Alt-T:  delete output of text field",
+                "Alt-W:  eval code chunk / ignore warnings",
+                "Alt-I:  insert output into report",
                 "Alt-S:  copy plot and generate postscript / JPEG file",
                 "Alt-R:  clear output field",
+                "Alt-T:  delete inserted output from report",
                 "Alt-H:  R help",
-		"Crtl-F:  Find text in report field",
-		"<F3>:  Find text in report field again",
-		"Crtl-S:  Save Report",
-		"Crtl-P:  Process Report: save, weave, and latex Report",
-	#	"Crtl-Page-down:  copy code chunk to end", -- abgeschaltet
-		"","Shortcuts of tcltk, may depend on tcl/tk version:","",
+                "Alt-F, Crtl-F:  Find text in report field"),
+          if(<<OS ist Mac-Mini-Tiger>>)
+              c(#"Alt-D:  move cursor one code chunk DOWN",
+                #"Alt-U:  move cursor one code chunk UP",
+                "Apple-P:  plan new code chunk",
+                "Apple-E:  eval code chunk",
+                # "Apple-W:  eval code chunk / ignore warnings", # will destroy relax window
+                "Apple-I:  insert output into report",
+                "Apple-S:  copy plot and generate postscript / JPEG file",
+                "Apple-R:  clear output field",
+                "Apple-T:  delete output of text field",
+                # "Alt-H:  R help",
+                "Crtl-G:  Goto line number",
+                "<Fn><F3>:  Find text in report field again",
+                "Alt-F, Crtl-F:  Find text in report field") 
+           else
+              c("Crtl-G:  Goto line number",
+                "<F3>:  Find text in report field again"),  ## end of if
+          "Crtl-S:  Save Report",
+          "Crtl-P:  Process Report: save, weave, and latex Report",
+		"","Shortcuts of tcltk, may depend on OS / tcl/tk version:","",
                 "Crtl-Z:  UNDO",
                 "Crtl-C:  copy marked text",
                 "Crtl-V:  paste marked text",
@@ -4715,7 +4939,11 @@ fExamples<-function(){
         } else args <- NULL
         path <- .path.package(package)
         alias <- file.path(path,"help","aliases.rds")
-        rds <- base::.readRDS(file.path(path,"help","aliases.rds"))
+        ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
+        ## 120110 function reconstructed because of change of name 
+        readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
+                                    .Internal(unserializeFromConn(con, NULL)) }
+        rds <- readRDS(file.path(path,"help","aliases.rds"))
         help.name <- rds[which(names(rds)==topic)]
         help.text <- utils:::.getHelpFile(
           file.path(.path.package(package),"help",help.name)
@@ -4894,11 +5122,11 @@ Einfache Anfügung an das Outputfeld:
 if(!exists("toutwin"))
   toutwin<-get("toutwin",envir=get("revive.sys",envir=revive.env))
 pos.to.insert<-"end"
-news<-paste(gsub("\n+","\n",news),collapse="\n")
+## news<-paste(gsub("\n+","\n",news),collapse="\n") # 111121
+news<-paste(gsub("\n[ \n\t]*\n","\n",news),collapse="\n")
 try(tkinsert(toutwin,pos.to.insert,news))
 tksee(toutwin,"end - 0 lines")
 melde("appended characters: \n",3,substring(news[1:min(7,length(news))],1,80))
-
 
 @
 Einfügung von [[news]] hinter den aktuellen Code-Chunk:
@@ -5561,11 +5789,11 @@ CopyToEnd<-function(){
 @
 <<implementiere Eigenschaften der allgemeinen Knöpfe>>=
 # tkconfigure(Help.R,command=fHelp.R)
-tkbind(TopW, "@<<Help.R>>", fHelp.R)
+if( ! <<OS ist Mac-Mini-Tiger>> ) tkbind(TopW, "@<<Help.R>>", fHelp.R) #120111
 # tkconfigure(Up,command=fUp)
 tkbind(TopW, "@<<Up>>", fUp)
 # tkconfigure(Down,command=fDown)
-tkbind(TopW, "@<<Down>>", fDown)
+if( ! <<OS ist Mac-Mini-Tiger>> ) tkbind(TopW, "@<<Down>>", fDown) #120111
 
 # tkconfigure(PlanRCode,command=fPlanRCode)
 tkbind(TopW, "@<<PlanRCode>>", fPlanRCode)
@@ -5849,6 +6077,8 @@ tkadd(mbFile.menu, "command", command=PLAYGROUND,
 tkadd(mbFile.menu,"command", command=ShowHistory,
       label="ShowHistory:   show history of evaluation in a separate window")
 if(but.Wizardry!="simple") {
+  tkadd(mbFile.menu,"command", command=StartCodeChunkPlayer,
+      label="StartCodeChunkPlayer:     call code chunk player (without saving report field)")
   tkadd(mbFile.menu,"command", command=ConstructDemoFunction,
       label="ConstructDemoFunction:   save, construct demo showing code chunks")
   tkadd(mbFile.menu, "separator")
@@ -7379,6 +7609,9 @@ Sie ruft nur die Funktion [[playground]] des Paketes mit der Umgebung
 PLAYGROUND<-function() playground(revive.env)
 
 @
+Jan 2012: ALT-E für evaluiere R-Code sollte für Freunde der Tastatur gehen. Aus Parallelität wurde "ACTIVIERE" in 
+"EVALUATE" umbenannt. ALT-Q für Quit ist jedoch ungeeignet, da damit der Klammeraffe erzeugt wird.
+Die Logik für das CLIPBOARD ist angepasst entnommen von: [[<definiere Report-Text-Frame>]].
 <<*>>=
 playground<-function(playground.envir=NULL,code=NULL){
   require(tcltk)
@@ -7386,13 +7619,38 @@ playground<-function(playground.envir=NULL,code=NULL){
   tkwm.title(pg, "playground for testing R code (error messages appear in the R Console)")
   pgtext<-tktext(pg,height=19,background="#f7fffF",
                  font="-Adobe-courier-Medium-R-Normal--18-180-*")
+  ## ok: tkbind(pgtext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+if(<<OS ist Mac-Mini-Tiger>> ){
+  mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
+     try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
+          news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
+          tkinsert(pgtext,"insert",paste(news,collapse="\n"))})
+          tksee(pgtext,"insert - 7 lines");  tksee(pgtext,"insert + 7 lines") #090706 
+  } 
+  tkbind(pgtext,"<Control_L><v>",mac.paste)
+  mac.copy<-function(...){  ## Ctrl-C  # mac-COPY
+     news<-""
+     try(news<-tclvalue(.Tcl("if {[catch {clipboard get}]} {set aa empty} {set aa full}")))
+     if(news=="empty") return()
+     try({news<-tclvalue(.Tcl("set aaa [selection get -selection CLIPBOARD]"))
+          tmp.file.name <- tempfile("rt-tmp")
+          base::cat(news,file=tmp.file.name); system(paste("pbcopy < ",tmp.file.name))
+          .Tcl("clipboard append hello"); .Tcl("clipboard clear")})
+  }
+  tkbind(pgtext,"<Control_L><c>",mac.copy)
+  tkevent.add("@<<extract>>",  "<Control_L><c><KeyRelease>")   # mac-extract
+  tkbind(pgtext,"@<<extract>>",mac.copy)
+}else{
+  tkevent.add("@<<Paste>>",   "<Control_L><v>")
   tkbind(pgtext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
+}
+
   pgbutfr<-tkframe(pg)
   tkpack(pgtext, side="top",fill="both",expand="y")
   tkpack(pgbutfr,side="top",fill="both")
   
-  bexit<-tkbutton(pgbutfr,text="EXIT",width=9)
-  beval<-tkbutton(pgbutfr,text="ACTIVATE",width=9)
+  bexit<-tkbutton(pgbutfr,text="QUIT",width=9)
+  beval<-tkbutton(pgbutfr,text="EVALUATE",width=9)
   tkpack(beval,side="left")
   tkpack(bexit,side="right")
 
@@ -7420,6 +7678,7 @@ playground<-function(playground.envir=NULL,code=NULL){
     }  
     NULL
   }
+  tkbind(pg, "@<<EvalRCode>>", eval.code)
   exit.function<-function(){
      tkdestroy(pg)
      return()
@@ -8335,18 +8594,20 @@ Parametern zur Anwendung, so daß im R-Fenster die normale Ausgabe erscheint.
 Zusätzlich wird sie aufgerufen, um das Ausgegebene auch in der Datei
 [[<<tmp>>]]q
 abzulegen. Der Inhalt von [[<<tmp>>]] wird dann ins Arbeitsfenster übertragen.
-Frage: print gibt etwas invisible aus. 
-Zur Zeit wird das nicht mit dem relax-print abgebildet. OK?
+Frage: base::print gibt x invisible aus, relax-print gibt invisible(NULL) aus. Ist das OK?
+Problem: help(mean) erzeugt eine Ausgabe, die mit "print" umgesetzt wird. Wenn wir eine doppelte
+Ausgabe machen, wir quasi auch die Hilfe doppelt aktiviert.
 <<definiere Input/Output-Funktionen neu>>=
 print<-function(x, ...){ # 050614
-  if( <<teste, ob [[relax]] aktiv ist>> ){
+  if( <<teste, ob [[relax]] aktiv ist>> && !is.null(x) ){
     sink(<<tmp.sink>>); base::print(x, ...); sink()
-    news<-paste("", paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
+    news<-paste(# "", # 111123
+                paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
                 "",sep="\n" )
     <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
-  } # else
-  base::print(x, ...)
-  NULL
+    if(class(x) != "help_files_with_topic") base::print(x, ...)
+  }  else base::print(x, ...)
+  invisible(NULL)
 }
 ## assign("print",print,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
 assign("print",print, pos=pos.of.relax.fns)
@@ -8362,6 +8623,11 @@ print(list(1,1:2,"asdf"))
 print(print)
 print(NA)
 print(summary(co2))
+print(str(1:10))
+print(str(co2))
+print(str(mean))
+print(str(as.data.frame(cbind(1:10,letters[1:10]))))
+print(str(list(1:3,letters,list(1,2,3))))
 
 @
 \subsubsection{Die Überlagerung von [[cat]]}
@@ -8373,8 +8639,9 @@ cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
   ## if(exists("eval.something.for.check")) eval(parse(text=eval.something.for.check)) ###
   if(file==""&& <<teste, ob [[relax]] aktiv ist>> ){
      base::cat(...,file=<<tmp>>,sep=sep,fill=fill,labels=labels,append=append)
-     news<-paste("\n", paste(scan(file=<<tmp>>,what="",sep="\n"),collapse="\n"),
-                 "",sep="\n")
+     news<-paste( # "\n", # 111123
+                 paste(scan(file=<<tmp>>,what="",sep="\n"),collapse="\n"), "", # 111123
+                 sep="\n")
      <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
   }
   base::cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
@@ -8386,6 +8653,8 @@ melde("cat saved",3)
 
 @
 Auch [[str]] schreibt direkt auf das Konsolenfenster und muss eingerahmt werden.
+Als Alternative könnte für das relax-str eine eigene print-Methode entworfen werden,
+so dass die Ausgabe auf diese Print-Methode verlagert wird.
 <<definiere Input/Output-Funktionen neu>>=
 str<-function(object,...){
   if(<<teste, ob [[relax]] aktiv ist>> ){ 
@@ -8393,19 +8662,21 @@ str<-function(object,...){
      base::cat(file=fname,"")
      if(is.data.frame(object)) 
         base::cat(file=fname,
-           paste("'data.frame':  ", 
-           paste(dim(object)[1],"obs. of",dim(object)[2],"variables:\n")))
+                  paste("'data.frame':  ", 
+                        paste(dim(object)[1],"obs. of",
+                              dim(object)[2],"variables:\n")))
      a <- deparse(getS3method("str", "default"))
      a <- gsub("cat[(]", paste("base::cat(file=\"", fname, 
                "\",append=TRUE,", sep = ""), a) # ))
      a <- sub(" str[(]", " mystr(", a) # ))
      mystr <- eval(parse(text = a))
-     mystr(object)
+     mystr(object,...)  # 111123
      news <- scan(file = fname,
                   what = "", sep = "\n")
      news <- sub("chr .data.frame.", "", news)
      if(0<length(ind<-grep("^ -",news))) news<-news[-ind]
-     if(0<length(ind<-grep("^List of",news))) news<-news[-ind]
+     ## in data frames additional "List of ?" appear and should be removed
+     if(is.data.frame(object) && 0<length(ind<-grep("^List of",news))) news<-news[-ind]
      news<-paste("\n", # date(),
                  paste(news,collapse="\n"),"",sep="\n")
      <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
@@ -9981,40 +10252,33 @@ tkbind(TopW,"@<<SetNo>>", fSetNo)
 \end{verbatim}
 \end{quote}
 @ 
-Für HPUX gelten die Setzungen des else-Teiles.
 <<definiere plattformspezifische Ereignisse>>=
 if(<<das OS ist Windows>> | <<das OS ist Linux>>){
-  tkevent.add("@<<FindText>>",  "<Alt_L><f>")
-  tkevent.add("@<<EvalRCode>>",  "<Alt_L><e>")
-  tkevent.add("@<<WarnEval>>",  "<Alt_L><w>")
-  tkevent.add("@<<Down>>",  "<Alt_L><d>")
-  tkevent.add("@<<Up>>",  "<Alt_L><u>")
-  tkevent.add("@<<AdvanceNo>>", "<Alt_L><a>")
-  tkevent.add("@<<TrashROutput>>","<Alt_L><t>")
-  tkevent.add("@<<Next>>",      "<Alt_L><n>")
-  tkevent.add("@<<Help.R>>",   "<Alt_L><h>")
-  tkevent.add("@<<Modify>>",    "<Alt_L><m>")
+  tkevent.add("@<<Down>>",        "<Alt_L><d>")
+  tkevent.add("@<<Up>>",          "<Alt_L><u>")
   tkevent.add("@<<PlanRCode>>",   "<Alt_L><p>")
-  tkevent.add("@<<FindReportText>>",   "<Control_L><f>")
-  tkevent.add("@<<GoToLine>>",   "<Control_L><g>")
-  tkevent.add("@<<SaveReport>>",   "<Control_L><s>")
-  tkevent.add("@<<ProcessReport>>",   "<Control_L><p>")
+  tkevent.add("@<<EvalRCode>>",   "<Alt_L><e>")
+  tkevent.add("@<<WarnEval>>",    "<Alt_L><w>")
+  tkevent.add("@<<Insert>>",      "<Alt_L><i>")
+  tkevent.add("@<<SavePlot>>",    "<Alt_L><s>")
   tkevent.add("@<<RemoveOut>>",   "<Alt_L><r>")
-  tkevent.add("@<<Insert>>",   "<Alt_L><i>")
-  tkevent.add("@<<SavePlot>>","<Alt_L><s>")
-  tkevent.add("@<<CopyToEnd>>",   "<Alt_L><c>")
-  tkevent.add("@<<CopyOld>>",   "<Alt_L><x>")
-  tkevent.add("@<<RunNo>>",     "<Alt_L><r>")
-  tkevent.add("@<<SetNo>>",     "<Alt_L><s>")
-  tkevent.add("@<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
-  tkevent.add("@<<RKgeschw>>",  "<Alt_L><0>")
-  tkevent.add("@<<LKgeschw>>",  "<Alt_L><7>")
-  tkevent.add("@<<RKeckig>>",   "<Alt_L><9>")
-  tkevent.add("@<<LKeckig>>",   "<Alt_L><8>")
-  tkevent.add("@<<Tilde>>",     "<Alt_L><plus>")
-  tkevent.add("@<<Klammera>>",  "<Alt_L><q>")
-  #tkevent.add("@<<Backsl>>",    "<Alt_L><ssharp>")
-  tkevent.add("@<<Pipe>>",      "<Alt_L><less>")
+  tkevent.add("@<<TrashROutput>>","<Alt_L><t>")
+  tkevent.add("@<<Help.R>>",      "<Alt_L><h>")
+  tkevent.add("@<<FindText>>",    "<Alt_L><f>") ## <F3> without virtual event
+  tkevent.add("@<<FindReportText>>",   "<Control_L><f>")
+  tkevent.add("@<<GoToLine>>",         "<Control_L><g>")
+  tkevent.add("@<<SaveReport>>",       "<Control_L><s>")
+  tkevent.add("@<<ProcessReport>>",    "<Control_L><p>")
+  tkevent.add("@<<Next>>",        "<Alt_L><n>")
+  tkevent.add("@<<Back>>",        "<Alt_L><b>")
+  ## important for special characters
+  tkevent.add("@<<RKgeschw>>",    "<Alt_L><0>")
+  tkevent.add("@<<LKgeschw>>",    "<Alt_L><7>")
+  tkevent.add("@<<RKeckig>>",     "<Alt_L><9>")
+  tkevent.add("@<<LKeckig>>",     "<Alt_L><8>")
+  tkevent.add("@<<Tilde>>",       "<Alt_L><plus>")
+  tkevent.add("@<<Klammera>>",    "<Alt_L><q>")
+  tkevent.add("@<<Pipe>>",        "<Alt_L><less>")
   tkevent.add("@<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
   tkevent.add("@<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
   tkevent.add("@<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
@@ -10022,20 +10286,77 @@ if(<<das OS ist Windows>> | <<das OS ist Linux>>){
   tkevent.add("@<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
   tkevent.add("@<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
   tkevent.add("@<<szumlaut>>",      "<ssharp><KeyRelease>")
-  tkevent.add("@<<Backsl>>",    "<Alt_L><ssharp>")
-#  tkevent.add("@<<Klammeraffe>>",  
-#                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
-} else {                                               #f <hpguilder>
+  tkevent.add("@<<Backsl>>",      "<Alt_L><ssharp>")
+  #tkevent.add("@<<Klammeraffe>>", "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>") unused
+} 
+if(<<OS ist Mac-Mini-Tiger>>){
+  tkevent.add("@<<Down>>",        "<Meta_L><d>") # don't work: deletes characters after Cursor 
+  tkevent.add("@<<Up>>",          "<Meta_L><u>")
+  tkevent.add("@<<PlanRCode>>",   "<Meta_L><p>")
+  tkevent.add("@<<EvalRCode>>",   "<Meta_L><e>")
+  tkevent.add("@<<Insert>>",      "<Meta_L><i>")
+  tkevent.add("@<<SavePlot>>",    "<Meta_L><s>")
+  tkevent.add("@<<RemoveOut>>",   "<Meta_L><r>")
+  tkevent.add("@<<TrashROutput>>","<Meta_L><t>")
+  tkevent.add("@<<Help.R>>",      "<Meta_L><h>") # don't work: hide relax window
+  tkevent.add("@<<FindText>>",    "<Meta_L><f>")
+  tkevent.add("@<<FindReportText>>",  "<Control_L><f>")
+  tkevent.add("@<<GoToLine>>",        "<Control_L><g>")
+  tkevent.add("@<<SaveReport>>",      "<Control_L><s>")
+  tkevent.add("@<<ProcessReport>>",   "<Control_L><p>")
+  tkevent.add("@<<Next>>",        "<Meta_L><n>") # Meta_L n opens new window
+  tkevent.add("@<<Back>>",        "<Meta_L><b>") 
+  # tkevent.add("@<<WarnEval>>",    "<Meta_L><w>") # willl destroy relax window
+  ## important for special characters, aeoe...will work 
+  tkevent.add("@<<RKgeschw>>",  "<Meta_L><0>")
+  tkevent.add("@<<LKgeschw>>",  "<Meta_L><7>")
+  tkevent.add("@<<RKeckig>>",   "<Meta_L><9>")
+  tkevent.add("@<<LKeckig>>",   "<Meta_L><8>")
+  tkevent.add("@<<Klammera>>",  "<Meta_L><q>")
+  tkevent.add("@<<Pipe>>",      "<Meta_L><less>")
+  #tkevent.add("@<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
+  #tkevent.add("@<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
+  #tkevent.add("@<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
+  #tkevent.add("@<<Aeumlaut>>",      "<Adiaeresis><KeyRelease>")
+  #tkevent.add("@<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
+  #tkevent.add("@<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
+  #tkevent.add("@<<szumlaut>>",      "<ssharp><KeyRelease>")
+  #tkevent.add("@<<Backsl>>",        "<Meta_L><ssharp>")
+  #tkevent.add("@<<Tilde>>",    "<Meta_L><plus>")
+  #tkevent.add("@<<Klammeraffe>>", "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>") unused
+} 
+
+@
+<<unused>>=
+  # tkevent.add("@<<AdvanceNo>>", "<Alt_L><a>") # unused
+  # tkevent.add("@<<Modify>>",    "<Alt_L><m>") # unused
+  # tkevent.add("@<<CopyToEnd>>",   "<Alt_L><c>") # unused
+  # tkevent.add("@<<CopyOld>>",   "<Alt_L><x>")   # unused
+  # tkevent.add("@<<RunNo>>",     "<Alt_L><r>")   # unused
+  # tkevent.add("@<<ActChunk>>",  "<Control_L><Next>") #Short-Cut copy.down / set
+  # MAC:
+  # tkevent.add("@<<AdvanceNo>>", "<Meta_L><a>")
+  # tkevent.add("@<<Modify>>",    "<Meta_L><m>")
+  # tkevent.add("@<<CopyToEnd>>", "<Alt_L><c>")
+  # tkevent.add("@<<CopyOld>>",   "<Alt_L><x>")
+  # tkevent.add("@<<RunNo>>",     "<Meta_L><r>")
+  # tkevent.add("@<<SetNo>>",     "<Meta_L><s>")
+  # tkevent.add("@<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
+
+@
+Für HPUX galten die Setzungen:
+<<old: definiere plattformspezifische Ereignisse>>=
+if("HPUX") {                                               #f <hpguilder>
   tkevent.add("@<<WarnEval>>",  "<ae>")
-  tkevent.add("@<<AdvanceNo>>", "<aring>")
+  #tkevent.add("@<<AdvanceNo>>", "<aring>")
   tkevent.add("@<<TrashROutput>>","<hpmute_acute>") # vorher Drop:<eth>  #u <hpmute_diaeresis>
   tkevent.add("@<<InsertPlot>>","<hpmute_asciitilde>") #c <ccedilla>
   tkevent.add("@<<Next>>",      "<ordfeminine>")
   tkevent.add("@<<Help.R>>",   "<yen>")
-  tkevent.add("@<<Modify>>",    "<mu>")
+  #tkevent.add("@<<Modify>>",    "<mu>")
   tkevent.add("@<<PlanRCode>>",   "<thorn>")
-  tkevent.add("@<<CopyOld>>",   "<ccedilla>")                #a aring
-  tkevent.add("@<<RunNo>>",     "<hpmute_acute>")
+  #tkevent.add("@<<CopyOld>>",   "<ccedilla>")                #a aring
+  #tkevent.add("@<<RunNo>>",     "<hpmute_acute>")
   tkevent.add("@<<SetNo>>",     "<ssharp>")
   tkevent.add("@<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
   tkevent.add("@<<RKgeschw>>",  "<braceright>")
@@ -10047,50 +10368,6 @@ if(<<das OS ist Windows>> | <<das OS ist Linux>>){
   tkevent.add("@<<Backsl>>",    "<Alt_R><backslash>")
   tkevent.add("@<<Pipe>>",      "<Alt_R><bar>")
 }
-if(<<OS ist Mac-Mini-Tiger>>){
-  tkevent.add("@<<FindText>>",  "<Meta_L><f>")
-  tkevent.add("@<<EvalRCode>>",  "<Meta_L><e>")
-  tkevent.add("@<<WarnEval>>",  "<Meta_L><w>")
-  tkevent.add("@<<Down>>",  "<Meta_L><d>")
-  tkevent.add("@<<Up>>",  "<Meta_L><u>")
-  tkevent.add("@<<AdvanceNo>>", "<Meta_L><a>")
-  tkevent.add("@<<TrashROutput>>","<Meta_L><t>")
-  tkevent.add("@<<Next>>",      "<Meta_L><n>")
-  tkevent.add("@<<Help.R>>",   "<Meta_L><h>")
-  tkevent.add("@<<Modify>>",    "<Meta_L><m>")
-  tkevent.add("@<<PlanRCode>>",   "<Meta_L><p>")
-  tkevent.add("@<<FindReportText>>",   "<Control_L><f>")
-  tkevent.add("@<<GoToLine>>",   "<Control_L><g>")
-  tkevent.add("@<<SaveReport>>",   "<Control_L><s>")
-  tkevent.add("@<<ProcessReport>>",   "<Control_L><p>")
-  tkevent.add("@<<RemoveOut>>",   "<Meta_L><r>")
-  tkevent.add("@<<Insert>>",   "<Meta_L><i>")
-  tkevent.add("@<<SavePlot>>","<Meta_L><s>")
-  tkevent.add("@<<CopyToEnd>>",   "<Alt_L><c>")
-  tkevent.add("@<<CopyOld>>",   "<Alt_L><x>")
-  tkevent.add("@<<RunNo>>",     "<Meta_L><r>")
-  tkevent.add("@<<SetNo>>",     "<Meta_L><s>")
-  #tkevent.add("@<<ActChunk>>",  "<Control_L><Next>")#Short-Cut copy.down / set
-  tkevent.add("@<<RKgeschw>>",  "<Meta_L><0>")
-  tkevent.add("@<<LKgeschw>>",  "<Meta_L><7>")
-  tkevent.add("@<<RKeckig>>",   "<Meta_L><9>")
-  tkevent.add("@<<LKeckig>>",   "<Meta_L><8>")
-  #tkevent.add("@<<Tilde>>",     "<Meta_L><plus>")
-  tkevent.add("@<<Klammera>>",  "<Meta_L><q>")
-  #tkevent.add("@<<Backsl>>",    "<Meta_L><ssharp>")
-  tkevent.add("@<<Pipe>>",      "<Meta_L><less>")
-  #tkevent.add("@<<aeumlaut>>",      "<adiaeresis><KeyRelease>")
-  #tkevent.add("@<<oeumlaut>>",      "<odiaeresis><KeyRelease>")
-  #tkevent.add("@<<ueumlaut>>",      "<udiaeresis><KeyRelease>")
-  #tkevent.add("@<<Aeumlaut>>",      "<Adiaeresis><KeyRelease>")
-  #tkevent.add("@<<Oeumlaut>>",      "<Odiaeresis><KeyRelease>")
-  #tkevent.add("@<<Ueumlaut>>",      "<Udiaeresis><KeyRelease>")
-  #tkevent.add("@<<szumlaut>>",      "<ssharp><KeyRelease>")
-  #tkevent.add("@<<Backsl>>",    "<Meta_L><ssharp>")
-#  tkevent.add("@<<Klammeraffe>>",  
-#                   "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>")
-} 
-
 @
 %% ## 101019
 <<OS ist Mac-Mini-Tiger>>=
@@ -10151,8 +10428,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.3.7
-Date: 2011-11-11
+Version: 1.3.8
+Date: 2012-01-27
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -10201,7 +10478,7 @@ License: This package was written by Hans Peter Wolf.
 ab Version 2.14.0 erforderlich.
 %% exportPattern("^slider.[a-z]+")
 <<define-NAMESPACE>>=
-export(gslider,playground,red,redit,relax,
+export(gslider,playground,CodeChunkPlayer,ConstructDemo,red,redit,relax,
        slider,tangleR,weaveR,weaveRhtml)
 
 @
@@ -10665,17 +10942,17 @@ playground(playground.envir=NULL,code=NULL)
 }
 \details{
   Besides your usual work you often need little tools for writing memos or calculating simple
-  arithmethic operations. Often you take some paper, a pencil or your desk calculator to go ahead. 
+  arithmethic operations. Some times you take a sheet of paper, a pencil or your desk calculator to go ahead. 
   And there are situations in which you would like to have furthers fields for testing simple R codes. Perhaps you will start another R session in parallel for executing your R statements. 
 
   \code{playground()} is an alternative approach to this problem. After starting the function
   \code{playground} a text field (in a Tcl/Tk widget) is created and you are allow put some R commands
-  into this field. Below the text field you find two buttoms: one for activating commands and 
-  a second one for closing the widget. The results will be printed on the current output device.
-  All assignments took place in the global envirnment or if \code{revive.env} exists
-  the new objects are created in this environment.
+  into this field. At the bottom of the window you find two buttons: one for activating commands and 
+  a second one for closing the window. The results will be printed on the current output device.
+  All assignments take place in the global envirnment or if \code{revive.env} exists
+  the new objects will be created in \code{revive.env}.
 
-  It may be you need the field only for taking a lot of notes without any calculations. 
+  May be you need the field for taking a lot of notes without any calculations only. 
   Anyway, it is no problem to call \code{playground} several times. 
 
   \code{playground} is in an experimental state yet. So it may be changed later on.
@@ -10687,6 +10964,63 @@ playground(playground.envir=NULL,code=NULL)
 \author{Hans Peter Wolf}
 \examples{
 ## playground()
+}
+\keyword{ misc }% at least one, from doc/KEYWORDS
+
+@
+\subsection{Help-Page von [[CodeChunkPlayer]]}
+
+<<define-CodeChunkPlayer-help>>=
+\name{CodeChunkPlayer}
+\alias{CodeChunkPlayer}
+\alias{ConstructDemo}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{CodeChunkPlayer, ConstructDemo -- tools for browsing and evaluation of code chunks}
+\description{
+  \code{CodeChunkPlayer} enables the user to evaluate code chunks interactively.
+  \code{ConstructDemo} constructs a demo function from a file containing code chunks.
+}
+\usage{
+  CodeChunkPlayer(file="")
+  ConstructDemo(file="")
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{file}{name of rev-, Snw-file or .R-file containing code chunks}
+}
+\details{
+  Both functions need a .R-file that has been generated by \code{tangleR}.
+  If the input file is not a .R-file but an rev-file or an Snw-file the input file 
+  will be tangled by \code{tangleR} and a .R-file will be generated.  
+
+  \code{CodeChunkPlayer}:
+  \code{CodeChunkPlayer} extracts the code chunks stored in the .R-file and 
+  creates a Tcl/Tk window to show a code chunk selected by the user. 
+  The user can browse through 
+  the set of chunks by clicking on \code{NEXT} or b\code{BACK} or by typing
+  the number of a code chunk. The code of the selected code chunk is shown 
+  in the text field of the player window and may be edited. By clicking button 
+  \code{EVALUATE} the code will be evaluated and the output occurs on the R console.
+
+  \code{ConstructDemo}: 
+  \code{ConstructDemo} extracts the code chunks of the .R-file and builds a new
+  function for browsing through the code chunks. This function will contain the code 
+  chunks of the .R-file as well as the logic for browsing and evaluation of selected chunks.
+  The function is stored with its call in a file whose name is composed 
+  from the name of the input file and the extension \code{.demo.R}. Therefore, you can 
+  start the demo function by e.g. \code{source("xyz.demo.R")} and 
+  a Tcl/Tk window for code chunk browsing will be created. 
+  This window works like the Tcl/Tk window that is generated by \code{CodeChunkPlayer}.  
+}
+\value{
+
+  \code{CodeChunkPlayer} and \code{ConstructDemo} don't have any explicit result.
+}
+\references{\url{http://www.wiwi.uni-bielefeld.de/com/wolf/software/relax.html}}
+\author{Hans Peter Wolf}
+\examples{
+## CodeChunkPlayer()
+## ConstructDemo()
 }
 \keyword{ misc }% at least one, from doc/KEYWORDS
 
@@ -10721,6 +11055,7 @@ cp -p ../webR/webR.pdf  relax/inst/src/webR.pdf
 
 notangle -Rdefine-relax-help ../relax.rev > relax/man/relax.Rd
 notangle -Rdefine-playground-help ../relax.rev > relax/man/playground.Rd
+notangle -Rdefine-CodeChunkPlayer-help   ../relax.rev > relax/man/CodeChunkPlayer.Rd
 notangle -Rdefine-slider ../slider-function.rev >  relax/R/slider.R
 ### notangle -Rdefine-slider-function ../relax.rev > relax/R/slider.R
 notangle -Rdefine-slider-help   ../relax.rev > relax/man/slider.Rd
@@ -10734,16 +11069,16 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.3.7.tar.gz
+R CMD INSTALL --library=lib relax_1.3.8.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
 cd $HOME/R/work/relax/install.dir/lib; 
 # zip aus $HOME/bin mit 7z aus p7zip_9.13 
-zip a -r relax_1.3.7.zip relax
-mv relax_1.3.7.zip ..
+zip a -r relax_1.3.8.zip relax
+mv relax_1.3.8.zip ..
 
 cd ..
-cp relax_1.3.7.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.3.7.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.8.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.8.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 

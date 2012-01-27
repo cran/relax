@@ -1,6 +1,6 @@
-7754feceb57d653916bb4f3c1ddd177d *DESCRIPTION
-71eefe0eae34f2bc27056ece481132fc *NAMESPACE
-53199d64fdb93e4acc837379d4af8b52 *R/relax.R
+c4aa9686f832afb0e984860b89731a6c *DESCRIPTION
+106cbb84e14801b65790e8977ac4b14e *NAMESPACE
+8ff4d48eed023b0ffae4a95a8aa363b8 *R/relax.R
 4f35ac42d54dd2af641c3cec4ed67cc6 *R/slider.R
 52f2680d7daba52ebd29c01d71a13a47 *R/tangleR.R
 5506f7e83e2facbf2eafc8173cface77 *R/weaveR.R
@@ -30,10 +30,11 @@ ac5f4894c7e007908589cc0d7c453f75 *inst/rev/tutbild2.jpg
 4e9796a91be2ac97bd7df4f090def522 *inst/rev/tutbild3.jpg
 2f086f3e723a610a9b60a8c6b85e4476 *inst/rev/tutorial-tk.pdf
 5b9a1b96565a5d7992878919abc8df35 *inst/rev/tutorial-tk.rev
-343774147205794824a24ad784008289 *inst/src/relax.rev
+4089af26d1ed38c9aae78869a4348b80 *inst/src/relax.rev
 9773b3993758f342f6240493fe8bdf63 *inst/src/webR.pdf
 ccda51f91930b7f554bb0c13f04cac12 *inst/src/webR.rev
-22cde0c5534902c75d801931a1aaa45b *man/playground.Rd
+a5b2f370dd46682e02db9feb16a89843 *man/CodeChunkPlayer.Rd
+655af05cf18630c35df28c68ebf7675a *man/playground.Rd
 8922d0637673e20d6a911af0dc10ca1a *man/relax.Rd
 1aae67ab650eaa96d6fed190bc49419a *man/slider.Rd
 dd5d1b68cb923777d1861af467932b6a *man/tangleR.Rd
