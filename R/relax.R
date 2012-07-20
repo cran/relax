@@ -917,7 +917,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -1230,7 +1230,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                cat("A warning message stopped the evaluation!",
                      "If you want to\nevaluate the code anyway",
                      "evaluate code by:\n>WarnEval<")
-            cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+            # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
           } else { ok<-TRUE }
 
 
@@ -1658,7 +1658,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -1849,8 +1849,9 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           alias <- file.path(path,"help","aliases.rds")
           ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
           ## 120110 function reconstructed because of change of name 
-          readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
-                                      .Internal(unserializeFromConn(con, NULL)) }
+          ## readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
+          ##                          .Internal(unserializeFromConn(con, NULL)) }
+          readRDS <- base::.readRDS  ## 120719
           rds <- readRDS(file.path(path,"help","aliases.rds"))
           help.name <- rds[which(names(rds)==topic)]
           help.text <- utils:::.getHelpFile(
@@ -2174,7 +2175,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -2207,7 +2208,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -2243,7 +2244,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -2370,7 +2371,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -2468,7 +2469,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
             cat("A warning message stopped the evaluation!",
                   "If you want to\nevaluate the code anyway",
                   "evaluate code by:\n>WarnEval<")
-         cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+         # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
        } else { ok<-TRUE }
 
 
@@ -2835,7 +2836,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -3399,7 +3400,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3469,7 +3470,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3537,7 +3538,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3606,7 +3607,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3674,7 +3675,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3742,7 +3743,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3810,7 +3811,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3878,7 +3879,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -3946,7 +3947,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -4174,7 +4175,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                cat("A warning message stopped the evaluation!",
                      "If you want to\nevaluate the code anyway",
                      "evaluate code by:\n>WarnEval<")
-            cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+            # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
           } else { ok<-TRUE }
 
 
@@ -4278,7 +4279,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           cat("A warning message stopped the evaluation!",
                 "If you want to\nevaluate the code anyway",
                 "evaluate code by:\n>WarnEval<")
-       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+       # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
      } else { ok<-TRUE }
 
 
@@ -4349,7 +4350,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           cat("A warning message stopped the evaluation!",
                 "If you want to\nevaluate the code anyway",
                 "evaluate code by:\n>WarnEval<")
-       cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+       # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
      } else { ok<-TRUE }
 
 
@@ -4410,7 +4411,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -4504,7 +4505,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -4617,7 +4618,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -4932,7 +4933,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -5635,7 +5636,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     doc<-c("=================================================",
            "RELAX -- R Editor for Literate Analysis and lateX",
            "=================================================","",
-           paste("version:","relax 1.3.8 - 120127"),"",
+           paste("version:","relax 1.3.10 - 120719"),"",
   "relax() is designed to support the process of data analysis, report writing,",
                  "presentation, and programming. On start it creates a new window for writing",
                  "code and text at the same time. You are allowed to evaluate R code chunks",
@@ -6421,7 +6422,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6473,7 +6474,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6524,7 +6525,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6570,7 +6571,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6664,7 +6665,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6755,7 +6756,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6858,7 +6859,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6931,7 +6932,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -6962,7 +6963,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -6998,7 +6999,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7090,7 +7091,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7156,7 +7157,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7278,7 +7279,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7409,7 +7410,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7530,7 +7531,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          cat("A warning message stopped the evaluation!",
                "If you want to\nevaluate the code anyway",
                "evaluate code by:\n>WarnEval<")
-      cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+      # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
     } else { ok<-TRUE }
 
 
@@ -7560,7 +7561,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            cat("A warning message stopped the evaluation!",
                  "If you want to\nevaluate the code anyway",
                  "evaluate code by:\n>WarnEval<")
-        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
       } else { ok<-TRUE }
 
 
@@ -7583,7 +7584,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
              cat("A warning message stopped the evaluation!",
                    "If you want to\nevaluate the code anyway",
                    "evaluate code by:\n>WarnEval<")
-          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
         } else { ok<-TRUE }
 
 
@@ -8040,7 +8041,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8078,7 +8079,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8111,7 +8112,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8147,7 +8148,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                     cat("A warning message stopped the evaluation!",
                           "If you want to\nevaluate the code anyway",
                           "evaluate code by:\n>WarnEval<")
-                 cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                 # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                } else { ok<-TRUE }
 
 
@@ -8633,7 +8634,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8671,7 +8672,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8704,7 +8705,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   cat("A warning message stopped the evaluation!",
                         "If you want to\nevaluate the code anyway",
                         "evaluate code by:\n>WarnEval<")
-               cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+               # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
              } else { ok<-TRUE }
 
 
@@ -8740,7 +8741,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                     cat("A warning message stopped the evaluation!",
                           "If you want to\nevaluate the code anyway",
                           "evaluate code by:\n>WarnEval<")
-                 cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                 # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                } else { ok<-TRUE }
 
 
@@ -9911,7 +9912,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.3.8 - 120127"
+  relax.version.sys<- "relax 1.3.10 - 120719"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -10030,7 +10031,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkwm.title(TopW,paste(
                if(but.Wizardry=="simple") "redit -- simple Report EDITor for statistical analysis:" else
                                           "relax -- Report Editor for Literate Analysis and lateX:",
-                        "relax 1.3.8 - 120127"))
+                        "relax 1.3.10 - 120719"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -11100,7 +11101,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                              cat("A warning message stopped the evaluation!",
                                    "If you want to\nevaluate the code anyway",
                                    "evaluate code by:\n>WarnEval<")
-                          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                         } else { ok<-TRUE }
 
 
@@ -11133,7 +11134,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                              cat("A warning message stopped the evaluation!",
                                    "If you want to\nevaluate the code anyway",
                                    "evaluate code by:\n>WarnEval<")
-                          cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                          # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                         } else { ok<-TRUE }
 
 
@@ -11169,7 +11170,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                cat("A warning message stopped the evaluation!",
                                      "If you want to\nevaluate the code anyway",
                                      "evaluate code by:\n>WarnEval<")
-                            cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                            # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                           } else { ok<-TRUE }
 
 
@@ -11254,7 +11255,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                            cat("A warning message stopped the evaluation!",
                                  "If you want to\nevaluate the code anyway",
                                  "evaluate code by:\n>WarnEval<")
-                        cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+                        # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
                       } else { ok<-TRUE }
 
 
@@ -11376,7 +11377,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
   ReloadReportWidget() # to repair defect report widget
-  cat( "relax 1.3.8 - 120127" ,"\n")
+  cat( "relax 1.3.10 - 120719" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{

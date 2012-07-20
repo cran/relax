@@ -7,15 +7,15 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten
-% f) cp install.dir/relax_1.3.8.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.8.*
+% f) cp install.dir/relax_1.3.10.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.10.*
 % g) upload to cran:
 %    1. mailto:  cran@r-project.org
 %    2a. upload by konquerer!! 
 %          ftp://CRAN.R-project.org/incoming/ 
 %    2b. upload by ftp
 %          ftp ftp://cran.R-project.org/incoming/
-%          ftp> put relax_1.3.8.tar.gz
+%          ftp> put relax_1.3.10.tar.gz
 %          ftp> bye   
 % ==========================================================
 % Paketverteilung fuer Rechner: 138/20/21/102: 
@@ -34,8 +34,8 @@
 %   cd lib; zip -r relax.zip relax
 % Paketbeschaffung über Netz:
 %   download.file(
-%     "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.8.tar.gz",
-%     "relax_1.3.8.tar.gz")
+%     "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.10.tar.gz",
+%     "relax_1.3.10.tar.gz")
 % Dokumentationserstellung:
 %   cd /home/wiwi/pwolf/work/relax
 %   noweave -delay -index relax.rev > relax.tex; latex relax
@@ -95,7 +95,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.3.8 - 120127"
+"relax 1.3.10 - 120719"
 @
 <<relax>>=
 "relax"
@@ -4941,8 +4941,9 @@ fExamples<-function(){
         alias <- file.path(path,"help","aliases.rds")
         ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
         ## 120110 function reconstructed because of change of name 
-        readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
-                                    .Internal(unserializeFromConn(con, NULL)) }
+        ## readRDS  <- function(file){ con <- gzfile(file, "rb"); on.exit(close(con)); 
+        ##                          .Internal(unserializeFromConn(con, NULL)) }
+        readRDS <- base::.readRDS  ## 120719
         rds <- readRDS(file.path(path,"help","aliases.rds"))
         help.name <- rds[which(names(rds)==topic)]
         help.text <- utils:::.getHelpFile(
@@ -6663,7 +6664,7 @@ if(0!=length(ok)&&("Error"==substring(ok,1,5) | "Fehler"==substring(ok,1,6))){
      cat("A warning message stopped the evaluation!",
            "If you want to\nevaluate the code anyway",
            "evaluate code by:\n>WarnEval<")
-  cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n")
+  # cat("sorry, operation failed in:",as.character(sys.call()),"!!!\n") # due to R-2.15.1
 } else { ok<-TRUE }
 
 
@@ -10428,8 +10429,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.3.8
-Date: 2012-01-27
+Version: 1.3.10
+Date: 2012-07-20
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -11069,16 +11070,16 @@ notangle -RLaTeX-head ../relax.rev > relax/inst/lib/LaTeX-head.tex
 
 R CMD check relax;  R CMD build relax
 rm lib/relax/R/relax.rdb
-R CMD INSTALL --library=lib relax_1.3.8.tar.gz
+R CMD INSTALL --library=lib relax_1.3.10.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
 cd $HOME/R/work/relax/install.dir/lib; 
 # zip aus $HOME/bin mit 7z aus p7zip_9.13 
-zip a -r relax_1.3.8.zip relax
-mv relax_1.3.8.zip ..
+zip a -r relax_1.3.10.zip relax
+mv relax_1.3.10.zip ..
 
 cd ..
-cp relax_1.3.8.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.3.8.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.10.tar.gz /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.10.zip /home/wiwi/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 

@@ -1,6 +1,6 @@
-c4aa9686f832afb0e984860b89731a6c *DESCRIPTION
+a0934b1e374f387ede9264a5a297a178 *DESCRIPTION
 106cbb84e14801b65790e8977ac4b14e *NAMESPACE
-8ff4d48eed023b0ffae4a95a8aa363b8 *R/relax.R
+4ba6d0851437b0dea099f647748be115 *R/relax.R
 4f35ac42d54dd2af641c3cec4ed67cc6 *R/slider.R
 52f2680d7daba52ebd29c01d71a13a47 *R/tangleR.R
 5506f7e83e2facbf2eafc8173cface77 *R/weaveR.R
@@ -30,7 +30,7 @@ ac5f4894c7e007908589cc0d7c453f75 *inst/rev/tutbild2.jpg
 4e9796a91be2ac97bd7df4f090def522 *inst/rev/tutbild3.jpg
 2f086f3e723a610a9b60a8c6b85e4476 *inst/rev/tutorial-tk.pdf
 5b9a1b96565a5d7992878919abc8df35 *inst/rev/tutorial-tk.rev
-4089af26d1ed38c9aae78869a4348b80 *inst/src/relax.rev
+68c0a346ebe9c68bfa3a7358c2b5b516 *inst/src/relax.rev
 9773b3993758f342f6240493fe8bdf63 *inst/src/webR.pdf
 ccda51f91930b7f554bb0c13f04cac12 *inst/src/webR.rev
 a5b2f370dd46682e02db9feb16a89843 *man/CodeChunkPlayer.Rd
