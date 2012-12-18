@@ -24,7 +24,7 @@
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
 \date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007, 04.09.2008, 31.10.2008, 29.1.2009,
-20.2.2009, 24.3.2009, 20.7.2009, 15.6.2011, 4.9.2011}
+20.2.2009, 24.3.2009, 20.7.2009, 15.6.2011, 4.9.2011, 20.11.2012}
 \begin{document}
 \maketitle
 \raggedright
@@ -467,10 +467,11 @@ cat("tangle process finished\n")
 
 @
 \subsection{Testprozedur}
-{\footnotesize
+{\footnotesize\newcommand{\dollarweg}[1]{\relax}
 \begin{enumerate}
 \item Erzeuge Basis-Tangle-Funktion durch Tangle mit [[noweb]] unter [[linux]]:
-[[ $ notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R ]]
+[[ $ notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R ]] 
+\dollarweg{$}
 \item Lade Ergebnis in R-Umgebung.\\
 [[ > source("tangle-by-noweb.R")]]
 \item Tangle mit der Tangle-Funktion, die in [[tangle-by-noweb.R]] definiert und von [[noweb]] erzeugt worden ist, 
@@ -726,7 +727,11 @@ is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
 UTF<- UTF | is.utf
 
 @
-Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
+Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen. In diesem Chunk entsteht ein Problem, wenn sich im [[input]] ein 
+Zeichen fälschlicherweise eingeschlichen hat, dass sich nicht von dem locale 
+Encoding nicht nach LATIN1 konvertieren lässt. Dann wird angenommen, dass
+LATIN1 vorliegt und es geschieht eine Konvertierung ins locale Encoding.
+Jedoch sollten nur betroffene Zeilen angefasst werden.
 <<lese Datei ein [[weaveR]]>>=
 if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
 if(!file.exists(in.file)){
@@ -735,9 +740,9 @@ if(!file.exists(in.file)){
 }
 # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
 input<-readLines(in.file) # 2.1.0
-try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
-    # LATIN1-Dok :
-    input<-iconv(input,"LATIN1","")
+try(if(replace.umlaute&&UTF && any(idx<-is.na(iconv(input,"","LATIN1")))){  
+    # LATIN1-Dok : input<-iconv(input,"LATIN1","") # old
+    input[idx] <- iconv( input[idx], "Latin1", "") # 121120
 })
 length.input<-length(input)
 
@@ -1074,7 +1079,7 @@ sowie
 Entscheidungen:
 \begin{itemize}
 \item Nur falls Argument [[eval_Sexpr==TRUE]] wird die Evaluation gestartet.
-\item Zeichengenauigkeit: werden per [[options()$digits]] bestimmt,
+\item Zeichengenauigkeit: werden per [[options()$digits]] bestimmt, \dollarweg{$}
 \item Ergebnisse, die mit [[""]] identisch sind, werden ausgelassen,
 \item Fehler führen zum Abdruck des Kommandos im Text,
 \item Die Schriftart für die Ergebnisse wird durch \emph{Code im Text} bestimmt,

@@ -32,9 +32,9 @@ weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
   }
   # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
   input<-readLines(in.file) # 2.1.0
-  try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
-      # LATIN1-Dok :
-      input<-iconv(input,"LATIN1","")
+  try(if(replace.umlaute&&UTF && any(idx<-is.na(iconv(input,"","LATIN1")))){  
+      # LATIN1-Dok : input<-iconv(input,"LATIN1","") # old
+      input[idx] <- iconv( input[idx], "Latin1", "") # 121120
   })
   length.input<-length(input)
 

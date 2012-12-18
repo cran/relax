@@ -28,7 +28,7 @@
   two text fields and some buttons and menus. Text (chunks) and code (chunks)
   are inserted in the upper text field (report field). Code chunks are evaluated by clicking
   on \code{EvalRCode}. Results are shown in the lower text field (output field) and will be
-  transfered to the report field by pressing on \code{Insert}.
+  transferred to the report field by pressing on \code{Insert}.
 
   Chunks are separated by separators:
   A line containing the character "@" at its first position indicades the beginning of a text chunk.
@@ -112,45 +112,6 @@
 }
 \value{
    --
-}
-\note{
-  \itemize{
-    \item Img-package-not-found-warning:
-      On start relax tries to load the Tcl/Tk package \code{Img} for showing jpeg pictures in the text window.
-      If this package isn't found relax will print a warning message.
-      For further information about the package see: 
-        \url{http://sourceforge.net/projects/tkimg},
-        \url{http://members.chello.nl/~j.nijtmans/img.html}, and
-        \url{http://home.kpnplanet.nl/~J.Nijtmans@kpnplanet.nl/img.html}.
-      The Img package has to be installed by the user himself. 
-      Windows users can proceed as follows:
-
-   \item Installing Img on windows PCs: How can you install the Tcl/Tk Img package on a windows PC?
-         The simplest way to get \code{Img} is to install \code{ActiveTcl8.4.19}
-         of ActiveState which you get via
-         \url{http://www.activestate.com/Products/activetcl/index.mhtml}.
-         The Tcl/Tk-package "Img" is included in the tcl distribution of ActiveState.
-         It is important to use version \code{Tcl8.4} and not \code{Tcl8.5}!
-         The following four steps will hopefully result in a working installation:
-      \itemize{
-       \item 1) Download \code{Tcl8.4} from ActiveState. May be the name of the 
-         downloaded file is \code{ActiveTcl8.4.19.286921-win32-ix86-threaded.exe}.
-
-       \item 2) Install Tcl8.4 by running the downloaded exe-file.
- 
-       \item 3) After installing Tcl8.4 you have to add the path to the directory 
-         \code{lib} of Tcl8.4 in the relax configuration file.
-         The configuration of relax is modified by activating the
-         entry \verb{Configure Relax: view or change parameters of relax} of the
-         relax menu \code{Options}.
-         In the configuration file you have to search the line with the entry 
-         \code{# imgpath.sys <- "C:/Tcl/lib"}. Then remove the comment character in front of
-         \code{imgpath.sys} and insert the correct path to the Tcl/Tk lib directory.
-         The modified line may look like this: \code{imgpath.sys <- "C:/Tcl/lib"}.
-      
-      \item 4) Save configuration file, quit relax and restart \code{relax} again.
-      }
-  }
 }
 \references{\url{http://www.wiwi.uni-bielefeld.de/com/wolf/software/relax.html}}
 \author{Hans Peter Wolf}
