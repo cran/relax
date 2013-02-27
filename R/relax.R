@@ -55,14 +55,6 @@ ConstructDemo <- function(file=""){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -79,14 +71,6 @@ ConstructDemo <- function(file=""){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -100,14 +84,6 @@ ConstructDemo <- function(file=""){
                                                                    if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                         is.nan(no.end)||is.nan(no.start)){
                                                                         cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -179,14 +155,6 @@ ConstructDemo <- function(file=""){
                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                        is.nan(no.end)||is.nan(no.start)){
                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                  }
-                                                                  ### cat("# aktueller chunk:",no,"\n")
-                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                       is.nan(no.end)||is.nan(no.start)){
-                                                                       cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                   }
                                                                   ### cat("# aktueller chunk:",no,"\n")
                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -324,14 +292,6 @@ CodeChunkPlayer<-function(file=""){
                                                                  }
                                                                  ### cat("# aktueller chunk:",no,"\n")
                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                      is.nan(no.end)||is.nan(no.start)){
-                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                 }
-                                                                 ### cat("# aktueller chunk:",no,"\n")
-                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                  if(0<length(code)) {
                                                                   tkdelete(ttext,"0.0","end")  
                                                                   tkinsert(ttext,"0.0",code)
@@ -348,14 +308,6 @@ CodeChunkPlayer<-function(file=""){
                                                                  }
                                                                  ### cat("# aktueller chunk:",no,"\n")
                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                      is.nan(no.end)||is.nan(no.start)){
-                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                 }
-                                                                 ### cat("# aktueller chunk:",no,"\n")
-                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                  if(0<length(code)) {
                                                                   tkdelete(ttext,"0.0","end")  
                                                                   tkinsert(ttext,"0.0",code)
@@ -369,14 +321,6 @@ CodeChunkPlayer<-function(file=""){
                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                       is.nan(no.end)||is.nan(no.start)){
                                                                       cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                 }
-                                                                 ### cat("# aktueller chunk:",no,"\n")
-                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                      is.nan(no.end)||is.nan(no.start)){
-                                                                      cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                  }
                                                                  ### cat("# aktueller chunk:",no,"\n")
                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -448,14 +392,6 @@ CodeChunkPlayer<-function(file=""){
                                                                 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                      is.nan(no.end)||is.nan(no.start)){
                                                                      cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                }
-                                                                ### cat("# aktueller chunk:",no,"\n")
-                                                                code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                     is.nan(no.end)||is.nan(no.start)){
-                                                                     cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                 }
                                                                 ### cat("# aktueller chunk:",no,"\n")
                                                                 code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -630,7 +566,8 @@ readline<-function(prompt=""){
   # cat("revive.env"); print(revive.env); cat("revive.sys"); print(revive.sys)
 
 
-  if(!is.environment(revive.env) || !("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){  ### 111103
+  if( !((is.environment(revive.env) && 
+         "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys)))) ) ){  ### 111103 # 130408
     readline<-base::readline
     return(readline(prompt=prompt))
   }
@@ -717,7 +654,8 @@ menu<-function(choices, graphics=FALSE, title=""){
   # cat("revive.env"); print(revive.env); cat("revive.sys"); print(revive.sys)
 
 
-  if( !is.environment(revive.env) || !("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){
+  if( !((is.environment(revive.env) && 
+         "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys)))) ) ){ # 130408
     menu<-utils::menu
     return(menu(choices=choices,graphics=graphics,title=title))
   }else{
@@ -782,8 +720,8 @@ scan<-function(file = "", what = double(), nmax = -1L, n = -1L, sep = "",
 
     scan<-get("scan",pos="package:base")
 
-    if(file!="" || !is.na(text) || !is.environment(revive.env) || 
-       !("1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) ) ){
+    if(file!="" || !is.na(text) || !((is.environment(revive.env) && 
+                                      "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys)))) ) ){ # 130408
       scan.args <- list(file=file,what=what)
       if(!missing(nmax)) scan.args <- c(scan.args, list(nmax=nmax))
       if(!missing(n))    scan.args <- c(scan.args, list(n=n))
@@ -866,8 +804,7 @@ scan<-function(file = "", what = double(), nmax = -1L, n = -1L, sep = "",
       twin<-tscan; f.sonderzeichen<-function(zeichen){
                      function(){
                        tkinsert(twin,"insert",zeichen)
-                       if((version$os=="Win32" || version$os=="mingw32")
-)tkdelete(twin,"insert-1chars")
+                       if((.Platform$OS.type=="windows"))tkdelete(twin,"insert-1chars")
                        if(substring(version$os,1,6)=="darwin" )tkdelete(twin,"insert-1chars")
                      }
                    }
@@ -930,7 +867,7 @@ scan<-function(file = "", what = double(), nmax = -1L, n = -1L, sep = "",
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -968,7 +905,8 @@ print<-function(x, ...){ # 050614
   # cat("revive.env"); print(revive.env); cat("revive.sys"); print(revive.sys)
 
 
-  if(is.environment(revive.env) && "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  && !is.null(x) ){
+  if( (is.environment(revive.env) && 
+       "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys))))  && !is.null(x) ){ # 130408
     sink(get("tmp.file.name",envir=revive.sys)
 ); base::print(x, ...); sink()
     news<-paste(# "", # 111123
@@ -1005,7 +943,8 @@ cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
   # cat("revive.env"); print(revive.env); cat("revive.sys"); print(revive.sys)
 
 
-  if(file=="" &&  is.environment(revive.env) && "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){
+  if(file=="" &&  (is.environment(revive.env) && 
+                   "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys))))  ){ # 130408
      base::cat(...,file=get("tmp.file.name",envir=revive.sys)
 ,sep=sep,fill=fill,labels=labels,append=append)
      news<-paste( # "\n", # 111123
@@ -1023,9 +962,9 @@ cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
 
      tcl("update","idletasks") # 090710
      NULL
+     invisible(NULL)
   }
   base::cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
-  NULL
 }
 # assign("cat",cat,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
 # assign("cat",cat, pos=pos.of.relax.fns)
@@ -1042,7 +981,8 @@ str<-function(object,...){
   # cat("revive.env"); print(revive.env); cat("revive.sys"); print(revive.sys)
 
 
-  if( is.environment(revive.env) && "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env))))  ){ 
+  if( (is.environment(revive.env) && 
+       "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys))))  ){ # 130408
      fname <- get("tmp.file.name",envir=revive.sys)
 ; fname <- gsub("\\\\","/",fname)
      base::cat(file=fname,"")
@@ -1108,8 +1048,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
  # Copyright (C) 2005--2008 Hans Peter Wolf
   options(warn=1)
  #      options(warning.expression={cat("WARNING: Warning-Info see Console window")})
-  relax.path<-.path.package("relax"
-)
+  relax.path<-path.package("relax"
+)  # 130325 .path.package defunct
   relax.pos<-grep("^package:relax$",search())[1]
 
   ## running.function<- #<relax>#  assign("running.function",#<relax>#, pos=relax.pos) ##111103
@@ -1191,8 +1131,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(typ==3){cat(report.msg); cat(...); cat("\n")}
     }
     if(typ=="cmd.msg"){
-      if((version$os=="Win32" || version$os=="mingw32")
-) flush.console()
+      if((.Platform$OS.type=="windows")) flush.console()
       if(exists("report.msg.to.file.flag")) cat(report.msg, "\n", file="report.msg", append=TRUE)
     }
     invisible()
@@ -1284,23 +1223,19 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     for(i in seq(settings)) eval(parse(text=settings[i]))
   })
   editor.sys<-text.editor.mac
-  if((version$os=="Win32" || version$os=="mingw32")
-) {
+  if((.Platform$OS.type=="windows")) {
     editor.sys <- text.editor.windows
   }
-  if(substring(version$os,1,5)=="linux"
-) {
+  if(substring(version$os,1,5)=="linux") {
     editor.sys <- text.editor.linux
   }
   browser.sys<-""
-  if((version$os=="Win32" || version$os=="mingw32")
-) {
+  if((.Platform$OS.type=="windows")) {
     browser.sys<-"start "
     if(exists("browser.windows")&&nchar(browser.windows)>0&&0<length(grep("[a-zA-Z]",browser.windows))) 
       browser.sys <- browser.windows
   }
-  if(substring(version$os,1,5)=="linux"
-) {
+  if(substring(version$os,1,5)=="linux") {
     if(exists("browser.linux")) browser.sys <- browser.linux
   }
   if(substring(version$os,1,6)=="darwin" ){
@@ -1316,8 +1251,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   if(!exists("relaxwindow.width.sys")) relaxwindow.width.sys<-"700"
   if(!exists("relaxwindow.height.sys")) relaxwindow.height.sys<-"700"
   if(!exists("name.complete.sys")) name.complete.sys<-TRUE
-  if((version$os=="Win32" || version$os=="mingw32")
- && nchar(ghostscript)<=1){
+  if((.Platform$OS.type=="windows") && nchar(ghostscript)<=1){
     if(Sys.getenv("R_GSCMD")!="") ghostscript <- Sys.getenv("R_GSCMD")
     else { path.sep <- ";"
       # find pathes where a search will take place and generate all parts of the pathes
@@ -1349,8 +1283,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
   }
 
-  if(substring(version$os,1,5)=="linux"
- && nchar(ghostscript)<=1){
+  if(substring(version$os,1,5)=="linux" && nchar(ghostscript)<=1){
     if(Sys.getenv("R_GSCMD")!="") ghostscript <- Sys.getenv("R_GSCMD")
     else { 
       gsexe <- Sys.getenv("R_GSCMD")
@@ -1691,7 +1624,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -1893,7 +1826,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
             args[1] <- paste("# header of",topic,":\n#",args[1],"\n")
             args <- paste(args,collapse="\n")
           } else args <- NULL
-          path <- .path.package(package)
+          path <- path.package(package) # 130325 .path.package defunct
           alias <- file.path(path,"help","aliases.rds")
           ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
           ## 120110 function reconstructed because of change of name, 120822 because of defunc
@@ -1905,7 +1838,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           rds <- readRDS(file.path(path,"help","aliases.rds"))
           help.name <- rds[which(names(rds)==topic)]
           help.text <- utils:::.getHelpFile(
-            file.path(.path.package(package),"help",help.name)
+            file.path(path.package(package),"help",help.name) # 130325 .path.package defunct
           )
           help.text <- as.character(help.text)
           idx <- grep("\\\\examples",help.text)
@@ -2021,7 +1954,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     h<-worktext[start+1:ende-1]
     h<-c("\\documentclass{article}\\begin{document}",h,"\\end{document}")
     cat(h,file="tmptmp.tex",sep="\n")
-    if(version$os=="linux-gnu") system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
+    if( substring(version$os,1,5)=="linux" || substring(version$os,1,6)=="darwin" ) 
+       system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
     ##lege Bild unter [[bildname]] ab##
     ##zeige Bilder im Textfenster an##
     ##show.single.plot(tworkwin,line,jpgname) 
@@ -2213,7 +2147,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -2234,8 +2168,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                   "height=",psheight.sys,"]{",bildname,"}\\end{center}\n",sep="") #081121
     # jpeg:
       jpgname<-paste(bildname,".jpg",sep="")
-      if((version$os=="Win32" || version$os=="mingw32")
-){ # width=width in pixel, 72 dpi
+      if((.Platform$OS.type=="windows")){ # width=width in pixel, 72 dpi
         try.res<-try({dev.copy(jpeg,jpgname,width=jpgdesignsize.sys*72,
                                height=jpgdesignsize.sys*72,quality=100,pointsize=7);dev.off()})
       }else{
@@ -2246,7 +2179,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -2267,13 +2200,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     # ppm
       ppmname<-paste(bildname,".ppm",sep="")
       # if( <das OS ist Windows>  && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){
-      if((version$os=="Win32" || version$os=="mingw32")
- && 2<=nchar(ghostscript) && !no.plots){
+      if((.Platform$OS.type=="windows") && 2<=nchar(ghostscript) && !no.plots){
         try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
       }
       # if( <das OS ist Linux> && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){ }
-      if(substring(version$os,1,5)=="linux"
- && 2<=nchar(ghostscript) && !no.plots){ # 121113
+      if(substring(version$os,1,5)=="linux" && 2<=nchar(ghostscript) && !no.plots){ # 121113
         try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
       }
     # gif+ppm:
@@ -2285,7 +2216,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -2412,7 +2343,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -2520,7 +2451,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          ok <- "OK"
        } else {
          if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-         ok<-try.res[1]
+         if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
          if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
          if(!is.character(ok)) { ok <- "OK" }
        }
@@ -2572,16 +2503,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
   pstojpg<-function(psname,jpgname){
     return() # im Moment nicht im Dienst
-    if(substring(version$os,1,5)=="linux"
-){
+    if(substring(version$os,1,5)=="linux"){
       gsexe <- Sys.getenv("R_GSCMD")
       if(is.null(gsexe) || nchar(gsexe) == 0) {
         gsexe <- "gs"; rc <- system(paste(gsexe, "-help > /dev/null"))
         if (rc != 0) return()
       }
     }
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
       if(exists("ghostscript")&&2<=nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript))) 
         gsexe<-ghostscript else return()
     }
@@ -2595,16 +2524,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   pstoppm<-function(psname,ppmname){
     # return() # im Moment nicht im Dienst // ginge auch mit convert
     melde("pstoppm startet",3)
-    if(substring(version$os,1,5)=="linux"
-){
+    if(substring(version$os,1,5)=="linux"){
       gsexe <- Sys.getenv("R_GSCMD")
       if(is.null(gsexe) || nchar(gsexe) == 0) {
         gsexe <- "gs"; rc <- system(paste(gsexe, "-help > /dev/null"))
         if (rc != 0) return()
       }
     }
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
       if(exists("ghostscript")&&2<=nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript))) 
         gsexe<-ghostscript else return()
     }
@@ -2614,8 +2541,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         " -sOutputFile=", ppmname, "  ",psname, sep = "")
     melde(cmd,3)
     try(system(cmd))
-    if(substring(version$os,1,5)=="linux"
- && 0 < nchar(system("which pnmcrop",intern=TRUE))){ # 121114
+    if(substring(version$os,1,5)=="linux" && 0 < nchar(system("which pnmcrop",intern=TRUE))){ # 121114
       system(paste("mv ",ppmname," tmptmp.ppm; pnmcrop tmptmp.ppm > ",ppmname,"; rm tmptmp.ppm"))    
     }                       
     invisible()
@@ -2894,7 +2820,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -3016,7 +2942,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(res=="cancel") return()
     if(res=="no") SaveReport()
     set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
-    ## remove("print",pos=which(.path.package("relax")==searchpaths())) ## 111103
+    ## remove("print",pos=which(path.package("relax")==searchpaths())) ## 111103 # 130325 .path.package defunct
     melde("==================================================\n")
     melde("RELAX --- EXIT                    \n")
     # melde("copy of report saved as: \n")
@@ -3145,8 +3071,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     tkpost(menuwidget,"0","0"); tkactivate(menuwidget,activate)
     tkbind(menuwidget,"<Escape>",function(){
            tkdestroy(menuwidget);set.tclvalue("tvchoice","0")})
-    if( (! (version$os=="Win32" || version$os=="mingw32")
-) ) tkwait.variable("tvchoice")
+    if( (! (.Platform$OS.type=="windows")) ) tkwait.variable("tvchoice")
 
     choice <- tclvalue("tvchoice")
     choice <- if(choice!="0") choice<-which(choice==choices) else 0
@@ -3244,8 +3169,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     tkpost(menuwidget,"0","0"); tkactivate(menuwidget,activate)
     tkbind(menuwidget,"<Escape>",function(){
            tkdestroy(menuwidget);set.tclvalue("tvchoice","0")})
-    if( (! (version$os=="Win32" || version$os=="mingw32")
-) ) tkwait.variable("tvchoice")
+    if( (! (.Platform$OS.type=="windows")) ) tkwait.variable("tvchoice")
 
     choice <- tclvalue("tvchoice")
     choice <- if(choice!="0") choice<-which(choice==choices) else 0
@@ -3271,8 +3195,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     tkpost(menuwidget,"0","0"); tkactivate(menuwidget,activate)
     tkbind(menuwidget,"<Escape>",function(){
            tkdestroy(menuwidget);set.tclvalue("tvchoice","0")})
-    if( (! (version$os=="Win32" || version$os=="mingw32")
-) ) tkwait.variable("tvchoice")
+    if( (! (.Platform$OS.type=="windows")) ) tkwait.variable("tvchoice")
 
     choice <- tclvalue("tvchoice")
     choice <- if(choice!="0") choice<-which(choice==choices) else 0
@@ -3378,7 +3301,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         tkpack(fcmd<-tkframe(.newl))
         Save<-tkbutton(fcmd,width=15,text="save settings",command=function(){
                    newsettings<-paste(tclvalue(tkget(tt,"0.0","end")),"\n")
-                   filename<-file.path(.path.package("relax"),"config/settings.relax")
+                   filename<-file.path(path.package("relax"),"config/settings.relax") # 130325 .path.package defunct
                    try(cat(file=filename,newsettings))
                    tkmessageBox(title="", icon="warning",
                             message="to get new settings work, relax has to be restarted")
@@ -3393,13 +3316,13 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                    try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
         })
         LoadOrig<-tkbutton(fcmd,width=15,text="load original",command=function(){
-          filename<-file.path(.path.package("relax"),"config/settings.init")
+          filename<-file.path(path.package("relax"),"config/settings.init") # 130325 .path.package defunct
           settings<-scan(file=filename,what="",sep="\n")
           try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
         })
         tkpack(Save,ReloadOld,LoadOrig,Exit,side="left")
         tkwm.title(.newl,"view and change settings of relax: config/settings.relax")
-        filename<-file.path(.path.package("relax"),"config/settings.relax")
+        filename<-file.path(path.package("relax"),"config/settings.relax") # 130325 .path.package defunct
         settings<-scan(file=filename,what="",sep="\n")
         assign("settings",settings,envir=revive.sys)
         try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
@@ -3496,7 +3419,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3566,7 +3489,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3634,7 +3557,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3703,7 +3626,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3771,7 +3694,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3839,7 +3762,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3907,7 +3830,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -3975,7 +3898,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -4043,7 +3966,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -4085,8 +4008,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
    }
    LaTeX.head<-function(){
     melde("LaTeX.head",1)
-    # news<-scan(file=paste(.path.package("relax"),"lib/LaTeX-head.tex",sep="/"),what="",sep="\n")
-    news<-readLines(paste(.path.package("relax"),"lib/LaTeX-head.tex",sep="/")) # 2.1.0
+    # news<-scan(file=paste(path.package("relax"),"lib/LaTeX-head.tex",sep="/"),what="",sep="\n")
+    news<-readLines(paste(path.package("relax"),"lib/LaTeX-head.tex",sep="/")) # 2.1.0 # 130325 .path.package defunct
     news<-sub("NOWEBSTYLEFILE",file.path(relax.path,"lib","noweb"),news)
     news<-sub("JOBPATH",getwd(),news); news<-c(news,"")
     if(!exists("revive.sys")) revive.sys<-get("revive.sys",envir=revive.env)
@@ -4137,8 +4060,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     melde("latex process starts, messages: see output window\n") 
     # 060116: show logfile
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
         latex<-paste(latex.command.windows," ",filename,sep="")
         ok<-try(shell(latex,wait=TRUE))
     }else{ 
@@ -4177,8 +4099,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     }
     if(!file.exists(filename)){ cat("ERROR: file",filename,"not found!!!\n");return() }
     cmd <-paste(editor.sys, filename)
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
         try(shell(cmd,wait=FALSE))
     }else{
       if( substring(version$os,1,6)=="darwin"  ){
@@ -4201,13 +4122,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(!file.exists(filename)){
       cat("ERROR: file",filename,"not found!!!\n");return()
     }
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
         view<-paste(view.command.windows," ",filename,sep="")
         try(shell(view,wait=FALSE))
     }else{
-        if(substring(version$os,1,5)=="linux"
-) 
+        if(substring(version$os,1,5)=="linux") 
           view<-paste(view.command.linux,"  ",filename," &",sep="")
         if(substring(version$os,1,6)=="darwin"  ){
           view<-paste(view.command.mac,"  ",filename," &",sep="")
@@ -4226,8 +4145,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(!file.exists(filename)){
         cat("ERROR: file",filename,"not found!!!\n");return()
     }
-    if((version$os=="Win32" || version$os=="mingw32")
-){
+    if((.Platform$OS.type=="windows")){
         dvipdf<-paste(dvipdf.command.windows," ",filename,sep="")
         try(shell(dvipdf,wait=FALSE))
     }else{
@@ -4271,7 +4189,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
             ok <- "OK"
           } else {
             if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-            ok<-try.res[1]
+            if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
             if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
             if(!is.character(ok)) { ok <- "OK" }
           }
@@ -4375,7 +4293,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        ok <- "OK"
      } else {
        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-       ok<-try.res[1]
+       if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
        if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
        if(!is.character(ok)) { ok <- "OK" }
      }
@@ -4446,7 +4364,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        ok <- "OK"
      } else {
        if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-       ok<-try.res[1]
+       if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
        if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
        if(!is.character(ok)) { ok <- "OK" }
      }
@@ -4507,7 +4425,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -4601,7 +4519,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -4656,8 +4574,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         cat(file=infile,sweave.call,"\n")
      cmd<-paste(R.home(),"/bin/Rcmd BATCH ",infile," ",
                   outfile,sep="")
-  if((version$os=="Win32" || version$os=="mingw32")
-){
+  if((.Platform$OS.type=="windows")){
      shell(cmd)
   }else{
       system(cmd)
@@ -4714,7 +4631,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -4781,14 +4698,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        }
        ### cat("# aktueller chunk:",no,"\n")
        code<-paste(chunks[no.start:no.end],collapse="\n")
-       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-            is.nan(no.end)||is.nan(no.start)){
-            cat("# versuchte Chunk-Nummer falsch\n"); return()
-       }
-       ### cat("# aktueller chunk:",no,"\n")
-       code<-paste(chunks[no.start:no.end],collapse="\n")
        if(0<length(code)) {
         tkdelete(ttext,"0.0","end")  
         tkinsert(ttext,"0.0",code)
@@ -4805,14 +4714,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        }
        ### cat("# aktueller chunk:",no,"\n")
        code<-paste(chunks[no.start:no.end],collapse="\n")
-       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-            is.nan(no.end)||is.nan(no.start)){
-            cat("# versuchte Chunk-Nummer falsch\n"); return()
-       }
-       ### cat("# aktueller chunk:",no,"\n")
-       code<-paste(chunks[no.start:no.end],collapse="\n")
        if(0<length(code)) {
         tkdelete(ttext,"0.0","end")  
         tkinsert(ttext,"0.0",code)
@@ -4826,14 +4727,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
             is.nan(no.end)||is.nan(no.start)){
             cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-       }
-       ### cat("# aktueller chunk:",no,"\n")
-       code<-paste(chunks[no.start:no.end],collapse="\n")
-       no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-       no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-            is.nan(no.end)||is.nan(no.start)){
-            cat("# versuchte Chunk-Nummer falsch\n"); return()
        }
        ### cat("# aktueller chunk:",no,"\n")
        code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -4905,14 +4798,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
            is.nan(no.end)||is.nan(no.start)){
            cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-      }
-      ### cat("# aktueller chunk:",no,"\n")
-      code<-paste(chunks[no.start:no.end],collapse="\n")
-      no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-      no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-      if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-           is.nan(no.end)||is.nan(no.start)){
-           cat("# versuchte Chunk-Nummer falsch\n"); return()
       }
       ### cat("# aktueller chunk:",no,"\n")
       code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -5029,7 +4914,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -5088,14 +4973,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -5112,14 +4989,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -5133,14 +5002,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                         is.nan(no.end)||is.nan(no.start)){
                                                                         cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -5212,14 +5073,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                        is.nan(no.end)||is.nan(no.start)){
                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                  }
-                                                                  ### cat("# aktueller chunk:",no,"\n")
-                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                       is.nan(no.end)||is.nan(no.start)){
-                                                                       cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                   }
                                                                   ### cat("# aktueller chunk:",no,"\n")
                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -5314,14 +5167,18 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
          ,envir=revive.sys)
   ShowHistory<-function(){
     melde("ShowHistory",1)
-    # check history
-    if(0==length(grep("relax.history",ls(envir=revive.sys)))){ cat("relax warning: no history found"); return() }
-    # save history in file
-    relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
-    workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
-    base::cat(txt,file=workname,sep="\n")
-    # tangle history file
-    try(tangleR(workname)); workname<-sub(".rev$",".R",workname); cat(workname,"generated\n")
+      # check history
+      if(0==length(grep("relax.history",ls(envir=revive.sys)))){ 
+        cat("relax warning: no history found"); return() 
+      }
+      # save history in file
+      relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
+      workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
+      base::cat(txt,file=workname,sep="\n")
+      # tangle history file
+      try(tangleR(workname)); workname<-sub(".rev$",".R",workname)
+      cat(sub(".R$",".rev",workname),"/",workname,"generated\n")
+
     # construct history viewer
     chunks<-where<-"" # to reduce warnings during package construction
     fh<-function(file,no=1,start=TRUE){
@@ -5351,14 +5208,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -5375,14 +5224,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
                                                                    if(0<length(code)) {
                                                                     tkdelete(ttext,"0.0","end")  
                                                                     tkinsert(ttext,"0.0",code)
@@ -5396,14 +5237,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                    if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                         is.nan(no.end)||is.nan(no.start)){
                                                                         cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                   }
-                                                                   ### cat("# aktueller chunk:",no,"\n")
-                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                   no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                   no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                        is.nan(no.end)||is.nan(no.start)){
-                                                                        cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                    }
                                                                    ### cat("# aktueller chunk:",no,"\n")
                                                                    code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -5475,14 +5308,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                                                   if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
                                                                        is.nan(no.end)||is.nan(no.start)){
                                                                        cat("# sorry, chunk number '",no,"' wrong!\n"); return()
-                                                                  }
-                                                                  ### cat("# aktueller chunk:",no,"\n")
-                                                                  code<-paste(chunks[no.start:no.end],collapse="\n")
-                                                                  no.start<-grep(paste("^#",no,":$",sep=""),chunks)
-                                                                  no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
-                                                                  if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
-                                                                       is.nan(no.end)||is.nan(no.start)){
-                                                                       cat("# versuchte Chunk-Nummer falsch\n"); return()
                                                                   }
                                                                   ### cat("# aktueller chunk:",no,"\n")
                                                                   code<-paste(chunks[no.start:no.end],collapse="\n")
@@ -5567,6 +5392,23 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     # start of history viewer
     try(eval(parse(text=txt),envir=revive.env))
     melde("ShowHistory",2)
+  }
+
+  SaveHistory<-function(){
+    melde("SaveHistory",1)
+      # check history
+      if(0==length(grep("relax.history",ls(envir=revive.sys)))){ 
+        cat("relax warning: no history found"); return() 
+      }
+      # save history in file
+      relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
+      workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
+      base::cat(txt,file=workname,sep="\n")
+      # tangle history file
+      try(tangleR(workname)); workname<-sub(".rev$",".R",workname)
+      cat(sub(".R$",".rev",workname),"/",workname,"generated\n")
+
+    melde("SaveHistory",2)
   }
 
   FindReportChunk<-function(){
@@ -5744,7 +5586,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     doc<-c("=================================================",
            "RELAX -- R Editor for Literate Analysis and lateX",
            "=================================================","",
-           paste("version:","relax 1.3.12 - 121218"),"",
+           paste("version:","relax 1.3.13 - 130408"),"",
                  "relax() is designed to support processes of data analysis, report writing,",
                  "presentation, and programming. On start relax() creates a Tk/Tcl window",
                  "consisting a report and an output field. You can write down your ideas as",
@@ -5774,7 +5616,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                 # "file of the package, see: relax/src/tkimg1.3.tar.gz.","",
                  "---------------------------------------------------------","",""
                  )
-    try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
+    try(doc<-c(doc,scan(file=paste(path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n"))) # 130325 .path.package defunct
     .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
     tkpack(tt<-tktext(.newl,height="33")) ## ((length(doc)))
     tkwm.title(.newl,paste("What's relax? ","Exit by Return or Escape!"))
@@ -5793,9 +5635,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   ShowShortCuts<-function(){
     melde("ShowShortCuts",1)
     keys<-c("Shortcuts of relax:","",
-            if((version$os=="Win32" || version$os=="mingw32")
- | substring(version$os,1,5)=="linux"
-)
+            if((.Platform$OS.type=="windows") | substring(version$os,1,5)=="linux")
                 c("Alt-D:  move cursor one code chunk DOWN",
                   "Alt-U:  move cursor one code chunk UP",
                   "Alt-P:  plan new code chunk",
@@ -6186,15 +6026,13 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     h<-gsub(" ","",gsub(":","",date())); h<-substring(h,4:nchar(h),4:nchar(h))
     jpgname<-paste(c("t",h[6:11],h[4:5],h[1:2],h[14:15],".jpg"),collapse="")
     ppmname<-paste(c("t",h[6:11],h[4:5],h[1:2],h[14:15],".ppm"),collapse="")
-    if(substring(version$os,1,5)=="linux"
-){ #121114
+    if(substring(version$os,1,5)=="linux"){ #121114
       system("echo q | latex tmptmp.tex; dvips -E tmptmp.dvi")
       system(paste("convert tmptmp.ps ",jpgname))
       system(paste("convert tmptmp.ps tmptmp.ppm; pnmcrop tmptmp.ppm > ",ppmname))
       system("rm tmptmp.tex tmptmp.aux tmptmp.log tmptmp.ppm tmptmp.dvi tmptmp.ps")
     }
-    if((version$os=="Win32" || version$os=="mingw32")
-){ #121114
+    if((.Platform$OS.type=="windows")){ #121114
       if(!(exists("ghostscript")&&2<=nchar(ghostscript)&&0<length(grep("[A-Za-z]",ghostscript)))) 
          return()
          if(!file.exists(paste(ghostscript,".exe",sep=""))){
@@ -6528,7 +6366,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6580,7 +6418,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6631,7 +6469,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6677,7 +6515,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6771,7 +6609,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6862,7 +6700,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -6965,7 +6803,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7038,7 +6876,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7069,7 +6907,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -7105,7 +6943,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7197,7 +7035,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7263,7 +7101,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7385,7 +7223,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7516,7 +7354,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7578,7 +7416,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     path<-file.path(relax.path,"rev/robj.R")
     fns<-readLines(path) #2.1.0
     try(eval(parse(text=fns),
-                 envir=pos.to.env(which(.path.package("relax")==searchpaths()))))
+                 envir=pos.to.env(which(path.package("relax")==searchpaths())))) # 130325 .path.package defunct
     melde("LoadRwtools",2)
   }
 
@@ -7588,7 +7426,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
     if(is.null(n)||5>n||substring(filename,n-3,n)!=".rev"){
       cat("ERROR: file name not ok!!!\n"); return()
     }
-    if(version$os=="Win32" || version$os=="mingw32"){
+    if( (.Platform$OS.type=="windows") ){
            fname<-paste(sub("rev$","html",filename),sep="")
            browser.exe<- if(browser.sys=="") "start " else browser.sys
            res<-shell(paste(browser.exe, fname),wait=FALSE)
@@ -7637,7 +7475,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ok <- "OK"
     } else {
       if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-      ok<-try.res[1]
+      if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
       if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
       if(!is.character(ok)) { ok <- "OK" }
     }
@@ -7657,8 +7495,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
       ##  try.res <- try(system(paste(editor.sys, ..tmp..)))
       cmd<-paste(editor.sys, get("tmp.file.name",envir=revive.sys)
 )
-      if((version$os=="Win32" || version$os=="mingw32")
-){
+      if((.Platform$OS.type=="windows")){
         try.res<-try(shell(cmd,wait=TRUE))
       }else{
         try.res<-try(system(cmd))
@@ -7667,7 +7504,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         ok <- "OK"
       } else {
         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-        ok<-try.res[1]
+        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
         if(!is.character(ok)) { ok <- "OK" }
       }
@@ -7690,7 +7527,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
           ok <- "OK"
         } else {
           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-          ok<-try.res[1]
+          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
           if(!is.character(ok)) { ok <- "OK" }
         }
@@ -7707,8 +7544,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
 
         if(ok){
-          if((version$os=="Win32" || version$os=="mingw32")
-)worktext<-WinToTcl.read(worktext)
+          if((.Platform$OS.type=="windows"))worktext<-WinToTcl.read(worktext)
           line <-floor(as.numeric(tkindex(tworkwin,"insert")))
 
           code.start<-grep("^<<(.*)>>=",worktext)
@@ -8147,7 +7983,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8185,7 +8021,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8206,8 +8042,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                          "height=",psheight.sys,"]{",bildname,"}\\end{center}\n",sep="") #081121
            # jpeg:
              jpgname<-paste(bildname,".jpg",sep="")
-             if((version$os=="Win32" || version$os=="mingw32")
-){ # width=width in pixel, 72 dpi
+             if((.Platform$OS.type=="windows")){ # width=width in pixel, 72 dpi
                try.res<-try({dev.copy(jpeg,jpgname,width=jpgdesignsize.sys*72,
                                       height=jpgdesignsize.sys*72,quality=100,pointsize=7);dev.off()})
              }else{
@@ -8218,7 +8053,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8239,13 +8074,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            # ppm
              ppmname<-paste(bildname,".ppm",sep="")
              # if( <das OS ist Windows>  && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){
-             if((version$os=="Win32" || version$os=="mingw32")
- && 2<=nchar(ghostscript) && !no.plots){
+             if((.Platform$OS.type=="windows") && 2<=nchar(ghostscript) && !no.plots){
                try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
              }
              # if( <das OS ist Linux> && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){ }
-             if(substring(version$os,1,5)=="linux"
- && 2<=nchar(ghostscript) && !no.plots){ # 121113
+             if(substring(version$os,1,5)=="linux" && 2<=nchar(ghostscript) && !no.plots){ # 121113
                try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
              }
            # gif+ppm:
@@ -8257,7 +8090,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                  ok <- "OK"
                } else {
                  if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                 ok<-try.res[1]
+                 if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                  if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                  if(!is.character(ok)) { ok <- "OK" }
                }
@@ -8743,7 +8576,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8781,7 +8614,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8802,8 +8635,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                          "height=",psheight.sys,"]{",bildname,"}\\end{center}\n",sep="") #081121
            # jpeg:
              jpgname<-paste(bildname,".jpg",sep="")
-             if((version$os=="Win32" || version$os=="mingw32")
-){ # width=width in pixel, 72 dpi
+             if((.Platform$OS.type=="windows")){ # width=width in pixel, 72 dpi
                try.res<-try({dev.copy(jpeg,jpgname,width=jpgdesignsize.sys*72,
                                       height=jpgdesignsize.sys*72,quality=100,pointsize=7);dev.off()})
              }else{
@@ -8814,7 +8646,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                ok <- "OK"
              } else {
                if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-               ok<-try.res[1]
+               if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                if(!is.character(ok)) { ok <- "OK" }
              }
@@ -8835,13 +8667,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
            # ppm
              ppmname<-paste(bildname,".ppm",sep="")
              # if( <das OS ist Windows>  && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){
-             if((version$os=="Win32" || version$os=="mingw32")
- && 2<=nchar(ghostscript) && !no.plots){
+             if((.Platform$OS.type=="windows") && 2<=nchar(ghostscript) && !no.plots){
                try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
              }
              # if( <das OS ist Linux> && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){ }
-             if(substring(version$os,1,5)=="linux"
- && 2<=nchar(ghostscript) && !no.plots){ # 121113
+             if(substring(version$os,1,5)=="linux" && 2<=nchar(ghostscript) && !no.plots){ # 121113
                try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
              }
            # gif+ppm:
@@ -8853,7 +8683,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                  ok <- "OK"
                } else {
                  if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                 ok<-try.res[1]
+                 if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                  if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                  if(!is.character(ok)) { ok <- "OK" }
                }
@@ -9305,7 +9135,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                x[idx] <- xx; worktext <- x; worktext <- paste(worktext,collapse="") 
                changes <- TRUE
           } # end of replacements
-        } # end of Mac-Tiger
+        } # end of Mac-Mini
       } # end of not <..> case
     } # end of is.UTF
     is.LATIN1 <-l10n_info()[["Latin-1"]] 
@@ -9393,8 +9223,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         twin<-tt; f.sonderzeichen<-function(zeichen){
                     function(){
                       tkinsert(twin,"insert",zeichen)
-                      if((version$os=="Win32" || version$os=="mingw32")
-)tkdelete(twin,"insert-1chars")
+                      if((.Platform$OS.type=="windows"))tkdelete(twin,"insert-1chars")
                       if(substring(version$os,1,6)=="darwin" )tkdelete(twin,"insert-1chars")
                     }
                   }
@@ -10319,7 +10148,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   REVFILE            <- "REVFILE"    # eingelesener RevFile
   RCHFILE            <- "RCHFILE"    # eingelesener Chunk-File
   fr.paper.sys       <- "forget"     #
-  relax.version.sys<- "relax 1.3.12 - 121218"
+  relax.version.sys<- "relax 1.3.13 - 130408"
 
   tvexit       <- tclVar("0")
   tvchoice     <- tclVar("0")
@@ -10342,9 +10171,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   outfont.sys<-sub("al--.+-.+-\\*",paste("al--",sizes[initial.font.size],"-*",sep=""),outfont.sys)
   workname.sys<-"out.rev"
 
-  if((version$os=="Win32" || version$os=="mingw32")
- | substring(version$os,1,5)=="linux"
-){
+  if((.Platform$OS.type=="windows") | substring(version$os,1,5)=="linux"){
     tkevent.add("<<Down>>",        "<Alt_L><d>")
     tkevent.add("<<Up>>",          "<Alt_L><u>")
     tkevent.add("<<PlanRCode>>",   "<Alt_L><p>")
@@ -10438,7 +10265,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkwm.title(TopW,paste(
                if(but.Wizardry=="simple") "redit -- simple Report EDITor for statistical analysis:" else
                                           "relax -- Report Editor for Literate Analysis and lateX:",
-                        "relax 1.3.12 - 121218"))
+                        "relax 1.3.13 - 130408"))
   tkwm.protocol(TopW,"WM_DELETE_WINDOW",function(){
                      if(!exists("tworkwin"))
                        tworkwin<-get("tworkwin",envir=get("revive.sys",envir=revive.env))
@@ -10448,12 +10275,10 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
 
                      cat("... not a nice way to exit relax !!!\n")
                      cat("backup file: report-UnDo-bak.rev\n")
-                     if( (version$os=="Win32" || version$os=="mingw32")
- ){
+                     if( (.Platform$OS.type=="windows") ){
                         cat("--> to proceed the R session try: Quit R, then don't quit!\n")
                      }
-                     if(substring(version$os,1,5)=="linux"
-) cat("-- try: <Ctrl-C> to proceed the R session!\n")
+                     if(substring(version$os,1,5)=="linux") cat("-- try: <Ctrl-C> to proceed the R session!\n")
                      set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
              }
   )
@@ -10807,16 +10632,14 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         label="SWEAVE:   save, Sweave (new process) and LaTeX file")
    ##tkadd(mbRevweb.menu, "separator")
    FTL.ok<-FALSE
-   if( (version$os=="Win32" || version$os=="mingw32")
- ){
+   if( (.Platform$OS.type=="windows") ){
          libpath<-file.path(relax.path,"lib")
          if(file.exists(file.path(libpath,"pnmcrop.exe")) &&
             file.exists(file.path(libpath,"ppmtojpeg.exe")) &&
             file.exists(file.path(libpath,"netpbm.dll")) &&
             file.exists(file.path(libpath,"libjpeg.dll"))) FTL.ok<-TRUE
    }
-   if(substring(version$os,1,5)=="linux"
-){
+   if(substring(version$os,1,5)=="linux"){
       if(0<length(system("which convert",TRUE,TRUE)) &&
          0<length(system("which dvips",TRUE,TRUE))) FTL.ok<-TRUE
      }
@@ -10862,6 +10685,8 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         label="playground:   open R-window for testing R-code")
   tkadd(mbFile.menu,"command", command=ShowHistory,
         label="ShowHistory:   show history of evaluation in a separate window")
+  tkadd(mbFile.menu,"command", command=SaveHistory,
+        label="SaveHistory:   save history of evaluation")
   if(but.Wizardry!="simple") {
     tkadd(mbFile.menu,"command", command=StartCodeChunkPlayer,
         label="StartCodeChunkPlayer:     call code chunk player (without saving report field)")
@@ -10917,7 +10742,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
         label="UnDo:   load report-UnDo-bak.rev (report before last evaluation)")
 
   melde("frame head defined",3)
-
   implement.but("TrashROutput", "fworkcmds", "trash output (after line of cursor)",
                 job=fTrashROutput) ## 071115
   implement.but("WarnEval",   "fworkcmds", "evaluate code (even if warnings occur)",
@@ -10995,8 +10819,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   tkpack(outbar ,side="right",fill="y")
   tkpack(toutwin,fill="both",expand="yes")
 
-  if((version$os=="Win32" || version$os=="mingw32")
-) #{}
+  if((.Platform$OS.type=="windows")) #{}
   { # 110505
   # fout<-get("fout",envir=revive.sys); toutwin<-get("toutwin",envir=revive.sys)
    tkbind(fout,"<Configure>","")
@@ -11109,8 +10932,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
        fname<-sub("(.jpg).*$","\\1",fname)
        browser.sys<-get("browser.sys",envir=revive.sys)
        cat(fname, "will be displayed by browser in a few seconds!\n")
-       if( (version$os=="Win32" || version$os=="mingw32")
- ){
+       if( (.Platform$OS.type=="windows") ){
          browser.exe<- if(browser.sys=="") "start " else browser.sys
              res<-try(shell(paste(browser.exe, fname),wait=FALSE))  
          if(res!=0){ cat("ERROR: browser hasn't been started successfully \n") }
@@ -11284,8 +11106,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   twin<-tworkwin; f.sonderzeichen<-function(zeichen){
                     function(){
                       tkinsert(twin,"insert",zeichen)
-                      if((version$os=="Win32" || version$os=="mingw32")
-)tkdelete(twin,"insert-1chars")
+                      if((.Platform$OS.type=="windows"))tkdelete(twin,"insert-1chars")
                       if(substring(version$os,1,6)=="darwin" )tkdelete(twin,"insert-1chars")
                     }
                   }
@@ -11524,7 +11345,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                           ok <- "OK"
                         } else {
                           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                          ok<-try.res[1]
+                          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                           if(!is.character(ok)) { ok <- "OK" }
                         }
@@ -11545,8 +11366,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                                     "height=",psheight.sys,"]{",bildname,"}\\end{center}\n",sep="") #081121
                       # jpeg:
                         jpgname<-paste(bildname,".jpg",sep="")
-                        if((version$os=="Win32" || version$os=="mingw32")
-){ # width=width in pixel, 72 dpi
+                        if((.Platform$OS.type=="windows")){ # width=width in pixel, 72 dpi
                           try.res<-try({dev.copy(jpeg,jpgname,width=jpgdesignsize.sys*72,
                                                  height=jpgdesignsize.sys*72,quality=100,pointsize=7);dev.off()})
                         }else{
@@ -11557,7 +11377,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                           ok <- "OK"
                         } else {
                           if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                          ok<-try.res[1]
+                          if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                           if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                           if(!is.character(ok)) { ok <- "OK" }
                         }
@@ -11578,13 +11398,11 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                       # ppm
                         ppmname<-paste(bildname,".ppm",sep="")
                         # if( <das OS ist Windows>  && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){
-                        if((version$os=="Win32" || version$os=="mingw32")
- && 2<=nchar(ghostscript) && !no.plots){
+                        if((.Platform$OS.type=="windows") && 2<=nchar(ghostscript) && !no.plots){
                           try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
                         }
                         # if( <das OS ist Linux> && 2<=nchar(ghostscript) && !Img.package.found && !no.plots){ }
-                        if(substring(version$os,1,5)=="linux"
- && 2<=nchar(ghostscript) && !no.plots){ # 121113
+                        if(substring(version$os,1,5)=="linux" && 2<=nchar(ghostscript) && !no.plots){ # 121113
                           try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
                         }
                       # gif+ppm:
@@ -11596,7 +11414,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                             ok <- "OK"
                           } else {
                             if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                            ok<-try.res[1]
+                            if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                             if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                             if(!is.character(ok)) { ok <- "OK" }
                           }
@@ -11681,7 +11499,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
                         ok <- "OK"
                       } else {
                         if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-                        ok<-try.res[1]
+                        if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
                         if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
                         if(!is.character(ok)) { ok <- "OK" }
                       }
@@ -11815,7 +11633,7 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   ##definiere Logik zum Eintrag der Zeilennummer##
   data.fns.menu()
   ReloadReportWidget() # to repair defect report widget
-  cat( "relax 1.3.12 - 121218" ,"\n")
+  cat( "relax 1.3.13 - 130408" ,"\n")
   if(language=="german"){
     cat("relax Initialisierung abgeschlossen!\nR-Editor wird erneut durch  relax()  gestartet!\n")
   }else{

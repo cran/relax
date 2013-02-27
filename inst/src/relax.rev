@@ -7,15 +7,15 @@
 % d) Nr in Datei "install.dir/dorx":     
 %            notangle -Rdefine-dorx relax.rev > install.dir/dorx; chmod +x install.dir/dorx
 % e) $HOME/R/work/install.dir/dorx   starten 
-% f) cp install.dir/relax_1.3.12.*  
-%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.12.*
+% f) cp install.dir/relax_1.3.13.*  
+%          http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.13.*
 % g) upload to cran:
-%    1. mailto:  cran@r-project.org: subject: CRAN submission relax 1.3.12
+%    1. mailto:  cran@r-project.org: subject: CRAN submission relax 1.3.13
 %    2a. upload by konquerer!! 
 %          ftp://CRAN.R-project.org/incoming/ 
 %    2b. upload by ftp
 %          ftp ftp://cran.R-project.org/incoming/
-%          ftp> put relax_1.3.12.tar.gz
+%          ftp> put relax_1.3.13.tar.gz
 %          ftp> bye   
 % ==========================================================
 % Paketverteilung fuer Rechner: 138/20/21/102: 
@@ -34,8 +34,8 @@
 %   cd lib; zip -r relax.zip relax
 % Paketbeschaffung über Netz:
 %   download.file(
-%     "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.12.tar.gz",
-%     "relax_1.3.12.tar.gz")
+%     "http://www.wiwi.uni-bielefeld.de/fileadmin/stat/wolf/SOFTWARE/relax_1.3.13.tar.gz",
+%     "relax_1.3.13.tar.gz")
 % Dokumentationserstellung:
 %   cd /home/wiwi/pwolf/work/relax
 %   noweave -delay -index relax.rev > relax.tex; latex relax
@@ -97,7 +97,7 @@
 %% ============================================================== %% neue Versionen: ändere auch "
 " in "install.dir" sowie Chunk unten: define-DESCRIPTION
 <<Version von [[relax]]>>=
-"relax 1.3.12 - 121218"
+"relax 1.3.13 - 130408"
 @
 <<relax>>=
 "relax"
@@ -1667,7 +1667,7 @@ tkpack(tworkwin,fill="both",expand="yes")
 tkinsert(tworkwin,"0.0",paste("% New Report:",date(),"\n"))
 ### CLIPBOARD-Funktion PASTE a la windows / clipboard
   ### tkevent.add("@<<Paste>>", "<Control_L><v>")
-if(<<OS ist Mac-Mini-Tiger>> ){
+if(<<OS ist Mac-Mini>> ){
   mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
      try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
           news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
@@ -1795,7 +1795,7 @@ if(<<das OS ist Windows>>) #{}
  }
  tkbind(fout,"<Configure>",config.fns)
 }
-if(<<OS ist Mac-Mini-Tiger>> ){  #121109
+if(<<OS ist Mac-Mini>> ){  #121109
   tkbind(toutwin,"<Control_L><v>",mac.paste)
   tkbind(toutwin,"<Control_L><c>",mac.copy) 
   tkbind(toutwin,"@<<extract>>",mac.copy) 
@@ -2049,7 +2049,7 @@ Exit<-function(){
   if(res=="cancel") return()
   if(res=="no") SaveReport()
   set.tclvalue("tvexit","fertig"); tkdestroy(TopW)
-  ## remove("print",pos=which(.path.package("relax")==searchpaths())) ## 111103
+  ## remove("print",pos=which(path.package("relax")==searchpaths())) ## 111103 # 130325 .path.package defunct
   melde("==================================================\n")
   melde("RELAX --- EXIT                    \n")
   # melde("copy of report saved as: \n")
@@ -2390,7 +2390,7 @@ ConfigRelax<-function(){
       tkpack(fcmd<-tkframe(.newl))
       Save<-tkbutton(fcmd,width=15,text="save settings",command=function(){
 		 newsettings<-paste(tclvalue(tkget(tt,"0.0","end")),"\n")
-		 filename<-file.path(.path.package("relax"),"config/settings.relax")
+		 filename<-file.path(path.package("relax"),"config/settings.relax") # 130325 .path.package defunct
 		 try(cat(file=filename,newsettings))
 		 tkmessageBox(title="", icon="warning",
                           message="to get new settings work, relax has to be restarted")
@@ -2405,13 +2405,13 @@ ConfigRelax<-function(){
                  try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
       })
       LoadOrig<-tkbutton(fcmd,width=15,text="load original",command=function(){
-	filename<-file.path(.path.package("relax"),"config/settings.init")
+	filename<-file.path(path.package("relax"),"config/settings.init") # 130325 .path.package defunct
         settings<-scan(file=filename,what="",sep="\n")
         try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
       })
       tkpack(Save,ReloadOld,LoadOrig,Exit,side="left")
       tkwm.title(.newl,"view and change settings of relax: config/settings.relax")
-      filename<-file.path(.path.package("relax"),"config/settings.relax")
+      filename<-file.path(path.package("relax"),"config/settings.relax") # 130325 .path.package defunct
       settings<-scan(file=filename,what="",sep="\n")
       assign("settings",settings,envir=revive.sys)
       try(tkinsert(tt,"0.0",paste(settings,collapse="\n")))
@@ -2767,8 +2767,8 @@ eine Spezialform des noweb-Systems unter Windows installiert sein.
  }
  LaTeX.head<-function(){
   melde("LaTeX.head",1)
-  # news<-scan(file=paste(.path.package("relax"),"lib/LaTeX-head.tex",sep="/"),what="",sep="\n")
-  news<-readLines(paste(.path.package("relax"),"lib/LaTeX-head.tex",sep="/")) # 2.1.0
+  # news<-scan(file=paste(path.package("relax"),"lib/LaTeX-head.tex",sep="/"),what="",sep="\n")
+  news<-readLines(paste(path.package("relax"),"lib/LaTeX-head.tex",sep="/")) # 2.1.0 # 130325 .path.package defunct
   news<-sub("NOWEBSTYLEFILE",file.path(relax.path,"lib","noweb"),news)
   news<-sub("JOBPATH",getwd(),news); news<-c(news,"")
   <<lese Arbeitsfenster auf [[worktext]] ein>>
@@ -2832,7 +2832,7 @@ eine Spezialform des noweb-Systems unter Windows installiert sein.
   if(<<das OS ist Windows>>){
       try(shell(cmd,wait=FALSE))
   }else{
-    if( <<OS ist Mac-Mini-Tiger>> ){
+    if( <<OS ist Mac-Mini>> ){
       cmd<-paste(view.command.mac,filename)
     } 
     try(system(paste(cmd," &")))
@@ -2846,7 +2846,7 @@ eine Spezialform des noweb-Systems unter Windows installiert sein.
   if(is.null(n)||5>n||substring(filename,n-3,n)!=".dvi"){
     cat("ERROR: file",filename,"not compatible!!!\n");return()
   }
-  if(<<OS ist Mac-Mini-Tiger>> ){
+  if(<<OS ist Mac-Mini>> ){
         filename<-sub("dvi$","pdf",filename)   
   }    
   if(!file.exists(filename)){
@@ -2858,7 +2858,7 @@ eine Spezialform des noweb-Systems unter Windows installiert sein.
   }else{
       if(<<das OS ist Linux>>) 
         view<-paste(view.command.linux,"  ",filename," &",sep="")
-      if(<<OS ist Mac-Mini-Tiger>> ){
+      if(<<OS ist Mac-Mini>> ){
         view<-paste(view.command.mac,"  ",filename," &",sep="")
       }
       try(system(view))
@@ -3301,14 +3301,7 @@ assign("relax.history",
        ,envir=revive.sys)
 ShowHistory<-function(){
   melde("ShowHistory",1)
-  # check history
-  if(0==length(grep("relax.history",ls(envir=revive.sys)))){ cat("relax warning: no history found"); return() }
-  # save history in file
-  relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
-  workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
-  base::cat(txt,file=workname,sep="\n")
-  # tangle history file
-  try(tangleR(workname)); workname<-sub(".rev$",".R",workname); cat(workname,"generated\n")
+  <<check, save and tangle history>>
   # construct history viewer
   chunks<-where<-"" # to reduce warnings during package construction
   <<DemoFunctionHead>>; fh<-deparse(fh); fh<-fh[-length(fh)]; <<DemoFunctionTail>>
@@ -3332,6 +3325,28 @@ ShowHistory<-function(){
   # start of history viewer
   try(eval(parse(text=txt),envir=revive.env))
   melde("ShowHistory",2)
+}
+
+@
+<<check, save and tangle history>>=
+  # check history
+  if(0==length(grep("relax.history",ls(envir=revive.sys)))){ 
+    cat("relax warning: no history found"); return() 
+  }
+  # save history in file
+  relax.history<-get("relax.history",envir=revive.sys); txt<-unlist(relax.history)
+  workname<-sub(".rev$",".history.rev",get("workname.sys",envir=revive.sys))
+  base::cat(txt,file=workname,sep="\n")
+  # tangle history file
+  try(tangleR(workname)); workname<-sub(".rev$",".R",workname)
+  cat(sub(".R$",".rev",workname),"/",workname,"generated\n")
+
+@
+<<definiere Kopf-Zeilen-Funktionen>>=
+SaveHistory<-function(){
+  melde("SaveHistory",1)
+  <<check, save and tangle history>>
+  melde("SaveHistory",2)
 }
 
 @
@@ -3500,7 +3515,7 @@ ft<-function(){
   tkpack(tf,side="bottom"); tkpack(tf,ttext,side="bottom",fill="both",expand="y") # 091026
   tkevent.add("@<<Paste>>",   "<Control_L><v>")
 ## ok:  tkbind(ttext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
-if(<<OS ist Mac-Mini-Tiger>> ){
+if(<<OS ist Mac-Mini>> ){
   mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
      try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
           news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
@@ -3531,7 +3546,7 @@ if(<<OS ist Mac-Mini-Tiger>> ){
   bnext<-tkbutton(tf,text="NEXT",width=9)
   bback<-tkbutton(tf,text="BACK",width=9)
   tkbind(top, "@<<EvalRCode>>", eval.code)
-  if( ! <<OS ist Mac-Mini-Tiger>> ) {
+  if( ! <<OS ist Mac-Mini>> ) {
     tkbind(top, "@<<Next>>", show.next.number)
     tkbind(top, "@<<Back>>", show.back.number)
   }
@@ -3615,7 +3630,7 @@ Die alte rtrevweb-Lösung mittels noweb:
   }
   if( <<das OS ist Windows>> ){
     if(missing(binpath)){
-      binpath<-paste(.path.package(<<relax>>),"rtrevweb",sep=.Platform$file.sep)
+      binpath<-paste(path.package(<<relax>>),"rtrevweb",sep=.Platform$file.sep) # 130325 .path.package defunct
       binpath<-gsub("/","\\\\",binpath)
     }
     vol<-strsplit(binpath,":")[[1]]
@@ -3884,7 +3899,7 @@ ShowAboutRelax<-function(){
               # "file of the package, see: relax/src/tkimg1.3.tar.gz.","",
 	       "---------------------------------------------------------","",""
                )
-  try(doc<-c(doc,scan(file=paste(.path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n")))
+  try(doc<-c(doc,scan(file=paste(path.package("relax"),"lib/gpl.txt",sep="/"),what="",sep="\n"))) # 130325 .path.package defunct
   .newl<-tktoplevel();tkwm.geometry(.newl,"+0+15")
   tkpack(tt<-tktext(.newl,height="33")) ## ((length(doc)))
   tkwm.title(.newl,paste("What's relax? ","Exit by Return or Escape!"))
@@ -3915,7 +3930,7 @@ ShowShortCuts<-function(){
                 "Alt-T:  delete inserted output from report",
                 "Alt-H:  R help",
                 "Alt-F, Crtl-F:  Find text in report field"),
-          if(<<OS ist Mac-Mini-Tiger>>)
+          if(<<OS ist Mac-Mini>>)
               c(#"Alt-D:  move cursor one code chunk DOWN",
                 #"Alt-U:  move cursor one code chunk UP",
                 "Apple-P:  plan new code chunk",
@@ -4382,14 +4397,14 @@ fSavePlot<-function(){
   insertline<-insertline+3 # insertline is assigned during writing the pic link in the report
   base::cat(bildname,"is included into the report\n")
   if(!no.plots){
-    if(<<OS ist Mac-Mini-Tiger>>){ picname <- gifname; type <- "gif" } else 
+    if(<<OS ist Mac-Mini>>){ picname <- gifname; type <- "gif" } else 
     ##  if(Img.package.found)      { picname <- jpgname; type <- "jpg" } else ## 121114 jpg
         if(2<=nchar(ghostscript)){ picname <- ppmname; type <- "ppm" } else type <- NA
     # there had been situations in which the (windows) file system was to slow !!
     if(!is.na(type) ) Sys.sleep(0.2) 
     if(!is.na(type) && !file.exists(picname) && file.exists(sub("....$",".ps",picname))) Sys.sleep(0.2) 
     if(!is.na(type) && !file.exists(picname) && file.exists(sub("....$",".ps",picname))) Sys.sleep(0.4) 
-    if(<<OS ist Mac-Mini-Tiger>>) createandshow.single.plot(tworkwin,insertline,picname,type=type) else 
+    if(<<OS ist Mac-Mini>>) createandshow.single.plot(tworkwin,insertline,picname,type=type) else 
     ##  if(Img.package.found) createandshow.single.plot(tworkwin,insertline,picname,type=type) else ## 121113
         if(2<=nchar(ghostscript)) createandshow.single.plot(tworkwin,insertline,picname,type=type)
   }
@@ -4449,7 +4464,7 @@ if(!is.null(bildname)&&nchar(bildname)>0){
     try.res<-try({dev.copy(bitmap,type="ppmraw",ppmname,res=ppmresolution.sys);dev.off()})
   }
 # gif+ppm:
-  if(<<OS ist Mac-Mini-Tiger>> && !no.plots){
+  if(<<OS ist Mac-Mini>> && !no.plots){
     gifname<-paste(bildname,".gif",sep="")
     try({dev2bitmap(type="ppmraw",ppmname,res=ppmresolution.sys); dev.off()}) #121218
     try.res<-try({system(paste("convert",jpgname,gifname))})
@@ -4650,11 +4665,11 @@ createandshow.all.plots<-function(tworkwin){
     place<-paste(rows-1,".0",sep="")
     if(0==length(pic.names.report)) return()
     # fix pic name / file 
-    if(<<OS ist Mac-Mini-Tiger>>) picname<-sub(".jpg$",".gif",pic.names.report) else 
+    if(<<OS ist Mac-Mini>>) picname<-sub(".jpg$",".gif",pic.names.report) else 
     ##  if(Img.package.found) picname<-pic.names.report  else ## 121113 jpg
         if(2<=nchar(ghostscript)) picname<-sub(".jpg$",".ppm",pic.names.report)
     # create missing files by postscript versions of the images
-    if(!<<OS ist Mac-Mini-Tiger>>){ #12114
+    if(!<<OS ist Mac-Mini>>){ #12114
       for(i in seq(picname)){
          melde(paste("generation of ppm",picname[i]),3)
          # ggf. new generation of plot
@@ -4672,7 +4687,7 @@ createandshow.all.plots<-function(tworkwin){
      if(!file.exists(picname[i])){
        next
      }
-     if(<<OS ist Mac-Mini-Tiger>>) 
+     if(<<OS ist Mac-Mini>>) 
        try.res<-try(tcl("createandshowimagegif",tworkwin,picname[i],place[i])) 
      else
        ## if(Img.package.found)
@@ -4788,7 +4803,7 @@ neu integriert.
 createandshow.single.plot<-function(textwidget,row.of.plot,jpgname,type="jpg"){ # up to 09/2011
   melde("createandshow.single.plot",1)
   # fix pic name / file 
-  if(<<OS ist Mac-Mini-Tiger>>) { 
+  if(<<OS ist Mac-Mini>>) { 
     picname <- sub(".jpg$",".gif",jpgname) 
   } else {
     picname <- jpgname 
@@ -4816,7 +4831,7 @@ createandshow.single.plot<-function(textwidget,row.of.plot,jpgname,type="jpg"){ 
 show.plots<-function(textwidget,is.reportwin=TRUE,path.of.plots){
    try(.Tcl( paste(
   "proc showimage {w im place} {",
-   if(<<OS ist Mac-Mini-Tiger>>) 
+   if(<<OS ist Mac-Mini>>) 
     "$w image create $place -image [image create photo -format gif -file $im]" else
     "$w image create $place -image [image create photo -format jpeg -file $im]"  ,
   "}", sep="\n") ) )
@@ -4828,9 +4843,9 @@ show.plots<-function(textwidget,is.reportwin=TRUE,path.of.plots){
     jpgnames  <-unlist(lapply(strsplit(worktext[rows],"<img src=\""), ## vorher "figure="
                     function(x){ x<-x[2]; strsplit(x,"\"")[[1]][1] }))
   }
-  picnames<-if(<<OS ist Mac-Mini-Tiger>>) sub(".jpg$",".gif",jpgnames) else jpgnames
+  picnames<-if(<<OS ist Mac-Mini>>) sub(".jpg$",".gif",jpgnames) else jpgnames
   for(i in seq(along=rows)){
-    if(!<<OS ist Mac-Mini-Tiger>>){
+    if(!<<OS ist Mac-Mini>>){
       if(file.exists(sub(".jpg$",".ps",picnames)[i])& (!file.exists(picnames[i]))){
         pstojpg(sub(".jpg$",".ps",picnames)[i],picnames[i])
       }
@@ -4990,7 +5005,8 @@ InsertTeX<-function(){
   h<-worktext[start+1:ende-1]
   h<-c("\\documentclass{article}\\begin{document}",h,"\\end{document}")
   cat(h,file="tmptmp.tex",sep="\n")
-  if(version$os=="linux-gnu") system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
+  if( <<das OS ist Linux>> || <<OS ist Mac-Mini>>) 
+     system("echo q|latex tmptmp.tex;dvips tmptmp.dvi")
   ##lege Bild unter [[bildname]] ab##
   ##zeige Bilder im Textfenster an##
   ##show.single.plot(tworkwin,line,jpgname) 
@@ -5024,7 +5040,7 @@ fExamples<-function(){
           args[1] <- paste("# header of",topic,":\n#",args[1],"\n")
           args <- paste(args,collapse="\n")
         } else args <- NULL
-        path <- .path.package(package)
+        path <- path.package(package) # 130325 .path.package defunct
         alias <- file.path(path,"help","aliases.rds")
         ## rds <- base::.readRDS(file.path(path,"help","aliases.rds")) 
         ## 120110 function reconstructed because of change of name, 120822 because of defunc
@@ -5036,7 +5052,7 @@ fExamples<-function(){
         rds <- readRDS(file.path(path,"help","aliases.rds"))
         help.name <- rds[which(names(rds)==topic)]
         help.text <- utils:::.getHelpFile(
-          file.path(.path.package(package),"help",help.name)
+          file.path(path.package(package),"help",help.name) # 130325 .path.package defunct
         )
         help.text <- as.character(help.text)
         idx <- grep("\\\\examples",help.text)
@@ -5881,11 +5897,11 @@ CopyToEnd<-function(){
 @
 <<implementiere Eigenschaften der allgemeinen Knöpfe>>=
 # tkconfigure(Help.R,command=fHelp.R)
-if( ! <<OS ist Mac-Mini-Tiger>> ) tkbind(TopW, "@<<Help.R>>", fHelp.R) #120111
+if( ! <<OS ist Mac-Mini>> ) tkbind(TopW, "@<<Help.R>>", fHelp.R) #120111
 # tkconfigure(Up,command=fUp)
 tkbind(TopW, "@<<Up>>", fUp)
 # tkconfigure(Down,command=fDown)
-if( ! <<OS ist Mac-Mini-Tiger>> ) tkbind(TopW, "@<<Down>>", fDown) #120111
+if( ! <<OS ist Mac-Mini>> ) tkbind(TopW, "@<<Down>>", fDown) #120111
 
 # tkconfigure(PlanRCode,command=fPlanRCode)
 tkbind(TopW, "@<<PlanRCode>>", fPlanRCode)
@@ -5931,7 +5947,7 @@ f.sonderzeichen<-function(zeichen){
   function(){
     tkinsert(twin,"insert",zeichen)
     if(<<das OS ist Windows>>)tkdelete(twin,"insert-1chars")
-    if(<<OS ist Mac-Mini-Tiger>>)tkdelete(twin,"insert-1chars")
+    if(<<OS ist Mac-Mini>>)tkdelete(twin,"insert-1chars")
   }
 }
 f.umlaut<-function(zeichen){
@@ -6168,6 +6184,8 @@ tkadd(mbFile.menu, "command", command=PLAYGROUND,
       label="playground:   open R-window for testing R-code")
 tkadd(mbFile.menu,"command", command=ShowHistory,
       label="ShowHistory:   show history of evaluation in a separate window")
+tkadd(mbFile.menu,"command", command=SaveHistory,
+      label="SaveHistory:   save history of evaluation")
 if(but.Wizardry!="simple") {
   tkadd(mbFile.menu,"command", command=StartCodeChunkPlayer,
       label="StartCodeChunkPlayer:     call code chunk player (without saving report field)")
@@ -6743,7 +6761,7 @@ if(is.function(try.res)){
   ok <- "OK"
 } else {
   if(mode(try.res)=="externalptr"||mode(try.res)=="environment") try.res<-"ok"
-  ok<-try.res[1]
+  if(mode(try.res)=="S4") try.res <- "ok" else ok<-try.res[1]  ## 130304
   if(is.null(ok) ||is.na(ok)|| is.name(ok) || is.list(ok) || is.numeric(ok)) ok <- "OK"
   if(!is.character(ok)) { ok <- "OK" }
 }
@@ -6993,7 +7011,7 @@ LoadRwtools<-function(){
   path<-file.path(relax.path,"rev/robj.R")
   fns<-readLines(path) #2.1.0
   try(eval(parse(text=fns),
-               envir=pos.to.env(which(.path.package("relax")==searchpaths()))))
+               envir=pos.to.env(which(path.package("relax")==searchpaths())))) # 130325 .path.package defunct
   melde("LoadRwtools",2)
 }
 
@@ -7127,7 +7145,7 @@ ViewReport.html<-function(){
   if(is.null(n)||5>n||substring(filename,n-3,n)!=".rev"){
     cat("ERROR: file name not ok!!!\n"); return()
   }
-  if(version$os=="Win32" || version$os=="mingw32"){
+  if( <<das OS ist Windows>> ){
          fname<-paste(sub("rev$","html",filename),sep="")
          browser.exe<- if(browser.sys=="") "start " else browser.sys
 	 res<-shell(paste(browser.exe, fname),wait=FALSE)
@@ -7171,7 +7189,7 @@ Achtung Seiteneffekt: Sie wird nicht automatisch wieder entfernt.
 <<definiere Kopf-Zeilen-Funktionen>>=
 EditReport<-function(){
   melde("EditReport",1)
-  if(<<OS ist Mac-Mini-Tiger>> ){
+  if(<<OS ist Mac-Mini>> ){
      cat("Sorry: not implemented yet!\n"); return()
   }    
   <<lese Arbeitsfenster auf [[worktext]] ein>>
@@ -7712,7 +7730,7 @@ playground<-function(playground.envir=NULL,code=NULL){
   pgtext<-tktext(pg,height=19,background="#f7fffF",
                  font="-Adobe-courier-Medium-R-Normal--18-180-*")
   ## ok: tkbind(pgtext,"@<<Paste>> { catch {%W insert insert [selection get -selection CLIPBOARD] } }")
-if(<<OS ist Mac-Mini-Tiger>> ){
+if(<<OS ist Mac-Mini>> ){
   mac.paste<-function(...){  ## Ctrl-V  # mac-PASTE
      try({.Tcl("clipboard append hello"); .Tcl("clipboard clear")
           news<-base::scan(file=pipe("pbpaste","r"),what="",sep="\n",blank.lines.skip=FALSE)
@@ -7790,7 +7808,9 @@ if(<<OS ist Mac-Mini-Tiger>> ){
 
 
 @
-<<hole chunk Nummer>>=
+Doppel, vgl. Chunk mit
+[[cat("# sorry, chunk number '",no,"' wrong!\n"); return()]]
+<<hole chunk Nummer-Doppel>>=
 no.start<-grep(paste("^#",no,":$",sep=""),chunks)
 no.end<-grep(paste("^#:",no,"$",sep=""),chunks)
 if(length(no.end)==0||is.na(no.end) ||is.na(no.start)||
@@ -8443,7 +8463,7 @@ Deshalb wird ab 05/2011 readline()-Aufrufe über das Informationsaustauschfenste
 <<definiere exportierte Überlagerungsfunktionen>>=
 readline<-function(prompt=""){
   <<initialisiere Variablen für spezielle Output-Funktionen>>
-  if(!is.environment(revive.env) || !(<<teste, ob [[relax]] aktiv ist>>) ){  ### 111103
+  if( !(<<teste, ob [[relax]] aktiv ist>>) ){  ### 111103 # 130408
     readline<-base::readline
     return(readline(prompt=prompt))
   }
@@ -8595,7 +8615,7 @@ melde("menu saved",3)
 <<definiere exportierte Überlagerungsfunktionen>>=
 menu<-function(choices, graphics=FALSE, title=""){
   <<initialisiere Variablen für spezielle Output-Funktionen>>
-  if( !is.environment(revive.env) || !(<<teste, ob [[relax]] aktiv ist>>) ){
+  if( !(<<teste, ob [[relax]] aktiv ist>>) ){ # 130408
     menu<-utils::menu
     return(menu(choices=choices,graphics=graphics,title=title))
   }else{
@@ -8647,8 +8667,7 @@ scan<-function(file = "", what = double(), nmax = -1L, n = -1L, sep = "",
              fileEncoding = "", encoding = "unknown", text = NA){
     <<initialisiere Variablen für spezielle Output-Funktionen>>
     <<definiere lokale [[scan]]-Funktion>>
-    if(file!="" || !is.na(text) || !is.environment(revive.env) || 
-       !(<<teste, ob [[relax]] aktiv ist>>) ){
+    if(file!="" || !is.na(text) || !(<<teste, ob [[relax]] aktiv ist>>) ){ # 130408
       <<realisiere [[scan]] ohne [[tcl]]-Eingabe-Fenster>>
     } else {
       <<realisiere [[scan]] für [[relax]]>>
@@ -8813,7 +8832,7 @@ Ausgabe machen, wir quasi auch die Hilfe doppelt aktiviert.
 <<definiere exportierte Überlagerungsfunktionen>>=
 print<-function(x, ...){ # 050614
   <<initialisiere Variablen für spezielle Output-Funktionen>>
-  if(is.environment(revive.env) && <<teste, ob [[relax]] aktiv ist>> && !is.null(x) ){
+  if( <<teste, ob [[relax]] aktiv ist>> && !is.null(x) ){ # 130408
     sink(<<tmp.sink>>); base::print(x, ...); sink()
     news<-paste(# "", # 111123
                 paste(scan(file=<<tmp.sink>>,what="",sep="\n"),collapse="\n"),
@@ -8851,15 +8870,15 @@ so daß es angepaßt werden mußte.
 <<definiere exportierte Überlagerungsfunktionen>>=
 cat<-function(...,file="",sep=" ",fill=FALSE,labels=NULL,append=FALSE){
   <<initialisiere Variablen für spezielle Output-Funktionen>>
-  if(file=="" &&  is.environment(revive.env) && <<teste, ob [[relax]] aktiv ist>> ){
+  if(file=="" &&  <<teste, ob [[relax]] aktiv ist>> ){ # 130408
      base::cat(...,file=<<tmp>>,sep=sep,fill=fill,labels=labels,append=append)
      news<-paste( # "\n", # 111123
                  paste(scan(file=<<tmp>>,what="",sep="\n"),collapse="\n"), "", # 111123
                  sep="\n")
      <<schreibe [[news]] ans Outputfeld ([[relax]]) oder ans Arbeitsfeld>>
+     invisible(NULL)
   }
   base::cat(...,file=file,sep=sep,fill=fill,labels=labels,append=append)
-  NULL
 }
 # assign("cat",cat,pos=#<stelle Nummer von [[relax]] im Suchpfad fest>#)
 # assign("cat",cat, pos=pos.of.relax.fns)
@@ -8873,7 +8892,7 @@ so dass die Ausgabe auf diese Print-Methode verlagert wird.
 <<definiere exportierte Überlagerungsfunktionen>>=
 str<-function(object,...){
   <<initialisiere Variablen für spezielle Output-Funktionen>>
-  if( is.environment(revive.env) && <<teste, ob [[relax]] aktiv ist>> ){ 
+  if( <<teste, ob [[relax]] aktiv ist>> ){ # 130408
      fname <- <<tmp>>; fname <- gsub("\\\\","/",fname)
      base::cat(file=fname,"")
      if(is.data.frame(object)) 
@@ -9157,8 +9176,10 @@ von außerhalb kommt. Schwierigkeiten ergeben sich dadurch, dass ja an verschied
 Fehler-Ausgaben anzuzeigen sind. Aus Gründen der Vereinfachung wird jetzt nur noch 
 untersucht, ob toutwin existiert. Wenn das der Fall ist, wird versucht eine Ausgabe ins
 Ausgabefenster einzutragen.
+% # "1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) # 130408
 <<teste, ob [[relax]] aktiv ist>>=
-"1"==tclvalue(tkwinfo("exists",get("toutwin",get("revive.sys",revive.env)))) 
+(is.environment(revive.env) && 
+ "toutwin" %in% ls( pattern="toutwin", envir=r.sys<-get("revive.sys",revive.env)) && "1"==tclvalue(tkwinfo("exists",get("toutwin",r.sys)))) 
 @
 <<OLD: teste, ob [[relax]] aktiv ist>>=
 && 5 < length(sys.frames())
@@ -9867,7 +9888,7 @@ ConvertGermanUmlauteToLocalEncoding<-function(){
       x[idx] <- xx; changes <- TRUE
       worktext <- paste(x,collapse="\n") #; print(worktext)      
     } else { # 121114
-      if(<<OS ist Mac-Mini-Tiger>> && paste(R.version$major,R.version$minor,sep="")<211){
+      if(<<OS ist Mac-Mini>> && paste(R.version$major,R.version$minor,sep="")<211){
         # find Mac-Umlaute:
         umlloc <- iconv("[\xe4\xf6\xfc\xc4\xd6\xdc\xdf]","latin1","")
         # are there mac-Umlaute
@@ -9887,7 +9908,7 @@ ConvertGermanUmlauteToLocalEncoding<-function(){
              x[idx] <- xx; worktext <- x; worktext <- paste(worktext,collapse="") 
              changes <- TRUE
         } # end of replacements
-      } # end of Mac-Tiger
+      } # end of Mac-Mini
     } # end of not <..> case
   } # end of is.UTF
   is.LATIN1 <-l10n_info()[["Latin-1"]] 
@@ -10384,6 +10405,11 @@ Paket [[Tcl/Tk]] geladen wurde.
 Die Option [[no.plots]] veranlaßt den Manager keine Bilder einzublenden.
 
 [[pswidth.sys="13cm"]] wurde als Parameter, da an sich überflüssig, entfernt.
+<<zeige Zustand von revive.sys>>=
+cat(">>",state<-state+1,"<<\n")
+print(ls(envir=get("revive.sys", envir=revive.env)))
+
+@
 <<*>>=
 #.First.lib<-function(lib, pkg) {
 #      options(warn=1)
@@ -10426,7 +10452,6 @@ relax<-function(file.name,no.plots=FALSE,cmds="",but.Wizardry="all"){
   <<generiere Top-Level-Fenster mit verschiedenen Frames>>
   <<definiere Kopf-Frame>>
   melde("frame head defined",3)
-
   <<definiere Report-Aktionsframe>>           ##implementiere Testknopf##
   <<definiere Report-Text-Frame>>
   <<definiere Info-Frame>>
@@ -10494,7 +10519,7 @@ Maßnahmen:
 
 @
 <<stelle Pfad und Position von [[relax]] fest>>=
-relax.path<-.path.package(<<relax>>)
+relax.path<-path.package(<<relax>>)  # 130325 .path.package defunct
 relax.pos<-grep("^package:relax$",search())[1]
 
 @
@@ -10617,7 +10642,7 @@ if(<<das OS ist Windows>>) {
 if(<<das OS ist Linux>>) {
   if(exists("browser.linux")) browser.sys <- browser.linux
 }
-if(<<OS ist Mac-Mini-Tiger>>){
+if(<<OS ist Mac-Mini>>){
   browser.sys<-"open "
   latex.command.linux<-latex.command.mac
   view.command.linux<-view.command.mac
@@ -10784,6 +10809,7 @@ DefineFKeys<-function(){
 Links:
 [[http://sourceforge.net/projects/tkimg/, http://wiki.tcl.tk/1404]],
 [[http://members.chello.nl/~j.nijtmans/img.html]]
+[[http://www.sciviews.org/_rgui/tcltk/]] tcltk-Beispiele
 
 Wird der Report-Manager als R-Pakete geladen, so sind für das Funktionieren
 einige Vorarbeiten zu erledigen. 
@@ -10966,83 +10992,6 @@ fr.paper.sys       <- "forget"     #
 relax.version.sys<- <<Version von [[relax]]>>
 
 @
-17.~Juni 2002 -- Erkenntnis:
-[[version$os]] liefert unter 1.5.1: [[mingw32]] statt [[Win32]].
-<<das OS ist Windows>>=
-(version$os=="Win32" || version$os=="mingw32")
-
-@
-Im Package tools: [[if(tools:::OStype()=="windows") ...]]
-
-@
-Für Vista muss evtl. etwas geändert werden.
-Vgl. Mail:
-\begin{verbatim}
-This is a known problem with your compiler installation, discussed in the 
-R-admin manual.  From the version in R-patched:
-
-   There are known problems with one of the compilers sets in this toolset
-   on Windows Vista: see the workaround below. (With that workaround it has
-   been used on both 32- and 64-bit versions of Vista.)
-
-   ...
-
-   On Vista systems you will need to add
-
-   c:\Rtools\MinGW\libexec\gcc\mingw\3.4.5
-
-   to the path.
-
-This is not relevant to the recommended compiler set for R 2.6.0.
-
-
-On Wed, 19 Sep 2007, Anand Patil wrote:
-
-> Hi all,
->
->
-> I'd like to distribute an R package that compiles some (small) C functions
-> every time it's sourced. The relevant code in the top level R script is as
-> follows:
->
-> system("R CMD SHLIB Selma_extensions.c")
-> if (.Platform$OS.type=="windows") {
->    slash = '\\'
->    dyn.load("Selma_extensions.dll")
-> }
-> if (.Platform$OS.type=="unix") {
->    slash = '/'
->    dyn.load("Selma_extensions.so")
-> }
-
-Hmm, all the information you need is already in .Platform, $file.sep and 
-$dynlib.ext: the latter varies by OS.type.
-
-> This works fine on a Mac, but I tried it under Windows Vista, after
-> installing RTools and telling it to put itself on the system path, and got
-> the following:
->
-> making Selma_extensions.d from Selma_extensions.c
-> gcc.exe: installation problem, cannot exec `cc1': No such file or directory
-> make: *** [Selma_extensions.d] Error 1
-> Error in dyn.load(x, as.logical(local), as.logical(now)) :
->        unable to load shared library
-> 'C:/Users/anand/Desktop/Selma/Selma_extensions.dll':
->  LoadLibrary failure:  The specified module could not be found.
->
-> Can this be fixed without requiring the user to do anything?
-
-The fix requires 'the user' to read the documentation.
-
--- 
-Brian D. Ripley,                  [EMAIL PROTECTED]
-Professor of Applied Statistics,  http://www.stats.ox.ac.uk/~ripley/
-University of Oxford,             Tel:  +44 1865 272861 (self)
-1 South Parks Road,                     +44 1865 272866 (PA)
-Oxford OX1 3TG, UK                Fax:  +44 1865 272595
-\end{verbatim}
-
-@
 <<unused: definiere Funktionen zum Umgang mit [[Tcl]]-Variablen>>=
 get.tclvar<-function(name){
   tclvalue(name)
@@ -11124,6 +11073,95 @@ Hinweis für Schriften: Durch Tausch von [[-r-]] statt [[-o-]] erhält
 man eine kursive Schrift.
 
 @
+@
+\subsection{Probleme mit Plattformen}
+17.~Juni 2002 -- Erkenntnis:
+[[version$os]] liefert unter 1.5.1: [[mingw32]] statt [[Win32]],
+evtl. könnte aber auch: 'Microsoft Windows' resultieren.
+Gemäß der Help-Seite von [[version]] ist es besser, die Variable
+[[.Platform]] mittels [[.Platform$OS.type=="windows"]] abzufragen. 
+% # (version$os=="Win32" || version$os=="mingw32") # 130325
+<<das OS ist Windows>>=
+(.Platform$OS.type=="windows")
+@
+%% ## 101019
+<<OS ist Mac-Mini>>=
+substring(version$os,1,6)=="darwin" 
+@
+<<das OS ist Linux>>=
+substring(version$os,1,5)=="linux"
+@
+Im Package tools: [[if(tools:::OStype()=="windows") ...]]
+
+@
+Für Vista muss evtl. etwas geändert werden.
+Vgl. Mail:
+\begin{verbatim}
+This is a known problem with your compiler installation, discussed in the 
+R-admin manual.  From the version in R-patched:
+
+   There are known problems with one of the compilers sets in this toolset
+   on Windows Vista: see the workaround below. (With that workaround it has
+   been used on both 32- and 64-bit versions of Vista.)
+
+   ...
+
+   On Vista systems you will need to add
+
+   c:\Rtools\MinGW\libexec\gcc\mingw\3.4.5
+
+   to the path.
+
+This is not relevant to the recommended compiler set for R 2.6.0.
+
+
+On Wed, 19 Sep 2007, Anand Patil wrote:
+
+> Hi all,
+>
+>
+> I'd like to distribute an R package that compiles some (small) C functions
+> every time it's sourced. The relevant code in the top level R script is as
+> follows:
+>
+> system("R CMD SHLIB Selma_extensions.c")
+> if (.Platform$OS.type=="windows") {
+>    slash = '\\'
+>    dyn.load("Selma_extensions.dll")
+> }
+> if (.Platform$OS.type=="unix") {
+>    slash = '/'
+>    dyn.load("Selma_extensions.so")
+> }
+
+Hmm, all the information you need is already in .Platform, $file.sep and 
+$dynlib.ext: the latter varies by OS.type.
+
+> This works fine on a Mac, but I tried it under Windows Vista, after
+> installing RTools and telling it to put itself on the system path, and got
+> the following:
+>
+> making Selma_extensions.d from Selma_extensions.c
+> gcc.exe: installation problem, cannot exec `cc1': No such file or directory
+> make: *** [Selma_extensions.d] Error 1
+> Error in dyn.load(x, as.logical(local), as.logical(now)) :
+>        unable to load shared library
+> 'C:/Users/anand/Desktop/Selma/Selma_extensions.dll':
+>  LoadLibrary failure:  The specified module could not be found.
+>
+> Can this be fixed without requiring the user to do anything?
+
+The fix requires 'the user' to read the documentation.
+
+-- 
+Brian D. Ripley,                  [EMAIL PROTECTED]
+Professor of Applied Statistics,  http://www.stats.ox.ac.uk/~ripley/
+University of Oxford,             Tel:  +44 1865 272861 (self)
+1 South Parks Road,                     +44 1865 272866 (PA)
+Oxford OX1 3TG, UK                Fax:  +44 1865 272595
+\end{verbatim}
+
+@
 \subsection{Plattformabhängige Events}
 Die Bezeichnungen von Event variieren von Maschine zu Maschine. Deshalb
 ist es vorteilhaft, mit virtuellen Events zu arbeiten. Die spezifischen
@@ -11196,7 +11234,7 @@ if(<<das OS ist Windows>> | <<das OS ist Linux>>){
   tkevent.add("@<<Backsl>>",      "<Alt_L><ssharp>")
   #tkevent.add("@<<Klammeraffe>>", "<ISO_Level3_Shift><KeyPress><KeyRelease><KeyRelease>") unused
 } 
-if(<<OS ist Mac-Mini-Tiger>>){
+if(<<OS ist Mac-Mini>>){
   tkevent.add("@<<Down>>",        "<Meta_L><d>") # don't work: deletes characters after Cursor 
   tkevent.add("@<<Up>>",          "<Meta_L><u>")
   tkevent.add("@<<PlanRCode>>",   "<Meta_L><p>")
@@ -11275,13 +11313,6 @@ if("HPUX") {                                               #f <hpguilder>
   tkevent.add("@<<Backsl>>",    "<Alt_R><backslash>")
   tkevent.add("@<<Pipe>>",      "<Alt_R><bar>")
 }
-@
-%% ## 101019
-<<OS ist Mac-Mini-Tiger>>=
-substring(version$os,1,6)=="darwin" 
-@
-<<das OS ist Linux>>=
-substring(version$os,1,5)=="linux"
 
 @
 Es zeigte sich, daß in Abhängigkeit vom Betriebssystem ein unterschiedliches
@@ -11321,7 +11352,7 @@ Dabei kommen schärfere Debugging Regeln zum Einsatz.
 <<dieser Chunk könnte beim Debuggen helfen>>=
 relax.debug<-function(){
   DEBUG<<-TRUE; options(warn=5)
-  path<-sub(paste("/",<<relax>>,sep=""),"",.find.package(<<relax>>))
+  path<-sub(paste("/",<<relax>>,sep=""),"",find.package(<<relax>>)) # 130325 .find.package defunct
   detach("package:relax")
   library(relax,lib.loc=path)
   assign("DEBUG",T,paste("package",<<relax>>,sep=":"))
@@ -11335,8 +11366,8 @@ relax.debug<-function(){
 
 <<define-DESCRIPTION>>=
 Package: relax
-Version: 1.3.12
-Date: 2012-12-18
+Version: 1.3.13
+Date: 2013-02-27
 Title: relax -- R Editor for Literate Analysis and lateX
 Author: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
 Maintainer: Hans Peter Wolf <pwolf@wiwi.uni-bielefeld.de>
@@ -11385,7 +11416,7 @@ License: This package was written by Hans Peter Wolf.
 
 @
 \subsection{Datei [[NAMESPACE]]}
-ab Version 2.14.0 erforderlich.
+ab R-Version 2.14.0 erforderlich.
 %% exportPattern("^slider.[a-z]+")
 <<define-NAMESPACE>>=
 export(gslider,playground,CodeChunkPlayer,ConstructDemo,red,redit,relax,
@@ -12232,29 +12263,29 @@ $Rcompile CMD check --as-cran relax
 # Rnew CMD check relax; 
 $Rcompile CMD build relax
 rm lib/relax/R/relax.rb
-$Rcompile CMD INSTALL --library=lib relax_1.3.12.tar.gz
+$Rcompile CMD INSTALL --library=lib relax_1.3.13.tar.gz
 echo "library(relax,lib.loc=\"lib\"); relax()" | $Rcompile --vanilla
 
 #Rtest CMD check --as-cran relax
 #Rtest CMD build relax
 #rm lib/relax/R/relax.rdb
-#Rtest CMD INSTALL --library=lib relax_1.3.12.tar.gz
+#Rtest CMD INSTALL --library=lib relax_1.3.13.tar.gz
 #echo "library(relax,lib.loc=\"lib\"); relax()" | Rtest --vanilla
 
 
 # R CMD check relax;  R CMD build relax
 # rm lib/relax/R/relax.rdb
-# R CMD INSTALL --library=lib relax_1.3.12.tar.gz
+# R CMD INSTALL --library=lib relax_1.3.13.tar.gz
 # echo "library(relax,lib.loc=\"lib\"); relax()" | R --vanilla
 cd $HOME/R/work/relax/install.dir/lib; 
 # zip aus $HOME/bin mit 7z aus p7zip_9.13 
-# zip a -r relax_1.3.12.zip relax # a-flag nicht notwendig unter ubuntu
-zip -r relax_1.3.12.zip relax
-mv relax_1.3.12.zip ..
+# zip a -r relax_1.3.13.zip relax # a-flag nicht notwendig unter ubuntu
+zip -r relax_1.3.13.zip relax
+mv relax_1.3.13.zip ..
 
 cd ..
-cp relax_1.3.12.tar.gz /home/pwolf/www/public_html/software/relax/R-2.5.0/
-cp relax_1.3.12.zip /home/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.13.tar.gz /home/pwolf/www/public_html/software/relax/R-2.5.0/
+cp relax_1.3.13.zip /home/pwolf/www/public_html/software/relax/R-2.5.0/
 
 # exit 0
 
