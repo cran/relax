@@ -1,0 +1,4 @@
+export(gslider,playground,CodeChunkPlayer,ConstructDemo,red,redit,relax,
+       str,cat,print,readline,menu,step,scan,args.player,
+       slider,tangleR,weaveR,weaveRhtml)
+

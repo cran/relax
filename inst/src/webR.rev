@@ -1,4 +1,11 @@
+% New Report: Wed Aug  7 17:35:18 2013 
+
+% New Report: Mon Jan 26 16:12:13 2009 
+
+% New Report: Sat Jan 24 19:52:52 2009 
+
 % New Report: Thu Feb  3 18:05:01 2005
+%   > weaveR("webR"); system("latex webR")
 % 070518: Fehler in transform.command und
 % transform.structure.command: en-1  war   NA; erledigt
 % nach [[~]] wird ein Leerzeichen erzeugt!???
@@ -6,17 +13,25 @@
 \usepackage{a4,graphicx,mathpazo,courier,alltt,amssymb}
 \usepackage[scaled=.95]{helvet}
 \usepackage{noweb}
-\noweboptions{webnumbering,smallcode}
-\topmargin-1cm
-\textheight=24.5cm
+\input{uml-ok}
+\renewcommand{\textchunkcommands}{\normalsize}
+\renewcommand{\codechunkcommands}{\small}
+%\renewcommand{\Routputcommands}{\footnotesize}
+% \noweboptions{webnumbering,smallcode}
+\topmargin-1cm\textheight=24.5cm\textwidth=17cm
+\oddsidemargin=0mm
+\parskip1ex
 \title{TANGLE und WEAVE mit R --- selbstgemacht}
 %\usepackage[T1]{fontenc}
 \author{ Peter Wolf\\[1ex]Datei: {\tt webR.rev} \\
              Ort:  {\tt /home/wiwi/pwolf/R/work/relax/webR }}
-\date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007}
+\date{20.09.2006, 10.11.2006, 30.8.2007, 12.11.2007, 04.09.2008, 31.10.2008, 29.1.2009,
+20.2.2009, 24.3.2009, 20.7.2009, 15.6.2011, 4.9.2011, 20.11.2012, 6.3.2012}
+% 6.3.2012 2*: require(tcltk) -> # require(tcltk)
 \begin{document}
 \maketitle
 \raggedright
+\renewcommand{\codechunkcommands}{\small}
 
 @
 \section{Verarbeitungsprozesse}
@@ -29,61 +44,107 @@ notangle -Rdefine-weaveR         webR.rev > ../install.dir/relax/R/weaveR.R
 notangle -Rdefine-weaveR-help webR.rev > ../install.dir/relax/man/weaveR.Rd
 notangle -Rdefine-weaveRhtml  webR.rev > ../install.dir/relax/R/weaveRhtml.R
 notangle -Rdefine-weaveRhtml-help webR.rev > ../install.dir/relax/man/weaveRhtml.Rd
-# noweave -delay .index webR.rev > webR.tex; latex webR; dvipdf webR
+# noweave -delay -index webR.rev > webR.tex; latex webR; dvips -p18 -n12 webR
 
 @
-\subsection{Neuste Korrekturen}
+\subsection{Changes}
+
+09/2011
 \begin{itemize}
-\item weavetoHtml: statt code-Tag nun pre-Tag in verbatim-Outputs
-\item weavetoTex: par und vspace zu Beginn von Chunks
+\item tangleR: Selektives Ausschließen von Code Chunks durch Argument [[show.code="echo"]] und [[echo=FALSE]] im Code-Chunk-Namen.
 \end{itemize}
 
+06/2011
+\begin{itemize}
+\item tangleR: Such-Strings per Variablen
+\end{itemize}
+
+
+01/2009
+\begin{itemize}
+\item weaveR: adding use-of-chunk-infos in TeX document
+\end{itemize}
+
+10/2008
+\begin{itemize}
+\item weaveRhtml: now pre tags are used instead of code tags for verbatim outputs
+\item weaveR: par and vspace are included at the beginning of chunks
+\item tangleR: now expansion of not root chunks is allowed 
+\item tangleR: the name of saved files after tangling must not have extension R
+\item tangleR: tangling without preserving comment lines with link information Quellenhinweisen
+\end{itemize}
 
 @
 \section{TEIL I --- TANGLE}
 \subsection{Problemstellung}
-In diesem Papier wird ein betriebssystemunabh�ngiges {\sc R}-Programm
-f�r den {\sc tangle}-Verarbeitungsproze� beschrieben. Dieses kann
-Demonstrationsbeispielen beigef�gt werden, au�erdem kann f�r die Definition
+In diesem Papier wird ein betriebssystemunabhängiges {\sc R}-Programm
+für den {\sc tangle}-Verarbeitungsprozeß beschrieben.Es kann
+als Demonstrationsbeispiel dienen und für die Definition
 alternativer Verarbeitungsvorstellungen Anregungen geben.
 
 In dem vorliegenden Vorschlag werden
 die verwendeten Modulnamen eines Quelldokumentes
 in den Code als Kommentarzeilen aufgenommen,
-so da� sie sp�ter f�r die Navigation verwendet werden k�nnen.
-Weiterhin werden alle Wurzeln aus dem Papier expandiert, sofern
+so daß sie später für die Navigation verwendet werden können.
+Grundsätzlich werden alle Wurzeln aus dem Papier expandiert, sofern
 nicht eine andere Option angegeben wird.
 
 @
-\subsection{Die grobe Struktur der L�sung}
-Der {\sc tangle}-Proze� soll mittels einer einzigen Funktion gel�st werden.
+\subsection{Die grobe Struktur der Lösung}
+Der {\sc tangle}-Prozeß soll mittels einer einzigen Funktion gelöst werden.
 Sie bekommt den Namen [[tangleR]]. Als Input ist der Name der Quelldatei zu
-�bergeben. Nach dem Einlesen und der Aufbereitung des Quellfiles
+übergeben. Nach dem Einlesen und der Aufbereitung des Quellfiles
 werden die Code-Chunks und die Stellen ihrer Verwendungen
 festgestellt. Dann werden Chunks mit dem Namen [[start]]
 und alle weiteren Wurzeln expandiert.
-�ber Optionen l��t sich die Menge der zu expandierender Wurzeln bestimmen.
+Über Optionen läßt sich die Menge der zu expandierender Wurzeln festlegen.
 Die Funktion besitzt folgende Struktur:
 <<define-tangleR>>=
 tangleR<-
-function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
+function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE,
+         insert.comments=TRUE,add.extension=TRUE){
   # german documentation of the code:
   # look for file webR.pdf, P. Wolf 050204
+  <<stelle spezielle Strings bereit [[tangleR]]>>
   <<bereite Inhalt der Input-Datei auf [[tangleR]]>>
-  <<initialisiere Variable f�r Output [[tangleR]]>>
+  <<initialisiere Variable für Output [[tangleR]]>>
   <<ermittle Namen und Bereiche der Code-Chunks [[tangleR]]>>
   if(expand.root.start){
     <<expandiere Start-Sektion [[tangleR]]>>
   }
   <<ermittle Wurzeln [[tangleR]]>>
   <<expandiere Wurzeln [[tangleR]]>>
-  <<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[tangleR]]>>
+  <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[tangleR]]>>
   <<speichere [[code.out]] [[tangleR]]>>
 }
-print("OK")
+
+@
+% # cat("function tangleR defined\n")
 
 @
 \subsection{Umsetzung der Teilschritte}
+
+\subsection{Such- und andere Strings}
+Für die Bearbeitung der Texte werden beispielsweise Suchmuster benötigt, die 
+einerseits wiederholt auftreten, andererseits eventuell beim Formatierung dieses
+Dokumentes Schwierigkeiten bereiten. Deshalb werden problematische Strings
+in diesem Abschnitt definiert und auf Variablen abgelegt, 
+so dass sie an den entsprechenden Stellen verwendet werden können. 
+<<stelle spezielle Strings bereit [[tangleR]]>>=
+AtSignLineBegin <- "^@"
+pat.chunk.header <- paste("^<","<(.*)>",">=",sep="")
+pat.chunk.header.line <- paste("(.*)",pat.chunk.header,"(.*)",sep="")
+pat.use.chunk      <- paste("<","<(.*)>",">",sep="")
+pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
+ReplaceStringChHeader <- paste("cOdE","dEf",sep="")
+ReplaceStringChUse <- paste("uSe","ChUnK",sep="")
+ReplaceStringEscLGB <- paste("DoSpOpenKl","-esc",sep="")
+ReplaceStringEscRGB <- paste("DoSpCloseKl","-esc",sep="")
+BREAK <- paste("bRe","Ak",sep="")
+EscLeftLowerBrackets <- paste("@<","<",sep="")
+EscRightGreaterBrackets <- paste("@>",">",sep="")
+
+@
 \subsubsection{Aufbereitung des Datei-Inputs}
 Aus der eingelesenen Input-Datei werden Text-Chunks entfernt und
 Definitions- und Verwendungszeilen gekennzeichnet.
@@ -93,7 +154,7 @@ Definitions- und Verwendungszeilen gekennzeichnet.
 <<substituiere mit @ versehene Zeichengruppen [[tangleR]]>>
 <<stelle Typ der Zeilen fest [[tangleR]]>>
 @
-Die Input-Datei mu� gelesen werden. Dieses werden zeilenweise auf
+Die Input-Datei muß gelesen werden. Die Zeilen der Input-Datei werden als Elemente auf
 [[code.ch]] abgelegt.
 [[code.n]] zeigt die aktuelle Zeilenzahl von [[code.ch]] an.
 <<lese Datei ein [[tangleR]]>>=
@@ -102,61 +163,83 @@ if(!file.exists(in.file)){
   cat(paste("ERROR:",in.file,"not found!!??\n"))
   return("Error in tangle: file not found")
 }
-# code.ch<-scan(in.file,sep="\n",what=" ")
+# code.ch<-scan(in.file,sep="\n",what=" ",blank.lines.skip =FALSE)
 code.ch<-readLines(in.file) # 2.1.0
 
 @
 <<substituiere mit @ versehene Zeichengruppen [[tangleR]]>>=
-code.ch<-gsub("@@>>","DoSpCloseKl-esc",gsub("@@<<","DoSpOpenKl-esc",code.ch))
+code.ch<-gsub(EscRightGreaterBrackets,
+              ReplaceStringEscRGB,
+              gsub(EscLeftLowerBrackets,ReplaceStringEscLGB,code.ch))
 
 @
-Text-Chunks beginnen mit einem [[@]], Code-Chunks enden mit der
+Text-Chunks beginnen mit einem @, Code-Chunks enden mit der
 Zeichenfolge [[>]][[>=]]. Es werden
-die Nummern ersten Zeilen der Code-Chunks auf [[code.a]] abgelegt.
+die Nummern der jeweils ersten Zeilen der Code-Chunks auf [[code.a]] abgelegt.
 [[code.z]] zeigt den Beginn von Text-Chunks an, weiter unten wird diese
 Variable die letzten Zeilen eines Code-Chunks anzeigen.
 Aus der Kumulation des logischen Vektor [[change]],
-der die diese �berg�nge anzeigt, lassen sich schnell die Bereiche der
+der diese Übergänge anzeigt, lassen sich schnell die Bereiche der
 Text-Chunks ermitteln.
+Falls mehrere Code-Chunks ohne einen Text-Chunk auftreten, müssen leere Text-Chunks erzeugt werden.
+Aus Gründen der Einfachheit wird deshalb vor jedem Code-Chunk-Beginn eine Zeile, die nur einen 
+einzigen @ enthält, eingefügt.
 <<entferne Text-Chunks [[tangleR]]>>=
+# append empty text chunk
 code.ch<-c(code.ch,"@")
-code.a<- grep("^@<<(.*)>>=",code.ch)
+# check for code chunk starts
+code.a <- grep(pat.chunk.header,code.ch)
 if(0==length(code.a)){return("Warning: no code found!!!!")}
-code.z<-grep("^@",code.ch)
-code.z    <-unlist(sapply(code.a ,function(x,y)min(y[y>x]),code.z))
-code.n    <-length(code.ch)
-change    <-rep(0,code.n); change[c(code.a ,code.z)]<-1
+# integrate "@" lines 090220
+aa<-as.list(code.ch) 
+aa[code.a]<-lapply(aa[code.a],function(x) c("@",x)) 
+code.ch<-unlist(aa)
+code.n <-length(code.ch)
+# find code chunk starts again
+code.a<- grep(pat.chunk.header,code.ch)
+# find code chunk endings
+#  text chunk starts
+code.z    <-grep(AtSignLineBegin,code.ch)
+#  text chunk starts that follow code chunks
+code.z    <-unlist(sapply(code.a, function(x,y) min(y[y>x]),code.z))
+# find positions of change from text to code chunk or from code chunk to text chunk
+change    <-rep(0,code.n); change[c(code.a ,code.z)] <- 1
+# extract code chunks
 code.ch   <-code.ch[1==(cumsum(change)%%2)]
+# save number of lines
 code.n    <-length(code.ch)
 
 @
-In dieser Implementation d�rfen
-vor der Verwendung von Verfeinerungen Anweisungsteile stehen,
-nicht aber dahinter. Deshalb werden die Zeilen, die [[<<]] enthalten
-aufgebrochen.
-Sodann werden die Orte der Code-Chunk-Definitionen
-und Verwendungen festgestellt.
+In einer Zeile können mehrere Verfeinerungen (Code-Chunk-Verwendungen) auftauchen.
+Deshalb werden die Zeilen, die [[<<]] enthalten, aufgebrochen.
+Dann werden die Orte der Code-Chunk-Definitionen und Verwendungen festgestellt.
 Auf der Variable [[line.typ]] wird
-die Qualit�t der Zeilen von [[code.ch]] anzeigt: [[D]] steht f�r
-Definition, [[U]] f�r Verwendungen und [[C]] f�r normalen Code-Zeilen.
-[[code.n]] h�lt die Zeilenanzahl,
+die Qualität der Zeilen von [[code.ch]] anzeigt: [[D]] steht für
+Definition, [[U]] für Verwendungen und [[C]] für normalen Code-Zeilen.
+[[code.n]] hält die Zeilenanzahl,
 <<stelle Typ der Zeilen fest [[tangleR]]>>=
 <<knacke ggf.\ Zeilen mit mehrfachen Chunk-Uses [[tangleR]]>>
 line.typ  <-rep("C",code.n)
-code.a    <-grep("cOdEdEf",code.ch)
+code.a    <-grep(ReplaceStringChHeader,code.ch)
 code.ch[code.a]<-substring(code.ch[code.a],8)
 line.typ[code.a]<-"D"
-code.use    <-grep("uSeChUnK",code.ch)
+code.use  <-grep(ReplaceStringChUse,code.ch)
 code.ch[code.use]<-substring(code.ch[code.use],9)
 line.typ[code.use]<-"U"
 
 @
 <<knacke ggf.\ Zeilen mit mehrfachen Chunk-Uses [[tangleR]]>>=
-code.ch<-gsub("(.*)@<<(.*)>>=(.*)","cOdEdEf\\2",code.ch)
+# remove disturbing characters in a code chunk definition line
+code.ch<-gsub(pat.chunk.header.line,
+              paste(ReplaceStringChHeader,"\\2",sep=""),
+              code.ch)
+ReplaceStringUseLine <- paste("\\1",BREAK,ReplaceStringChUse,"\\2",BREAK,"\\3",sep="")
 repeat{
-  if(0==length(cand<-grep("@<<(.*)>>",code.ch))) break
-  code.ch<-unlist(strsplit(gsub("(.*)@<<(.*)>>(.*)",
-             "\\1bReAkuSeChUnK\\2bReAk\\3",code.ch),"bReAk"))
+  if(0==length(cand<-grep(pat.use.chunk,code.ch))) break
+  code.ch<-unlist(strsplit(
+              gsub(pat.use.chunk.line,ReplaceStringUseLine,code.ch),
+              BREAK 
+           ))
 }
 code.ch<-code.ch[code.ch!=""]
 code.n<-length(code.ch)
@@ -164,10 +247,10 @@ if(exists("DEBUG")) print(code.ch)
 
 @
 \subsubsection{Ermittlung der Code-Chunks}
-Zur Erleichterung f�r sp�tere Manipulationen werden in den Bezeichnern die
+Zur Erleichterung für spätere Manipulationen werden in den Bezeichnern die
 Zeichenketten [[<<]]
 [[>>]] bzw.\ [[>>=]] entfernt.
-Die Zeilennummern der Code-Chunks-Anf�nge bez�glich [[code.ch]]
+Die Zeilennummern der Code-Chunks-Anfänge bezüglich [[code.ch]]
 stehen auf [[code.a]], die Enden auf [[code.z]].
 <<ermittle Namen und Bereiche der Code-Chunks [[tangleR]]>>=
 def.names<-code.ch[code.a]
@@ -179,10 +262,10 @@ if(exists("DEBUG")) print(code.ch)
 \paragraph{Randbemerkung}
 Zur Erleichterung der Umsetzung wurden in dem ersten Entwurf von [[tangleR]]
 mit Hilfe eines [[awk]]-Programms alle Text-Chunks aus dem Quellfile
-entfernt, so da� diese in der [[R]]-Funktion nicht mehr
-zu ber�cksichtigen waren. Dieses [[awk]]-Programm mit dem Namen
-[[pretangle.awk]] sei hier eingef�gt, vielleicht
-ist es im Zusammenhang mit einer {\sc S-Plus}-Implementation hilfreich.
+entfernt, so daß diese in der [[R]]-Funktion nicht mehr
+zu berücksichtigen waren. Dieses [[awk]]-Programm mit dem Namen
+[[pretangle.awk]] sei hier eingefügt, vielleicht
+ist es beispielsweise im Zusammenhang mit einer {\sc S-Plus}-Implementation hilfreich.
 <<ein [[awk]]-Programm zur Entfernung von Text-Chunks aus einem Quellfile>>=
 #
 # Problemstellung: Vorverarbeitung fuer eigenes TANGLE-Programm
@@ -209,21 +292,21 @@ BEGIN {code=0};
 @
 \subsubsection{Initialisierung des Outputs}
 Auf [[code.out]] werden die fertiggestellten Code-Zeilen abgelegt.
-Diese Variable mu� initialisiert werden.
-<<initialisiere Variable f�r Output [[tangleR]]>>=
+Diese Variable muß initialisiert werden.
+<<initialisiere Variable für Output [[tangleR]]>>=
 code.out<-NULL
 
 @
 \subsubsection{Expansion der Startsektion}
 Im {\sc revweb}-System hat der Teilbaum unter der Wurzel [[start]]
-eine besondere Relevanz. Diesen gilt es zun�chst zu expandieren.
+eine besondere Relevanz. Diesen gilt es zunächst zu expandieren.
 Dazu werden alle Chunks mit dem Namen [[start]] gesucht und auf dem
 Zwischenspeicher [[code.stack]] abgelegt. Dann werden normale Code-Zeilen
-auf die Output-Variablen �bertragen und Verfeinerungsverwendungen werden
+auf die Output-Variablen übertragen und Verfeinerungsverwendungen werden
 auf [[code.stack]] durch ihre Definitionen ersetzt.
 <<expandiere Start-Sektion [[tangleR]]>>=
 if(exists("DEBUG")) cat("bearbeite start\n")
-code.out<-c(code.out,"#0:","##start:##")
+if(insert.comments) code.out<-c(code.out,"#0:","##start:##")
 if(any(ch.no <-def.names=="start")){
    ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
    for(i in ch.no)
@@ -233,18 +316,18 @@ if(any(ch.no <-def.names=="start")){
      <<transferiere Startzeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>
    }
 }
-code.out<-c(code.out,"##:start##","#:0")
+if(insert.comments) code.out<-c(code.out,"##:start##","#:0")
 
 @
 Falls [[code.stack]] leer ist, ist nichts mehr zu tun. Andernfalls
-wird die Anzahl der aufeinanderfolgenden Codezeilen festgestellt
-und auf die Output-Variable �bertragen. Falls die n�chste keine
-Codezeile ist, mu� es sich um die Verwendung einer Verfeinerung handeln.
-In einem solchen Fall wird die n�chste Verfeinerung
+wird die Anzahl der aufeinander folgenden Codezeilen festgestellt
+und auf die Output-Variable übertragen. Falls die nächste keine
+Codezeile ist, muß es sich um die Verwendung einer Verfeinerung handeln.
+In einem solchen Fall wird die nächste Verfeinerung
 identifiziert und der Bezeichner der Verfeinerung wird durch seine Definition ersetzt.
-Nicht definierte, aber verwendete Chunks f�hrten anfangs zu einer Endlosschleife. Dieser Fehler ist inzwischen behoben [[051219]]. 
-Eine entsprechende �nderung wurde auch f�r 
-nicht-start-chunks f�llig.
+Nicht definierte, aber verwendete Chunks führten anfangs zu einer Endlosschleife. Dieser Fehler ist inzwischen behoben [[051219]]. 
+Eine entsprechende Änderung wurde auch für 
+nicht-start-chunks umgesetzt.
 <<transferiere Startzeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>=
 if(0==length(code.stack))break
 if("C"==substring(code.stack[1],1,1)){
@@ -266,21 +349,28 @@ if("C"==substring(code.stack[1],1,1)){
 
 @
 \subsubsection{Ermittlung aller Wurzeln}
-Nach den aktuellen �berlegungen sollen neben [[start]] auch alle weiteren
+Nach den aktuellen Überlegungen sollen neben [[start]] auch alle weiteren
 Wurzeln gesucht und expandiert werden.
 Wurzeln sind alle Definitionsnamen, die nicht verwendet werden.
 <<ermittle Wurzeln [[tangleR]]>>=
 root.no<-is.na(match(def.names,use.names))&def.names!="start"
 root.no<-seq(along=root.no)[root.no]
 roots  <-def.names[root.no]
-if(!is.null(expand.roots)){
-  h<-!is.na(match(roots,expand.roots))
-  roots<-roots[h]; root.no<-root.no[h]
+#if(!is.null(expand.roots)){ # verwende nur wirkliche Wurzeln
+#  h<-!is.na(match(roots,expand.roots))
+#  roots<-roots[h]; root.no<-root.no[h]
+#}
+if(!is.null(expand.roots)){ # verwende gegebene(n) Knoten
+  h<-!is.na(match(def.names,expand.roots))
+  root.no<-seq(def.names)
+  roots<-def.names[h]; root.no<-root.no[h]
 }
+if(0==length(roots)) cat("Sorry, no chunk for expanding found!\n")
+if(exists("DEBUG")) print(roots)
 
 @
 \subsubsection{Expansion der Wurzeln}
-Im Prinzip verl�uft die Expansion der Wurzel wie die von [[start]].
+Im Prinzip verläuft die Expansion der Wurzel wie die von [[start]].
 Jedoch werden etwas umfangreichere Kommentare eingebaut.
 <<OLD -- expandiere Wurzeln [[tangleR]] -- OLD>>=
 if(exists("DEBUG")) cat("bearbeite Sektion-Nr./Name\n")
@@ -303,20 +393,21 @@ for(r in seq(along=roots)){
 if(exists("DEBUG")) cat("bearbeite Sektion-Nr./Name\n")
 roots<-unique(roots)
 for(r in seq(along=roots)){
-  if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
+  # if(exists("DEBUG")) cat(root.no[r],":",roots[r],", ",sep="")
+  if(exists("DEBUG")) cat(which(def.names==roots[r]),":",roots[r],", ",sep="")
   if(any(ch.no <-def.names==roots[r])){
     ch.no     <-seq(along=def.names)[ch.no]; rows<-NULL
-    code.out<-c(code.out,
+    if(insert.comments) code.out<-c(code.out,
           # # # paste("#",root.no[r],":",sep=""), new 071114
-                paste("##",roots[r],":##",sep=""))
+                        paste("##",roots[r],":##",sep=""))
     for(i in ch.no){
        if((code.a[i]+1)<=code.z[i]){ 
          # # # rows<-c(rows, (code.a[i]+1):code.z[i]) # new:
             h<-code.a[i]+1
             rows<-c(rows, h:code.z[i])
-            code.ch[h]<-paste("C#",i,":NeWlInE",code.ch[h],sep="")
+            if(insert.comments) code.ch[h]<-paste("C#",i,":NeWlInE",code.ch[h],sep="")
             h<-code.z[i]
-            code.ch[h]<-paste(code.ch[h] ,"NeWlInEC#:",i,sep="")
+            if(insert.comments) code.ch[h]<-paste(code.ch[h] ,"NeWlInEC#:",i,sep="")
        }
     }
     code.stack<-code.ch[rows]
@@ -324,9 +415,9 @@ for(r in seq(along=roots)){
     repeat{
      <<transferiere Codezeilen oder ersetze Verfeinerungen bis Ende erreicht [[tangleR]]>>
     }
-    code.out<-c(code.out,paste("##:",roots[r],"##",sep="")
+    if(insert.comments) code.out<-c(code.out,paste("##:",roots[r],"##",sep="")
                # # #    ,paste("#:",root.no[r],sep="")
-               )
+                        )
   }
 }
 
@@ -348,33 +439,102 @@ if("C"==substring(code.stack[1],1,1)){
     for(no in found){
       row.no<-c((code.a[no]+1),code.z[no])
       if(row.no[1]<=row.no[2]){
-        code.stack<-c(paste("C#"  ,no,":"  ,sep=""      ),
-                    paste("C##" ,def.line,":##",sep=""),
-                    code.ch[row.no[1]:row.no[2]] ,
-                    paste("C##:",def.line, "##",sep=""),
-                    paste("C#:" ,no      ,sep=""      ),
-                    code.stack)
-	}
-     }
+        if(insert.comments){ 
+          code.stack<-c(paste("C#"  ,no,":"  ,sep=""      ),
+                        paste("C##" ,def.line,":##",sep=""), 
+                        code.ch[row.no[1]:row.no[2]],
+                        paste("C##:",def.line, "##",sep=""),
+                        paste("C#:" ,no      ,sep=""      ),
+                        code.stack)
+        }else{
+          code.stack<-c(code.ch[row.no[1]:row.no[2]], code.stack)
+        }
+      }
+    } # end of for
   } else code.stack <-code.stack[-1] # ignore not defined chunks!
   # 051219 
 }
 
 @
-<<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[tangleR]]>>=
-code.out<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",code.out))
+<<korrigiere ursprünglich mit @ versehene Zeichengruppen [[tangleR]]>>=
+code.out<-gsub(ReplaceStringEscRGB,">>",gsub(ReplaceStringEscLGB,"<<",code.out))
 
 @
+Ggf.\ muss der Name des Output-File erzeugt werden.
 <<speichere [[code.out]] [[tangleR]]>>=
 if(missing(out.file)||in.file==out.file){
   out.file<-sub("\\.([A-Za-z])*$","",in.file)
 }
-if(0==length(grep("\\.R$",out.file)))
+if(add.extension&&0==length(grep("\\.R$",out.file)))
   out.file<-paste(out.file,".R",sep="")
 get("cat","package:base")(code.out,sep="\n",file=out.file)
 cat("tangle process finished\n")
 
+@
+\subsection{Testprozedur}
+\newcommand{\dollarweg}[1]{\relax}
+{\footnotesize
+\begin{enumerate}
+\item Erzeuge Basis-Tangle-Funktion durch Tangle mit [[noweb]] unter [[linux]]:
+[[ $ notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R ]] \dollarweg{$}
+\item Lade Ergebnis in R-Umgebung.\\
+[[ > source("tangle-by-noweb.R")]]
+\item Tangle mit der Tangle-Funktion, die in [[tangle-by-noweb.R]] definiert und von [[noweb]] erzeugt worden ist, 
+den Quellfile und erzeuge [[tangleR-by-tangleR]]:\\
+[[ > tangleR("webR","tangleR-by-tangleR",expand.roots="define-tangleR",expand.root.start=FALSE) ]]\\
+[[tangle-by-noweb.R]] und [[tangleR-by-tangleR.R]] werden sich aufgrund von Leerzeichen und Kommentaren unterscheiden.
+Die Frage ist nun, ob das Ergebnis der Funktion, die mit der eigenen Tangle-Funktion erstellt wurde, ebenfalls 
+funktioniert. 
+\item Lade das gerade konstruierte Tangle-Ergebnis, also das mit der eigenen Funktion getangle ist, ins R:\\
+[[ > source("tangleR-by-tangleR.R")]]\\
+\item Und wende es an.\\
+[[ > tangleR("webR","tangleR-check.R",expand.roots="define-tangleR",expand.root.start=FALSE) ]]
+\item
+Wenn nichts verloren gegangen ist, müssen die beiden Dateien gleich sein:\\
+[[ > system("ls -rtl | tail -3") ]]\\
+[[ > system("diff tangleR-by-tangleR.R tangleR-check.R | wc") ]]\\
+Wenn sich Unterschiede zeigen oder ein Fehler auftritt, ist eine Korrektur angesagt.
+\end{enumerate}
+} % end of footnotesize
+Zusammenhängend erhalten wir folgenden Test-Code:
+@
+\renewcommand{\codechunkcommands}{\footnotesize}
+@
+<<teste Tangle-Funktion [[tangleR]]>>=
+library(relax)
+if("tangleR" %in% ls()) rm(tangleR)
+system("notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R")
+source("tangle-by-noweb.R")
+tangleR("webR","tangleR-by-tangleR.R",expand.roots="define-tangleR",expand.root.start=FALSE)
+source("tangleR-by-tangleR.R")
+tangleR("webR","tangleR-check.R",expand.roots="define-tangleR",expand.root.start=FALSE)
+system("ls -rtl | tail -3")
+system("diff tangleR-by-tangleR.R tangleR-check.R | wc")
 
+@
+\renewcommand{\codechunkcommands}{\small}
+Es folgt ein Testprotokoll:
+{\footnotesize
+\begin{verbatim}
+> library(relax)
+> if("tangleR" %in% ls()) rm(tangleR)
+> system("notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R")
+> source("tangle-by-noweb.R")
+function tangleR defined
+> tangleR("webR","tangleR-by-tangleR.R",expand.roots="define-tangleR",expand.root.start=FALSE)
+tangle process finished
+> source("tangleR-by-tangleR.R")
+function tangleR defined
+> tangleR("webR","tangleR-check.R",expand.roots="define-tangleR",expand.root.start=FALSE)
+tangle process finished
+> system("ls -rtl | tail -3")
+-rw-r--r-- 1 pwolf wiwi   9298 16. Jun 09:10 tangleR-check.R
+-rw-r--r-- 1 pwolf wiwi   9298 16. Jun 09:10 tangleR-by-tangleR.R
+-rw-r--r-- 1 pwolf wiwi   8019 16. Jun 09:10 tangle-by-noweb.R
+> system("diff tangleR-by-tangleR.R tangleR-check.R | wc")
+      0       0       0
+\end{verbatim}
+} % end of footnotesize
 
 @
 \subsection{Beispiel}
@@ -396,7 +556,7 @@ tangleR("out")
 }
 \usage{
 tangleR(in.file, out.file, expand.roots = NULL,
-expand.root.start = TRUE)
+expand.root.start = TRUE,insert.comments=TRUE,add.extension=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -407,11 +567,14 @@ expand.root.start = TRUE)
   all will be processed }
   \item{expand.root.start}{ if TRUE (default) root chunk
   "start" will be expanded }
+  \item{insert.comments}{ if TRUE comments with chunk inofs will be 
+                          added to the code }
+  \item{add.extension}{ if TRUE output file name will get extension .R }
 }
 \details{
   General remarks: A \code{noweb} file consists of a mixture of text
   and code chunks. An \code{@} character (in column 1 of a line)
-  indicates the beginning of a text chunk. \code{@<<name of code chunk>>=}
+  indicates the beginning of a text chunk. \preformatted{@<<name of code chunk>>=}
   (starting at column 1 of a line) is a header line of a code chunk with
   a name defined by the text between \code{@<<} and \code{>>=}.
   A code chunk is finished by the beginning of the next text chunk.
@@ -436,7 +599,8 @@ expand.root.start = TRUE)
 \seealso{  \code{\link{weaveR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work in an interactive R session
+## This example cannot be run by examples() but should be work 
+## in an interactive R session
   tangleR("testfile.rev")
 }
 "tangleR(\"testfile.rev\")"
@@ -453,12 +617,12 @@ function(in.file,out.file,expand.roots=NULL,expand.root.start=TRUE){
 
 
 @
-\subsection{Ein Abdruck aus Ver�rgerung}
-Bei �bertragungsversuchen von {\sc R} nach {\sc S-Plus}
+\subsection{Ein Abdruck aus Verärgerung}
+Bei Übertragungsversuchen von {\sc R} nach {\sc S-Plus}
 schien die Funktion [[strsplit]] zu fehlen, so dass sie mal grad entworfen
-wurde. Jedoch h�tte man statt dessen die Funktion [[unpaste]] (!!)
-verwenden k�nnen. Wer h�tte das gedacht?
-<<Definition einer unn�tigen Funktion>>=
+wurde. Jedoch hätte man statt dessen die Funktion [[unpaste]] (!!)
+verwenden können. Wer hätte das gedacht?
+<<Definition einer unnötigen Funktion>>=
 if(!exists("strsplit"))
   strsplit<-function(x, split){
   # S-Funktion zum Splitten von Strings
@@ -491,58 +655,75 @@ In diesem Teil wird eine einfache Funktionen zum WEAVEN von Dateien
 beschrieben. Als Nebenbedingungen der Realisation sind zu nennen:
 \begin{itemize}
 \item
-Code-Chunk-Header m�ssen ganz links beginnen.
+Code-Chunk-Header müssen ganz links beginnen.
 \item
-Code-Chunk-Verwendungen m�ssen separat in einer Zeile stehen.
+Code-Chunk-Verwendungen müssen separat in einer Zeile stehen.
 \item
-F�r eckige Klammern zum Setzen von Code im Text gelten
+Für eckige Klammern zum Setzen von Code im Text gelten
 folgende Bedingungen. Kommt in einer Zeile nur ein Fall \emph{Code im Text}
-vor, d�rfte es keine Probleme geben. Weiter werden auch F�llen,
-in denen die Code-St�cke keine Leerzeichen enthalten, selbst aber von
+vor, dürfte es keine Probleme geben. Weiter werden auch Fällen,
+in denen die Code-Stücke keine Leerzeichen enthalten, selbst aber von
 Leerzeichen eingeschlossen sind, funktionieren.
 \item
 Eckige Klammern in Verbatim-Umgebungen werden nicht ersetzt.
 \end{itemize}
 Die Funktion besitzt folgenden Aufbau:
 <<define-weaveR>>=
-weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE){
+weaveR<-function(in.file,out.file,show.code=TRUE,show.text=TRUE,
+                 replace.umlaute=TRUE,eval_Sexpr=FALSE){
   # german documentation of the code:
-  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830
+  # look for file webR.pdf, P. Wolf 050204, 060517, 070307, 070830, 110919
   <<initialisiere [[weaveR]]>>
   <<lese Datei ein [[weaveR]]>>
   <<substituiere mit @ versehene Zeichengruppen [[weaveR]]>>
   <<stelle Typ der Zeilen fest [[weaveR]]>>
+  <<extrahiere Header-, Code- und Verwendungszeilen [[weaveR]]>>
+  if(eval_Sexpr){ <<expandiere Sexpr-Ausdrücke>> }
+  <<bestimme ggf.\ Zeile für Objekt-Index>>
+  <<bestimme ggf.\ Zeile für Liste der Chunks>>
+  <<bestimme used-in Informationen>>
+  <<bestimme ggf.\ Menge der eigenen R-Objekte und sammle Object Index Infos>>
   <<erstelle Output [[weaveR]]>>
   <<ersetze Umlaute [[weaveR]]>>
-  <<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[weaveR]]>>
-  <<schreibe die Makrodefinition f�r Randnummern vor die erste Zeile>>
+  <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveR]]>>
+  <<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>
+  <<realisiere Output-Stilwechsel>>
   <<entferne ggf.\ Code oder Text>>
+  <<entferne ggf. Umlaut-TeX-Makros aus Code-Zeilen>>
   <<schreibe Ergebnis in Datei [[weaveR]]>>
 }
 
 @
 Das Encoding wird mittels tcltk festgestellt.
 <<initialisiere [[weaveR]]>>=
-require(tcltk)
-pat.use.chunk<-paste("<","<(.*)>",">",sep="")
-pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
+# require(tcltk) # 140306
+pat.use.chunk    <- paste("<","<(.*)>",">",sep="")
+pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
+pat.chunk.header <- paste("^<","<(.*)>",">=",sep="")
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
+pat.KlAffeGG <- paste("@",">",">",sep="")
+pat.KlAffeKK <- paste("@","<","<",sep="")
+pat.Sp.open <- paste("DoSp","OpenKl-esc",sep="")
+pat.Sp.close <- paste("DoSp","CloseKl-esc",sep="")
+pat.Eck.open <- paste("DoEck","OpenKl-esc",sep="")
+pat.Eck.close <- paste("DoEck","CloseKl-esc",sep="")
+
 .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
 UTF<-0<length(grep("utf",UTF))
 if(<<DEBUG-Flag gesetzt>>){
   if(UTF) cat("character set: UTF\n") else cat("character set: not utf\n")
 }
 if(!UTF){ 
-      char267<-eval(parse(text='"\\267"'))
+  char267<-eval(parse(text='"\\267"'))
 }
 
 @
-ALT: Zun�chst fixieren wir die Suchmuster f�r wichtige Dinge.
-Au�erdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
-Versuche zum UTF-Problem:
-[[is.utf<-"\"<c3>\""==deparse("\xc3")]]
+ALT: Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Versuche zum UTF-Problem:\\
+[[is.utf<-"\"<c3>\""==deparse("\xc3")]]\\
 [[is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""]]
 <<old>>=
 lcctype<-grep("LC_CTYPE",strsplit(Sys.getlocale(),";")[[1]],value=TRUE)
@@ -551,7 +732,11 @@ is.utf<-substring(intToUtf8(as.integer(999)),2,2)==""
 UTF<- UTF | is.utf
 
 @
-Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen.
+Die zu bearbeitende Datei wird zeilenweise auf die Variable [[input]] eingelesen. In diesem Chunk entsteht ein Problem, wenn sich im [[input]] ein 
+Zeichen fälschlicherweise eingeschlichen hat, dass sich nicht von dem locale 
+Encoding nicht nach LATIN1 konvertieren lässt. Dann wird angenommen, dass
+LATIN1 vorliegt und es geschieht eine Konvertierung ins locale Encoding.
+Jedoch sollten nur betroffene Zeilen angefasst werden.
 <<lese Datei ein [[weaveR]]>>=
 if(!file.exists(in.file)) in.file<-paste(in.file,"rev",sep=".")
 if(!file.exists(in.file)){
@@ -560,39 +745,41 @@ if(!file.exists(in.file)){
 }
 # input<-scan(in.file,what="",sep="\n",blank.lines.skip = FALSE)
 input<-readLines(in.file) # 2.1.0
-try(if(replace.umlaute&&UTF && any(is.na(iconv(input,"","LATIN1")))){  
-    # LATIN1-Dok :
-    input<-iconv(input,"LATIN1","")
+try(if(replace.umlaute&&UTF && any(idx<-is.na(iconv(input,"","LATIN1")))){  
+    # LATIN1-Dok : input<-iconv(input,"LATIN1","") # old
+    input[idx] <- iconv( input[idx], "Latin1", "") # 121120
 })
 length.input<-length(input)
 
 @
 <<substituiere mit @ versehene Zeichengruppen [[weaveR]]>>=
-input<-gsub("@@>>","DoSpCloseKl-esc",gsub("@@<<","DoSpOpenKl-esc",input))
+input<-gsub(pat.KlAffeGG,"DoSpCloseKl-esc",gsub(pat.KlAffeKK,"DoSpOpenKl-esc",input))
 input<-gsub("@\\]\\]","DoEckCloseKl-esc",gsub("@\\[\\[","DoEckOpenKl-esc",input))
 
 @
 Umlaute sind ein Dauerbrenner.
-Hinweis: im richtigen Code steht unten �brigens: \emph{������} sowie
-in der ersten Zeile ein \emph{�}.
+Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
+in der ersten Zeile ein \emph{ß}.
+Nach Mail von Duncan Murdoch vom 4.9.11 muss [[\283]] in [[\303 ]]
 <<ersetze Umlaute [[weaveR]]>>=
 if(replace.umlaute){
  if(!UTF){
- # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+ # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 
+ # (see: $ man iso-8859-1 / Latin1 / unicode)
+    pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
     uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
     uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
     input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
-    input<-gsub(substring(uml.latin1,7,7),"{\\\\ss}",input) # replace sz
+    input<-gsub(substring(uml.latin1,7,7),paste("{\\\\s","s}",sep=""),input) # sz
     uml.pattern<-eval(parse(text='"(\\344|\\366|\\374|\\304|\\326|\\334)"'))
     input<-gsub(uml.pattern,"\\\\\"\\1",input)  # replace Umlaute ae->&aeuml; 
 # replace Umlaute &aeuml;->&auml;
     input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)   
  }else{
-  input<-gsub("\283\237","{\\\\ss}",input)
-  input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+  input<-gsub("\303\237",paste("{\\\\s","s}",sep=""),input)
+  input<-gsub("(\303\244|\303\266|\303\274|\303\204|\303\226|\303\234)",
                             "\\\\\"\\1",input)
-  input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+  input<-chartr("\303\244\303\266\303\274\303\204\303\226\303\234", 
                               "aouAOU", input)
  }
  if(<<DEBUG-Flag gesetzt>>){
@@ -600,18 +787,20 @@ if(replace.umlaute){
  }
 }
 @
-Diese Darstellung lie� sich unter utf-8 nicht anzeigen!
+Diese Darstellung ließ sich unter utf-8 nicht anzeigen!
 <<alte Umlautersetzung weaveR>>=
 if(!UTF){
- # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
+ # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 
+ # (see: $ man iso-8859-1 / Latin1 / unicode)
   input<-gsub("\283","",input)
-  input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",input)
+  input<-chartr("\244\266\274\204\226\234\237","\344\366\374\304\326\334\337",
+                input)
   # Latin1 -> TeX-Umlaute
-  input<-gsub("\337","{\\\\ss}",input)
+  input<-gsub("\337",paste("{\\\\s","s}",sep=""),input)
   input<-gsub("(\344|\366|\374|\304|\326|\334)","\\\\\"\\1",input)
   input<-chartr("\344\366\374\304\326\334","aouAOU",input)
 }else{
-  input<-gsub("\283\237","{\\\\ss}",input)
+  input<-gsub("\283\237",paste("{\\\\s","s}",sep=""),input)
   input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
                             "\\\\\"\\1",input)
   input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
@@ -619,25 +808,26 @@ if(!UTF){
 }
 
 @
-Vor dem Wegschreiben m�ssen die besonderen Zeichengruppen
-zur�ck�bersetzt werden.
-<<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[weaveR]]>>=
-input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
-input<-gsub("DoEckCloseKl-esc","]]",gsub("DoEckOpenKl-esc","[[",input))
+Vor dem Wegschreiben müssen die besonderen Zeichengruppen
+zurückübersetzt werden.
+<<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveR]]>>=
+input<-gsub(pat.Sp.close,">>",gsub(pat.Sp.open,"<<",input))
+input<-gsub(pat.Eck.close,"]]",gsub(pat.Eck.open,"[[",input))
 
 @
-Es kam beim Umschalten auf Code zu unsch�nen Zeilenabst�nden, 
+Es kam beim Umschalten auf Code zu unschönen Zeilenabständen, 
 die durch Vorschalten von [[\\par\\vspace{-\\parskip}]] ausgeschaltet werden sollen. Das schwierigste Makro ist [[\makemarginno]],
 mit dem von Text- auf Code-Chunk umgestellt wird. Es wird der
 Paragraph abgeschlossen, ein Vorschub von einem halben
 Absatzabstand eingebaut, alle Umschaltungskommandos umgesetzt
-der Z�hler f�r die Randnummern hochgesetzt und der Z�hler eingetragen.
-<<schreibe die Makrodefinition f�r Randnummern vor die erste Zeile>>=
+der Zähler für die Randnummern hochgesetzt und der Zähler eingetragen.
+<<schreibe die Makrodefinition für Randnummern vor die erste Zeile>>=
 input[1]<-paste(
      "\\newcounter{Rchunkno}",
      "\\newcounter{IsInCodeChunk}\\setcounter{IsInCodeChunk}{1}",
      "\\newcommand{\\codechunkcommands}{\\relax}",
      "\\newcommand{\\textchunkcommands}{\\relax}",
+     "\\newcommand{\\Routputcommands}{\\relax}",
      "\\newcommand{\\makemarginno}",
           "{\\par\\vspace{-0.5\\parskip}\\codechunkcommands",
           "\\stepcounter{Rchunkno}",
@@ -647,21 +837,54 @@ input[1]<-paste(
      input[1],sep="")
 
 @
+<<unused>>=
 \par\vspace{-0.5\parskip}\codechunkcommands
 \stepcounter{Rchunkno}
 \hspace*{-3em}\makebox[0mm]{\arabic{Rchunkno}}
 \hspace*{3em}
 
 @
-Falls nur Text oder nur Code gew�nscht wird, 
-muss der Rest entfernt werden.
+090717
+Ggf. wünscht der Anwender einen Stilwechsel für den Output.
+Für diesen ist das Makro [[\Routputcommands]] vorbereitet worden.
+<<realisiere Output-Stilwechsel>>=
+input<-sub("^\\\\begin\\{verbatim\\}",
+           "\\\\par\\\\Routputcommands\\\\begin{verbatim}",input)
+input<-sub("^\\\\end\\{verbatim\\}",
+           "\\\\end{verbatim}\\\\textchunkcommands",input)
+
+@
+Falls nur Text oder nur Code gewünscht wird, muss der Rest entfernt werden.
+
+Falls beim Aufruf die Option [[show.code = "echo"]] gesetzt wurde, werden selektiv 
+einzelne Code Chunk ausgeschlossen. 
+Ein solcher Ausschluss wird umgesetzt, wenn zusätzlich im Code-Chunk-Namen die Zeichenfolge 
+[[echo = FALSE]] auftaucht. Um das Gleichheitszeichen können Leerzeichen stehen.
+Dann werden die Zeilen des Code Chunk durch Leerzeilen ersetzt.
 <<entferne ggf.\ Code oder Text>>=
+if(show.code == "echo"){
+  # checke code chunk names
+  idx <- grep("echo *= *FALSE",input[code.start.index])
+  if(0 < length(idx)){
+    remove.chunk.set <- code.start.index[idx]
+    for(i in seq(along=remove.chunk.set)){
+      # remove code chunks with names containing "echo=FALSE"
+      st <- en <- remove.chunk.set
+      repeat{
+        en <- en + 1; if( length.input < en || line.typ[en] == "TEXT-START" ) break
+      }
+      en <- en - 1  
+      input[st:en] <- " "
+    }
+  }
+}
 if(show.code==FALSE){
    input[code.index] <-"."
    input[use.index] <-":"
    an<-grep("\\\\begin(.*)\\{document\\}",input)[1]
    if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
-   input[an]<-paste(input[an],"${}^*$ --- only the TEXT of the paper ---\\par")
+   input[an]<-paste(input[an],
+                    "${}^*$ --- only the TEXT of the paper ---\\par")
 }
 if(show.text==FALSE){
    input<-sub("^%.*","%",input)
@@ -671,22 +894,67 @@ if(show.text==FALSE){
    text.index<-text.index[an<text.index&text.index<en]
    input[c(text.index, verb.index)] <-"."
    if(length(tit<-grep("\\\\maketitle",input))>0) an<-tit
-   input[an]<-paste(input[an],"${}^*$ --- only the CODE of the paper ---\\par")
+   input[an]<-paste(input[an],
+                    "${}^*$ --- only the CODE of the paper ---\\par")
 }
+
 @
-Zum Schluss m�ssen wir die modifizierte Variable [[input]] wegschreiben.
+In den Code-Zeilen wollen wir die Umlaute wieder zurücksetzen.
+Dieses wollen wir nur machen, wenn keine Modulzeilen gefunden werden.
+<<entferne ggf. Umlaut-TeX-Makros aus Code-Zeilen>>=
+if(replace.umlaute && 0<length(ind<-grep(".newline.verb",input))){
+   ind2<-grep("langle(.*)rangle",input[ind])
+   if(0<length(ind2)) ind<-ind[-ind2]
+   if(0<length(ind)){
+    inp<-input[ind];  
+    if(!UTF){
+    # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 
+    # (see: $ man iso-8859-1 / Latin1 / unicode)
+      # \"a -> ae, ... oe, ue, Ae, Oe, Ue, ß
+      u<-uml.latin1<-unlist(strsplit(eval(parse(
+           text='"\\344\\366\\374\\304\\326\\334\\337"')),""))
+      inp<-gsub(paste('\\\\"',"a",sep=""),u[1],inp)
+      inp<-gsub(paste('\\\\"',"o",sep=""),u[2],inp) 
+      inp<-gsub(paste('\\\\"',"u",sep=""),u[3],inp)
+      inp<-gsub(paste('\\\\"',"A",sep=""),u[4],inp)
+      inp<-gsub(paste('\\\\"',"O",sep=""),u[5],inp)
+      inp<-gsub(paste('\\\\"',"U",sep=""),u[6],inp) ##{
+      inp<-gsub(paste(".\\\\s","s}",sep=""),u[7],inp)
+    }else{
+      # pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
+      uml.utf.8 <-eval(parse(text=
+           '"\\303\\244\\303\\266\\303\\274\\303\\204\\303\\226\\303\\234\\303\\237"'))
+      u<-substring(uml.utf.8,1:7,1:7)
+      inp<-gsub(paste('\\\\"',"a",sep=""),u[1],inp)
+      inp<-gsub(paste('\\\\"',"o",sep=""),u[2],inp)
+      inp<-gsub(paste('\\\\"',"u",sep=""),u[3],inp)
+      inp<-gsub(paste('\\\\"',"A",sep=""),u[4],inp)
+      inp<-gsub(paste('\\\\"',"O",sep=""),u[5],inp)
+      inp<-gsub(paste('\\\\"',"U",sep=""),u[6],inp) ##{
+      inp<-gsub(paste(".\\\\s","s}",sep=""),u[7],inp)
+    }
+    input[ind]<-inp
+   }
+}
+if(<<DEBUG-Flag gesetzt>>){
+  cat("german Umlaute in code lines inserted\n")
+}
+
+
+@
+Zum Schluss müssen wir die modifizierte Variable [[input]] wegschreiben.
 <<schreibe Ergebnis in Datei [[weaveR]]>>=
 if(missing(out.file)||in.file==out.file){
   out.file<-sub("\\.([A-Za-z])*$","",in.file)
 }
 if(0==length(grep("\\.tex$",out.file)))
   out.file<-paste(out.file,".tex",sep="")
-get("cat","package:base")(input,sep="\n",file=out.file)
-cat("weave process finished\n")
+base::cat(input,sep="\n",file=out.file)
+base::cat("weave process finished\n")
 
 @
 Zu jeder Zeile wird ihr Typ festgestellt und auf dem Vektor [[line.typ]]
-eine Kennung vermerkt. Au�erdem merken wir zu jedem Typ auf einer
+eine Kennung vermerkt. Außerdem merken wir zu jedem Typ auf einer
 Variablen alle Zeilennummer des Typs. Wir unterscheiden:
 
 \begin{tabular}{lll}
@@ -700,13 +968,13 @@ normale Textzeilen & [[TEXT]] &\\
 Verbatim-Zeilen & [[VERBATIM]] & [[verb.index]]
 \end{tabular}
 
-Leerzeilen, Text- und Code-Chunk-Anf�nge sind leicht zu finden.
+Leerzeilen, Text- und Code-Chunk-Anfänge sind leicht zu finden.
 Code-Verwendungen sind alle diejenigen Zeilen, die [[<<]]
 und [[>>]] enthalten, jedoch keine Headerzeilen sind.
 Am schwierigsten sind normale Code-Zeilen zu identifizieren.
-Sie werden aus den Code-Chunk-Anf�ngen und den Text-Chunkanf�ngen
+Sie werden aus den Code-Chunk-Anfängen und den Text-Chunkanfängen
 ermittelt, wobei die [[USE]]-Zeilen wieder ausgeschlossen werden.
-Alle �brigen Zeilen werden als Textzeilen eingestuft.
+Alle übrigen Zeilen werden als Textzeilen eingestuft.
 <<stelle Typ der Zeilen fest [[weaveR]]>>=
 <<checke Leer-, Textzeilen [[weaveR]]>>
 <<checke verbatim-Zeilen [[weaveR]]>>
@@ -764,59 +1032,880 @@ is.code.line[code.start.index]<-0-text.start.indicator[code.start.index]
 is.code.line<-cummin(is.code.line)
 is.code.line<-(text.start.indicator+is.code.line) < 1
 is.code.line[code.start.index]<-FALSE
-## TSI<<-text.start.index; CSI<<-code.start.index; UI<<-use.index
-
-
-@
-<<erstelle Output [[weaveR]]>>=
-<<erledige Text-Chunk-Starts [[weaveR]]>>
-<<extrahiere Header-, Code- und Verwendungszeilen [[weaveR]]>>
-<<schreibe Header-Zeilen [[weaveR]]>>
-<<schreibe Code-Verwendungszeilen [[weaveR]]>>
-<<schreibe Code-Zeilen [[weaveR]]>>
-<<setze Code in Text-, Header- und Verwendungszeilen [[weaveR]]>>
- 
-
-@
-Es m�ssen nur die Klammeraffen entfernt werden. Einfacher ist es,
-den entsprechenden Zeilen etwas Leeres zuzuweisen.
-Vor [[textchunkcommands]] wurde noch eine Paragraphenerzeugung
-vorangestellt, damit bei Schriftwechseln der Zeilenabstand stimmt.
-<<erledige Text-Chunk-Starts [[weaveR]]>>=
-## input[text.start.index]<-""
-input[text.start.index]<-paste(
-                      "\\ifodd\\value{IsInCodeChunk}",
-                      "\\setcounter{IsInCodeChunk}{0}",
-                      "\\vspace{-\\parskip}\\par\\hspace*{-\\parindent}",
-                      "\\textchunkcommands\\fi",
-                      sep="")
+## TSI<<-text.start.index; CSI<<-code.start.index; UI<<-use.index # ->debugging
 
 @
 <<extrahiere Header-, Code- und Verwendungszeilen [[weaveR]]>>=
-code.chunk.names<-code.start.lines<-sub(pat.chunk.header,"\\1",input[code.start.index])
+code.chunk.names<-code.start.lines<-sub(pat.chunk.header,"\\1",
+                                        input[code.start.index])
 use.lines<-input[use.index]
 code.lines<-input[code.index]
 
 @
-Vorschub und Einzug wird nur noch per Makro
-[[\makemarginno]] umgesetzt.
-<<schreibe Header-Zeilen [[weaveR]]>>=
-no<-1:length(code.start.index)
-def.ref.no<-match(gsub("\\ ","",code.start.lines), 
-                             gsub("\\ ","",code.start.lines))
+Experimentell: Auswertung von [[\Sexpr]]-Ausdrücken.
+Als Beispiel mag folgender Text dienen:
+\begin{verbatim}
+Zur Demonstration wollen die Koeffizienten eines Regressionsmodells 
+per Hand und per [[lsfit()]] sowie per Matrizenoperationen ermitteln. 
+Als Beispiel soll uns der Datensatz [[cars]] dienen.
+Zur Vorbereitung berechnen wir ein paar Größen: [[x]], [[y]], [[X]]. 
+Dazu ist zu bemerken, dass wir die Design-Matrix durch 
+[[cbind(1,cars$speed)]] bekommen. Wir werten wir aus:
+ 
+[[\]]{}%
+[[Sexpr{x<-cars$speed; y<-cars$dist; X<-cbind(1,x); ""}]]
+ \Sexpr{x<-cars$speed; y<-cars$dist; X<-cbind(1,x); ""}
+
+Zur Kontrolle berechnen wir vorab die Lösung von [[lsfit()]].
+Diese liefert: [[lsfit(x,y)$coef =]] \Sexpr{lsfit(x,y)$coef}
+Wir bestimmen nun die Matrizenlösung. 
+\begin{eqnarray*}
+  \hat{\beta} &=& (               X^\prime X)^{-1} X^\prime y \\
+              &=&         [[solve(t(X) %*% X) %*%  t(X) * y]] \\
+              &=& (\Sexpr{  solve(t(X) %*% X) %*%  t(X)%*%y} )
+\end{eqnarray*}
+Per Hand erhalten wir
+\begin{eqnarray*}
+  \hat b&=& \frac{          s_{XY}}          {s_{X^2}} \\
+        &=& \frac{       [[cov(x,y)]]}    {[[var(x)]]}\\
+        &=& \frac{  \Sexpr{cov(x,y)}}{\Sexpr{var(x)}} \\[1ex]
+        &=& \Sexpr{b.dach<-cov(x,y)       /  var(x)} 
+\end{eqnarray*}
+sowie
+\begin{eqnarray*}
+  \hat a&=& \bar y -          \hat   b       \times        \bar x \\
+        &=& \Sexpr{mean(y)} - \Sexpr{b.dach} \times\Sexpr{mean(x)} \\
+        &=& \Sexpr{mean(y)} - \Sexpr{b.dach  *        mean(x)} \\[1ex]
+        &=& \Sexpr{mean(y)  -        b.dach  *        mean(x)}
+\end{eqnarray*}
+Übrigens führt [[lm()]] auch zu diesen Ergebnissen: 
+[[lm(y~x)$coef]] = (\Sexpr{lm(y~x)$coef}). Wer hätte das gedacht?
+\end{verbatim}
+Entscheidungen:
+\begin{itemize}
+\item Nur falls Argument [[eval_Sexpr==TRUE]] wird die Evaluation gestartet.
+\item Zeichengenauigkeit: werden per [[options()$digits]] bestimmt, \dollarweg{$}
+\item Ergebnisse, die mit [[""]] identisch sind, werden ausgelassen,
+\item Fehler führen zum Abdruck des Kommandos im Text,
+\item Die Schriftart für die Ergebnisse wird durch \emph{Code im Text} bestimmt,
+\item [[\Sexpr{ ... }]] muss in einer Zeile stehen.
+\end{itemize}
+<<expandiere Sexpr-Ausdrücke>>=
+if(!exists("revive.env")) revive.env <- ""
+# finde alle Textzeilen
+is.text.line<-line.typ=="TEXT"
+# extrahiere alle Textzeilen
+text.lines<-input[is.text.line]
+# suche Textzeilen mit Sexpr-Expressions
+sexpr.lines<-grep("\\Sexpr\\{.*\\}",text.lines)
+# falls es keine Sexpr-Expressions gibt, relax
+if(0<length(sexpr.lines)){
+  # arbeite Zeilen mit Sexpr-Expressions nacheinander ab
+  for(l in seq(along=sexpr.lines)){
+    # hole Nummer l der Zeilen, die Sexpr-Expressions enthalten 
+    cand<-text.lines[sexpr.lines[l]]
+    # knacke Kandidaten-Zeile an der Stelle auf, an der \Sexpr gefunden wird
+    cand<-unlist(strsplit(cand,"\\\\Sexpr"))
+    # cand[1] ist der vor der ersten Expression, 
+    # cand[i+1] der mit der i-ten Expression beginnt
+    # alle Expressions der Zeile werden nacheinander abgearbeitet
+    for(j in seq(cand)[-1]){
+      # ncandj zeigt die Laenge von Kandidat j an
+      ncandj<-nchar(cand[j])
+      # sexpr verwaltet den j-ten Kandidaten zeichenweise
+      sexpr<-substring(cand[j],1:ncandj,1:ncandj) 
+      # es gilt die beendende Klammer von Sexpr zu finden
+      brack<-cumsum((sexpr=="{")-(sexpr=="}")) 
+      # n.sexpr zeigt die Stelle der schliessenden-Klammer
+      n.sexpr<-which(brack==0)[1]; if(is.na(n.sexpr)) next
+      # mit n.sexpr greifen wir den vorderen Teil von sexpr und evaluieren
+      code <- paste(collapse="",sexpr[1:n.sexpr])
+      if(<<DEBUG-Flag gesetzt>>){ print(code) }
+      if(identical(revive.env,"")) 
+         result <- try(eval(parse(text=code),envir=revive.env))  
+      else 
+         result <- try(eval(parse(text=code)))
+      # wenn nichts rauskommt, ist nichts zu modifizieren
+      if(0!=length(result)&&!identical(result,"")) { 
+        # 101217 auch leere Ergebnisse ersetzen Sexpr!
+        # print("---");print(result);print("---")
+        # im Fehlerfall muss es eine Meldung geben
+        if(class(result)=="try-error"){ 
+          result<-paste("[[\\Sexpr-error:",
+                        paste(sexpr[1:n.sexpr],collapse=""),"]]",collaspe="")
+        }else{
+          # bei nummerischen Ergebnissen werden ungewollte Nachkommastellen entfernt
+          if(is.numeric(result)) result<-signif(result,digits=options()$digits)
+          # Das Ergebnis wird verpackt
+          result<-paste("[[",paste(unlist(result),collapse=" "),"]]",sep="")
+        }
+      }
+      # das Ergebnis des j-ten Ausdrucks wird vorn,
+      # also wo das Kommando stand eingetragen
+      cand[j]<-paste(result, substring(cand[j],n.sexpr+1),sep="")
+    }
+    text.lines[sexpr.lines[l]]<-paste(cand,collapse="")  
+  }
+  # aktualisiere Textzeilen 
+  input[is.text.line]<-text.lines
+}
+
+@
+Entsprechend zu R-Ausdrücken kann auch die automatische Integration von Bildern 
+gewünscht werden. In folgenden Punkten unterscheidet sich diese von der
+der Sexpr-Abwicklung: 
+\begin{itemize}
+% \item pro Zeile darf nur eine Bildkopie angefordert werden.
+\item das Kommando lautet [[\Splot{...}]]
+\item die drei Punkte müssen durch die relevante Argumentenliste ersetzt werden.
+\end{itemize}
+<<expandiere Sexpr-Ausdrücke>>=
+# finde alle Textzeilen
+is.text.line<-line.typ=="TEXT"
+# extrahiere alle Textzeilen
+text.lines<-input[is.text.line]
+# suche Textzeilen mit Splot-Expressions
+splot.lines<-grep("\\Splot\\{.*\\}",text.lines)
+# falls es keine Splot-Anweisungen gibt, relax
+if(0<length(splot.lines)){
+  if(identical(revive.env,"")) revive.sys <- get("revive.sys",revive.env)
+  copy.plot<-function(psname,latexheight,height,width,horizontal,center=TRUE,...){
+    psname<-as.character(substitute(psname))
+    if(exists("revive.sys")){
+      if(missing(latexheight)) latexheight <- get("psheight.sys",revive.sys)
+      if(missing(height))      height <-      get("psdesignheight.sys",revive.sys)
+      if(missing(width))       width <-       get("psdesignwidth.sys",revive.sys)
+      if(missing(horizontal))  horizontal <-  get("pshorizontal.sys",revive.sys)
+    } else {
+      if(missing(latexheight))     latexheight <- "10cm"
+      if(missing(height))          height <-      6
+      if(missing(width))           width <-       6
+      if(missing(horizontal))      horizontal <-  FALSE
+    }
+    if(<<DEBUG-Flag gesetzt>>){ cat(psname,latexheight,height,width,horizontal) }
+    if(0==length(grep("\\.ps$",psname))) psname<-paste(psname,".ps",sep="") 
+    news<-paste(if(center)"\n\\begin{center}","\\includegraphics[",
+                "height=",latexheight,"]{",psname,"}",
+                if(center)"\\end{center}\n",sep="") 
+    result<-try({dev.copy(postscript,psname,horizontal=horizontal,
+                width=width,height=height,...);dev.off()}
+    )
+    if(class(result)=="try-error"){ news <- result } 
+    news
+  }
+  # arbeite Zeilen mit Splot-Expressions nacheinander ab
+  for(l in seq(along=splot.lines)){
+    # hole Nummer l der Zeilen, die Splot-Expressions enthalten 
+    cand<-text.lines[splot.lines[l]]
+    # knacke Kandidaten-Zeile an der Stelle auf, an der \Splot gefunden wird
+    cand<-unlist(strsplit(cand,"\\\\Splot"))
+    # cand[1] ist der vor der ersten Expression, 
+    # cand[i+1] der mit der i-ten Expression beginnt
+    # alle Expressions der Zeile werden nacheinander abgearbeitet
+    for(j in seq(cand)[-1]){
+      # ncandj zeigt die Laenge von Kandidat j an
+      ncandj<-nchar(cand[j])
+      # splot verwaltet den j-ten Kandidaten zeichenweise
+      splot<-substring(cand[j],1:ncandj,1:ncandj) 
+      # es gilt die beendende Klammer von Splot zu finden
+      brack<-cumsum((splot=="{")-(splot=="}")) 
+      # n.splot zeigt die Stelle der schliessenden-Klammer
+      n.splot<-which(brack==0)[1]; if(is.na(n.splot)) next
+      # mit n.splot greifen wir den vorderen Teil von splot und evaluieren
+###
+      code <- paste("copy.plot(",paste(collapse="",splot[2:(n.splot-1)]),")")
+      if(<<DEBUG-Flag gesetzt>>){ print(code) }
+###
+      result <- try(eval(parse(text=code)))      
+      # wenn nichts rauskommt, ist nichts zu modifizieren
+      if(!identical(result,"")) { 
+        # print("---");print(result);print("---")
+        # im Fehlerfall muss es eine Meldung geben
+        if(class(result)=="try-error"){ 
+          result<-paste("[[\\Splot-error:",
+                        paste(splot[1:n.splot],collapse=""),"]]",collaspe="")
+        }
+      }
+      # das Ergebnis des j-ten Ausdrucks wird vorn, 
+      # also wo das Kommando stand eingetragen
+      cand[j]<-paste(result, substring(cand[j],n.splot+1),sep="")
+    }
+    text.lines[splot.lines[l]]<-paste(cand,collapse="")  
+  }
+  # aktualisiere Textzeilen 
+  input[is.text.line]<-text.lines
+}
+
+@
+\newpage
+\subsection{Referenzen und Indizes -- Überlegungen und Entscheidungen}
+
+\subsubsection{Ideen}
+
+Das literate programming bietet Entwicklern zwei wesentliche Pluspunkte:
+erstens lassen sich schwierige Probleme durch Zerlegung schrittweise lösen und
+zweitens können Lösungen in einer durch den Autor bestimmten 
+Reihenfolge verfasst werden. Ein Leser kann dann Schritt für Schritt die
+Bausteine der Lösung nachvollziehen und verstehen. Das Gesamtkunstwerk ergibt
+sich aus der Aggregation der einzelnen Bausteine. Sowohl bei der 
+Erstellung wie auch bei späteren Auseinandersetzungen mit einer literaten
+Lösung spielt der Zusammenhang der Bausteine eine zentrale Rolle. Deshalb
+ist es notwendig, dass Zusatzinformationen wie Verweise und Indizes über
+Beziehungen Auskunft geben. Ein Blick in D. E. Knuth (1982): \emph{\TeX\ the program}
+zeigt, dass solche Lesehilfen sehr komfortable gestaltet werden 
+können. Die hier beschriebene \texttt{weave}-Komponente soll ebenfalls
+zweckmäßige Zusatzinformationen integrieren. 
+
+\subsubsection{Wichtige Zusatzinformationen.}
+
+Die folgende Aufzählung zeigt Typen von Zusatzinformationen in der Reihenfolge, wie 
+ihre Wichtigkeit eingeschätzt wird:
+\begin{enumerate}
+\item[{\sf expand in}] 
+Wird ein Problem in Teilprobleme zerlegt, ist die wichtigste
+Information eine Angabe der Stellen, an denen die Teilprobleme
+weiter diskutiert werden. An der Stelle der Verwendung eines Code-Chunk sollte
+deshalb ein Verweis auf die Stelle der Definition des verwendeten Code-Chunk zu finden sein.
+\emph{The definition is found in: xx}.
+\item[{\sf used in}] 
+Wird eine Teillösung betrachtet, so interessiert, an welchen
+Stellen diese Teillösung Verwendung findet. Hierfür sollte an einem Code-Chunk eine
+Link-Information auf den Chunk bzw.\ die Chunks zu finden sein, in denen er als Verfeinerung eingesetzt wird.
+\emph{This chunk is used in the chunks with the numbers: xx, yy}.
+\item[{\sf chunk list}]
+Wird nach einer Teillösung gesucht, benötigt man eine Übersicht der kleinen Lösungen.
+Dieses ist für kleine Probleme nicht so wichtig, jedoch schnell, wenn die Lösung umfangreicher wird. 
+Eine Liste der Code-Chunk-Namen wird dann erforderlich. 
+\emph{The list of chunks with chunk numbers and page information: name -- definition in xx, yy, zz -- page of first definition}.
+\item[{\sf extensions}] 
+Manchmal werden Bausteine erweitert, weil später unter einer schon behandelten
+Überschrift noch ein weiterer Aspekt ergänzen wird. Beispielsweise können wir uns
+vorstellen, dass Sammelbecken wie \emph{definiere Ausgabe-Routinen} oder 
+\emph{definiere elementare Zugriffsfunktionen} an verschiedenen Stellen gefüllt werden.
+Bei strukturellen Veränderungen einer Teil-Lösung kann es erforderlich sein, 
+alle zu einem Namen zugehörenden Chunks zu finden. Die Erweiterungsinformation kann an 
+den Chunks oder aber an der Übersicht der Chunks angeheftet werden. \emph{See chunk list: yy, zz}.
+\item[{\sf object index}] 
+Letztlich ist es gerade für Entwickler wichtig, die Vorkommnisse bestimmter
+Objekte aufspüren zu können. Mit Suchfunktionen von Editoren ist das an sich
+kein Problem, jedoch ist in der Papierversion ein Objekt-Index überlegen.
+Die Realisation im \emph{\TeX\ -- The Program} zeigt uns eine Luxusversion,
+bei der auf jeder Seite verwendete Variablen mit dem Ort ihrer Definition und ihrer
+Qualität aufgeführt sind. \emph{Object Index: name -- numbers of chunks using the object}.
+\end{enumerate}
+
+\subsubsection{Design-Entscheidungen für [[weaveR]].}
+
+Für die genannten Punkte soll für [[weaveR]] eine Umsetzung gefunden werden. Dazu sind 
+Design-Entscheidungen zu fällen, die das Erscheinungsbild festlegen. Ausgehend von dem Verwendungszweck
+werden die Code-Chunk-Referenzen über Code-Chunk-Nummern geregelt und nicht wie andernorts zu sehen
+über Seitenzahlen. Um Ablenkungen beim Lesen gering zu halten, sollen keine Text eingefügt werden, 
+wie sie beispielsweise im letzten Abschnitt in englischer Sprache vorgeschlagen wurden. Stattdessen
+sollen einfache Symbole aus der Mengenlehre die Art der Beziehungen ausdrücken.
+\begin{enumerate}
+\item[{\sf expand in}] 
+Bei der Verwendung eines Code-Chunk soll hinter dem Namen -- jedoch vor 
+der den Namen abschließenden Klammer -- die Nummer des (ersten) Chunk
+mit der Definition eingefügt werden. 
+Falls es keine Definition gibt, erscheint dort ein [[NA]]. 
+\item[{\sf used in}] 
+Die Header-Zeile eines Code-Chunk soll um Verweise auf die Chunks, die die Definition einbauen, 
+erweitert werden. Dazu sollen die Nummern der rufenden Chunks sowie als Trennzeichen "$\subset$"
+rechts neben dem Chunk-Namen notiert werden. 
+Mit dem Teilmengenzeichen wird angezeigt, dass der vorliegende Chunk ein Teil
+von größeren Lösungen ist.
+\item[{\sf chunk list}]
+Die Chunk-Liste soll eine Kopie alle Code-Chunk-Header mit den Verwendungshinweisen darstellen.
+Zusätzlich sollen die Seitenzahlen des ersten Vorkommens der Definitionen angegeben werden.
+\item[{\sf extensions}] 
+Mit anderen Web-Systemen lassen sich Referenzen an eine Code-Chunk-Definition
+angefügen, die auf Ergänzungsdefinitionen hinweisen. In der vorliegenden Fassung von [[weaveR]] 
+werden Erweiterungsinformationen nur in der Chunk-Liste notiert. 
+Dazu wird die Zahl, die die Code-Chunk-Nummer des ersten Vorkommens angibt, 
+um die weiteren Nummern der Folgedefinition erweitert und durch das naheliegende Zeichen 
+"$\cup$" abgetrennt.
+\item[{\sf object index}]
+In einem Objekt-Index sollen die Objekt-Namen mit den Nummern ihres Einsatzes gesammelt werdeb.
+Dazu sollen alle Zeichenketten vor Zuweisungsoperatoren untersucht und hieraus die Menge der 
+Objekte gebildet werden. Namen mit nur einem Zeichen sollen ausgeklammert werden.
+Darüberhinaus sollen sich per Hand weitere Objekt-Namen festlegen lassen.
+\end{enumerate}
+
+\subsubsection{Optionen der Gestaltung.}
+
+Wesentliche Dinge müssen sein. Dementsprechend soll der Punkt "{\sf expand in}"
+immer wie beschrieben umgesetzt werden.
+Es könnte Situationen geben, in denen man "{\sf used in}"-Informationen abstellen möchte. 
+Die Übersicht "{\sf chunk list}" inklusive der "{\sf extensions}"-Informationen soll dagegen nur
+sofern gewünscht erstellt werden. Denn für kurze Abhandlungen oder bei sehr wenigen verschiedenen
+Header-Namen ist eine solche Übersicht verzichtbar. Entsprechendes gilt für den Objekt-Index. 
+Zu diesem ist neben der automatischen Generierung der Liste eine Integration weiterer 
+gewünschter Objektnamen notwendig. Denn einerseits kann der Automatismus eventuell Objektnamen
+übersehen. Andererseits ist es auch denkbar, dass ein Anwender Objektnamen, die nur aus einem Buchstaben
+bestehen, in die Liste aufnehmen will.
+
+\subsubsection{Syntax zu den Optionen.}
+
+Für die beschriebenen Einflussmöglichkeiten muss es Befehlselemente geben, die prinzipiell 
+entweder als Parameter beim [[weaveR]]-Aufruf oder direkt ins Quelldokument eingebracht werden könnten.
+Damit Dokumente ergebnisgleich rekonstruiert werden können, wurde die Parameter-Lösung ausgeschlossen.
+Optionen werden also über spezielle Anweisungen im Quelldokument festgelegt. 
+\begin{itemize} 
+\item[[@no.used.in.infos]]:\\
+Falls ein solcher Eintrag gefunden wird, wird keine Information bezüglich einer Verwendung eines 
+Code-Chunk am Definitionsort eingebunden.
+\item[[@list.of.chunks]]:\\
+In Anlehnung an das Makro [[\listoffigures]], jedoch für die Quellebene adaptiert,  
+fordert der Anwender durch eine Zeile beginnend mit [[@list.of.chunks]]
+die Liste der Code-Chunk Namen an.
+Diese wird dort platziert, wo [[@list.of.chunks]] gefunden wird.
+\item[[@index.of.objects]]:\\
+Entsprechend wird mit [[@index.of.objects]] der Objekt-Index an der Fundstelle des Keyword 
+in das Dokument eingesetzt.
+\item[[@index]]:\\
+Eigene Objektnamen werden durch Zeilen festgelegt, die mit [[@index]] beginnen und in denen nach diesem
+Keyword die Objektnamen folgen. Es werden jedoch nur Objektnamen in die Übersicht der Objekte aufgenommen,
+die auch in mindestens einem Code-Chunk gefunden werden.
+\item[[@index.reduced]]:\\
+Wird dieser Eintrag gefunden, wird keine automatische Suche nach Objektnamen durchgeführt und der
+Objektindex enthält nur manuell festgelegte Einträge.
+\end{itemize}
+Damit ist der Handlungsspielraum des Anwenders festgelegt und wir können uns der Umsetzung widmen.
+
+@
+\subsubsection{Referenzen und Indizes -- Umsetzungen}
+
+Für die Umsetzung lassen sich eine Reihe von Informationen und Variablen verwenden, 
+die an dieser Stelle bekannt sind. Die zentrale Variable, die auf der aktuelle Dokument 
+verwaltet wird, heißt [[input]]. Diese enthält zeilenweise das Quelldokument. Im Laufe des
+Verarbeitungs-Prozesses wird diese Variable solange aufbereitet, bis sie zum Schluss auf ihr 
+das fertige \LaTeX-Dokument steht.
+
+@
+\paragraph{\fbox{\sf expand in}}:
+\bigskip
+@
+Das Grundprinzip der Umsetzung ist einfach: 
+\begin{enumerate}
+\item suche alle Zeilen mit Chunk-Verwendungen
+\item extrahiere aus diesen die Chunk-Namen der verwendeten Chunks
+\item suche die extrahierten Chunk-Namen in der Menge aller Code-Chunk-Definitionen
+\item schreibe die Code-Chunk-Nummer der jeweils gefundenen Definition 
+      hinter den Chunk-Namen an der Verwendungsstelle ein.
+\end{enumerate} 
+
+@
+Die Chunk-Nummer der (ersten) Definition eines verwendeten Chunks wird 
+während der Formatierung der Zeilen mit Verwendungen umgesetzt, bei der
+geeignete \LaTeX-Befehle ergänzt werden. Es ist zu beachten, dass auch 
+\emph{Verwendungszeilen} behandelt werden, die in Text-Chunks gefunden werden.
+
+@
+Im Detail werden für die Formatierung zuerst die Leerzeichen am Anfang der Verwendungszeilen
+auf [[leerzeichen.vor.use]] (ergänzt um ein zusätzliches
+Leerzeichen) und die Zeilen ohne diese Leerzeichen auf [[use.lines]] abgelegt. 
+Jede Verwendungszeile wird in einem 
+Schleifendurchgang der for-Schleife untersucht:
+Dabei werden die Chunk-Namen solange aufgebrochen,
+bis alle in einzelnen Elementen von [[uli]] stehen.
+Die Stellen von [[uli]] mit Chunk-Namen werden auf 
+[[cand]] gemerkt. [[uli[-cand]]] enhält alle Nicht-Chunk-Namen.
+Nun können die Chunk-Namen gesucht und um die Nummer [[ref.no]] ergänzt werden.
+Die mit Nummern und TeX-Klammern versehenen
+[[uli]]-Einträge werden zusammengepackt und auf
+[[use.lines]] zurückgespielt.
+Zuvor müssen die Nicht-Chunk-Namen jedoch ggf.\ noch
+wie Code behandelt werden!
+@
+<<schreibe Code-Verwendungszeilen [[weaveR]]>>=
+# get use lines 
+use.lines<-input[use.index]; is.use.lines.within.code<-is.code.line[use.index]
+# remove and save leeding blanks
+leerzeichen.vor.use<-paste("\\verb|",
+                           sub("[^ ](.*)$"," ",use.lines),
+                           "|",sep="") ## plus 1 Leerzeichen 
+use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-7) 
+# loop along use lines
+for(i in seq(along=use.lines)){
+  # get single line
+  uli<-use.lines[i]
+  # split chunk names and other strings
+  repeat{
+    if(0==length(cand<-grep(pat.use.chunk,uli))) break
+    uli.h<-gsub(pat.use.chunk.line,"\\1bReAkuSeChUnK\\2bReAk\\3",uli)
+    uli<-unlist(strsplit(uli.h,"bReAk"))
+  }
+  # find chunk names
+  cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
+  # find chunk numbers of (first) definition
+  ref.no<-match(uli[cand],code.chunk.names)
+  # include number of definition chunk
+  uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
+  <<poliere [[use.lines]], die aufgesplittet auf [[uli]] stehen [[weaveR]]>>
+  use.lines[i]<-paste(uli,collapse="")
+}
+# store modified use lines
+input[use.index]<-ifelse(is.use.lines.within.code,
+      paste("\\rule{0mm}{0mm}\\newline",leerzeichen.vor.use,use.lines,"%",sep=""), 
+      paste(gsub("[^ ]","",leerzeichen.vor.use),use.lines,sep=""))
+
+@
+Für die Bearbeitung der Verwendungszeilen ist zu beachten, dass diese
+sowohl in einem Code-Chunk aber auch in einem Text-Chunk vorkommen können.
+Verwendungen im Text sind nicht weiter zu behandeln. Jedoch können bei einem
+Einsatz in einem Code-Chunk in der Zeile noch weitere Code-Stücke stehen. 
+Die Zeile selbst ist so in Zeichenketten aufgeteilt und auf [[uli]] abgelegt, dass verwendete
+Code-Chunk-Namen anhand von [[cand]] erkannt werden. Alle übrigen Einträge auf
+also [[uli[-cand]]] sind Code und müssen entsprechend durch eine [[\verb]]-Konstruktion
+eingepackt (\emph{poliert}) werden. Weitere Ausführungen siehe bei Code-Schreiben:
+\emph{schreibe Code-Zeilen [[weaveR]]}.
+<<poliere [[use.lines]], die aufgesplittet auf [[uli]] stehen [[weaveR]]>>=
+#  formating code within use references, in code chunk a little different
+if(length(uli)!=length(cand)){
+  if(is.use.lines.within.code[i]){ 
+    # within code chunks: code (but no the chunk names) has to be escaped
+     uli[-cand]<-gsub("\\?","?\\\\verb!?!\\\\verb?",uli[-cand]) #110518
+     uli[-cand]<-paste("\\verb?",uli[-cand],"?",sep="") #110518
+  }
+}
+
+@
+<<old escaping>>=
+#    if(!UTF){ 
+#        uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
+#    }else{
+#        uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
+#    }
+
+@
+\paragraph{\fbox{\sf used in}}:
+\bigskip
+
+Die \emph{used-in}-Info wird zusammen mit anderen formatierungstechnischen Aufbereitungen
+der Header-Zeilen erledigt.
+Da für jeden einzelnen Chunk zu klären ist, wo er eingebaut wird, ist eine
+Schleife über die Chunk zur Klärung naheliegend.
+\begin{enumerate}
+\item[1.] füge \TeX-Makro zur Erzeugung der laufenden Nummer am Rand an
+\item[2.] ermittle aus allen Verwendungszeilen die enthaltenen Code-Chunk-Namen
+\item[3.] suche die verwendeten Namen in der Liste aller Chunk-Namen
+\item[4.] merke zu jeder Chunk-Definition die gefundenen rufenden Chunks
+\item[5.] füge Referenz-Informationen an.
+\end{enumerate}
+
+@
+Betrachtet man einen isolierten Chunk, dann müssen in diesem die Header in unterschiedlicher Weise
+modiziert werden.
+Die einfachste Operation bestehen darin, eine laufende Nummer am Rand anzubringen.
+Weiter ist das Ersterscheinen von Code-Chunk-Namen hinter dem Namen zu vermerken.
+Drittens sind die "{\sf used in}"-Informationen anzufügen. 
+
+@
+Für die laufende Nummer wird das \LaTeX-Marko [[\makemarginno]] eingebaut, 
+das später die Nummern erzeugt und Vorschub und Einzug regelt.
+Als zweites wird hinter dem Code-Chunk-Namen die Sektionsnummer des ersten Vorkommnisses
+des Namens eingetragen.
+Nur bei Erweiterungsdefinitionen, werden sich die laufende Randnummer und die Nummer
+direkt hinter dem Chunk-Namen unterscheiden.
+Die Position der Header-Zeilen kann der Variablen [[code.start.index]] entnommen werden.
+@
+<<ergänze Randnummern und Ersterscheinen in Header-Zeilen [[weaveR]]>>=
+# find section numbers
+no<-seq(along=code.start.index)
+# find first occurences of code chunks
+def.ref.no<-match(gsub("\\ ","",code.start.lines),
+                  gsub("\\ ","",code.start.lines))
+# construct modified header lines
 code.start.lines<-paste("\\makemarginno ", 
-      "$\\langle${\\it ",code.start.lines,"}\\ $",def.ref.no,
-      "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$",sep="")
+                        "$\\langle${\\it ",code.start.lines,"}\\ $",def.ref.no,
+                        "\\rangle",ifelse(no!=def.ref.no,"+",""),"\\equiv$",sep="")
+# save modified header lines
 input[code.start.index]<-code.start.lines
 
 @
-�ber \verb+Rchunkno+ lassen sich Verweise erstellen.
-Hilfreich k�nnte dazu zwei Makros sein, um die Vorgehensweise
-von \verb+\label+ und \verb+\ref+ abzubilden. Dieses k�nnte so
+Nun widmen wir uns dem Problem, die "{\sf used in}"-Information zu ermitteln und
+bereitzustellen.
+
+@
+% Zur Erinnerung: [[pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")]].
+% Variable lines.header durch code.start.index ersetzt
+Die "used-in"-Infos erhalten wir, indem wir zunächst die Menge der relevanten 
+Header-Zeilen extrahieren. Dann suchen wir alle Zeilen mit Verwendungen, von denen 
+aber nur die interessieren, zu denen es bereits eine Definition gibt.
+Diese legen wir auf [[names.use.cand]] ab. Die Einträge (Zeilen) von
+[[names.use.cand]] gehen wir nacheinander durch und extrahieren aus diesen alle
+Chunk Verwendungen. Auf [[names.use]] werden dann alle Chunk-Verwendungen gesammelt
+sowie auf [[lines.use]] die Zeilen, in denen die Verwendungen stehen.
+
+@
+Mit allen Chunk-Namen und allen Verwendungsinformationen können wir nun alle 
+irgendwo verwendeten Code-Chunks durchgehen und die jeweiligen Nummern der 
+Verwendungsorte ermitteln: [[used.in.no]]. Mit diesen werden zum Schluss 
+Zeichenketten mit den {\sf used in}-Informationen zusammengesetzt.
+Unter [[used.in.message]] und [[lines.used.in.message]] werden die textuellen
+Anhängsel und die relevanten Zeilennummern abgelegt.
+@
+<<bestimme used-in Informationen>>=
+ref.infos.found<-FALSE
+# extract lines containing calls of other code chunks
+lines.use<-which(line.typ=="USE"&is.code.line)
+include.use.infos<-0==length(grep("^@no.used.in.infos",input))
+if(include.use.infos&&length(lines.use)>0){
+ <<ermittle Menge der Header>>
+ # lines with uses of code chunks
+ <<ermittle Namen und Zeilen der verwendeten Code-Chunk>>
+ # chunk uses found: names (names.use) and lines (lines.use)
+ # find headers that have been used, their lines and compute used-in-info
+ # remove brackets... old: sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",names.header)
+ names.header<-sub(pat.use.chunk.line,"\\2",names.header) 
+ ind<-!is.na(match(names.header,names.use))
+ names.header.used<-names.header[ind]; lines.header.used<-code.start.index[ind] # 
+ if((anz<-length(names.header.used))>0){ 
+   ref.infos.found<-TRUE; used.in.message<-rep("",anz)
+   lines.used.in.message<-rep(0,anz)
+   # find for each header of names.header.use the numbers of section of their uses
+   <<ermittle für verwendete Header-Namen die rufenden Chunks und erstelle Meldung>> 
+ }
+}
+@
+Die Header-Menge enthält keine Wiederholungen von Chunk-Namen!
+<<ermittle Menge der Header>>=
+# find header lines
+names.header<-input[code.start.index]
+# extract set header names: remove "<", ">" and characters not belonging to the name
+names.header.uniq<-sub(paste(pat.chunk.header,".*",sep=""),"\\1",
+                       unique(sort(names.header)))
+
+@
+Lege die Namen der Code-Chunks, die verwendet werden, 
+auf der Variablen [[names.use]] und die zugehörigen Zeilen auf 
+[[lines.use]] ab.
+<<ermittle Namen und Zeilen der verwendeten Code-Chunk>>=
+names.use.cand<-input[lines.use]; l.u<-n.u<-NULL
+for(ii in seq(along=lines.use)){ # aufknacken mehrerer Chunks in einer Code-Zeile
+   h<-names.use.cand[ii] 
+   repeat{  # old: last<-sub(paste("^.*<","<(.*)>",">.*",sep=""),"\\1",h) 
+     # if(!exists("max.wd")) max.wd<-10; max.wd<-max.wd-1; if(max.wd<1) break
+     last<-sub(pat.use.chunk.line,"\\2",h) # extract name
+     if(last!=h){ # something found during substitution => chunk use found
+       l.u<-c(l.u,lines.use[ii]); n.u<-c(n.u, last)
+       # old: h<-sub(paste("^(.*)<","<.*>",">.*",sep=""),"\\1",h) # rm 
+       h<-sub(pat.use.chunk.line,"\\1",h) # rm identified chunk use 
+       if(nchar(h)==0) break
+     } else break # no more chunk uses in line ii
+   }
+}
+names.use<-n.u; lines.use<-l.u 
+
+@
+<<ermittle für verwendete Header-Namen die rufenden Chunks und erstelle Meldung>>=
+for(i in 1:anz){
+     idx.found<-which(names.header.used[i]==names.use)
+     l<-lines.use[idx.found]
+     # find number of chunks calling names.header.used[i]
+     used.in.no<-unique(unlist(lapply(l,function(x) sum(code.start.index<x)))) #
+     # construct message and save line number of input that has to be changed
+     used.in.message[i]<-paste("{\\quad$\\subset$ ",
+                               paste(used.in.no,collapse=", "),"}")
+     lines.used.in.message[i]<-lines.header.used[i]
+}
+
+
+@
+Damit haben wir die "used-in"-Referenzinformationen ermittelt und aufbereitet auf 
+[[lines.used.in.message]] und [[used.in.message]] abgelegt. 
+Diese werden dann während der Output-Erstellung
+in dem Chunk $\langle$\emph{ergänze used-in-Infos, Chunk-Index und ggf.\ Object-Index}$\rangle$ 
+ausgewertet,
+also an passender Stelle in [[input]] eingetragen.
+Den Kern wollen wir jedoch hier vorstellen:
+<<lege "used in" Infos auf input ab>>=
+# include Referenzinformationen
+if(include.use.infos&&ref.infos.found)
+   input[lines.used.in.message]<-paste(input[lines.used.in.message],
+                                       used.in.message)
+
+@
+\paragraph{\fbox{\sf chunk list}}:
+\bigskip
+
+Die Erstellung einer einfachen Chunk-Liste ist völlig einfach. 
+Erst die Berücksichtigung von Erweiterungsdefinitionen und Seitenhinweise erfordert einige 
+Überlegungen. Der Grundalgorithmus lässt sich so formulieren:
+\begin{enumerate}
+\item suche alle Header-Zeilen
+\item ergänze die Erweiterungsinformationen
+\item ergänze Seiteninformationen
+\item führe noch ein paar Formatierungen durch.
+\end{enumerate}
+
+Zunächst stellen wir fest, ob überhaupt der Wunsch nach einer Chunk-Liste besteht
+und merken uns die Position, an der die Liste eingefügt werden soll.
+<<bestimme ggf.\ Zeile für Liste der Chunks>>=
+pos.chunk.list<-grep("^@list.of.chunks",input)
+  
+@
+Für die Chunk-Liste gehen wir pragmatisch vor und suchen aus [[input]]
+alle Header-Zeilen und entfernen alle unwichtigen Infos.
+<<bereite Chunk Index vor>>=
+# merke Header fuer Chunk Index
+chunk.index<-NULL 
+ind<-0<length(pos.chunk.list)
+if(ind){ 
+  # Randnummer entfernen
+  chunk.index<-sub("\\\\makemarginno.","",input[code.start.index]) 
+  # + Zeichen entfernen
+  chunk.index<-sub("rangle[+]*.equiv","rangle",chunk.index)    
+  first<-match(chunk.index,chunk.index)       # jeweils erste Chunks finden 
+  no.ext<-split(seq(along=chunk.index),first) # Nummern gleicher Chunks suchen
+  no.ext<-unlist(lapply(no.ext,function(x){
+         if(length(x)==1) " " else paste("\\cup",paste(x[-1],collapse="\\cup"))
+                               } ))   # Erweiterungsnummern als String ablegen
+  chunk.index<-unique(chunk.index); first<-unique(first)   # gleiche entfernen
+  if(0<length(first)){
+    # Erweiterungs-Infos einbauen
+    chunk.index<-paste(sub(".rangle.*","",chunk.index),no.ext,
+                       sub(".*rangle","\\\\rangle",chunk.index),sep="") 
+    <<trage pageref-Einträge ein>>
+    chunk.index<-sort(chunk.index)              # sortieren
+  }
+}
+
+@
+Für die Ergänzung von Seitenzahlen an die Chunk-Liste müssen wir an die Chunks
+\LaTeX-Labels anfügen. Dazu generieren wir auf Basis der Chunk-Nummern Labelnamen.
+Die Labelnamen beginnen alle mit [[CodeChunkLabel]] und werden gefolgt von der 
+codierten Nummer. Die Ziffer 0 wird durch ein [[A]] ersetzt, die Ziffer
+1 durch ein [[B]] usw., so dass dem Code-Chunk mit der Nummer 123 das Label
+[[CodeChunkLabelBCD]] zugeordnet wird. Ein geeigneter Label-Makroaufruf wird 
+an geeigneter Stelle den Header-Zeilen hinzugefügt.
+<<schreibe Label an Code-Chunk-Headers>>=
+label<-function(no){
+  <<definiere Funktion [[find.label]]>>
+  label<-sapply(no,find.label)
+  paste("\\label{",label,"}",sep="")
+}
+input[code.start.index]<-paste(input[code.start.index],
+                               label(seq(along=code.start.index)))
+
+@
+Die Funktion [[find.label]] benötigen wir zweimal. Deshalb definieren wir sie
+in einem eigenen Chunk.
+<<definiere Funktion [[find.label]]>>=
+find.label<-function(no){
+    label<-paste("CodeChunkLabel",
+        paste(LETTERS[1+as.numeric(substring((no+10000),2:5,2:5))],
+		      collapse=""),sep="")
+}
+  
+@
+Nachdem der Chunk-Index auf der Variablen [[chunk.index]] angekommen ist, können wir
+[[\pageref]]-Aufrufe an diese Variablen anhängen. Die Seitennummern wird \LaTeX\
+dann anfügen.
+<<trage pageref-Einträge ein>>=
+pageref<-function(no){
+  <<definiere Funktion [[find.label]]>>
+  label<-sapply(no,find.label)
+  paste("p\\pageref{",label,"}",sep="")
+}
+chunk.index<-paste(chunk.index,"\\dotfill",pageref(first))
+
+@
+Zur Komplettierung wird nur noch etwas \TeX-Kosmetik gemacht.
+<<erledige Restarbeiten für Chunk-Index>>=
+if(0<length(chunk.index)){
+  chunk.index<-paste(chunk.index,collapse="\\\\") # newline ?
+  chunk.index<-paste("{\\paragraph{Code Chunk Index}\\small",
+                     "\\rule{0mm}{0mm}\\\\[1.5ex]",
+                     chunk.index,"\\\\\\rule{0mm}{0mm}}")
+}
+
+@
+\paragraph{\fbox{\sf extensions}}:
+\bigskip 
+
+Diesen Punkt haben wir unter Chunk-Liste bereits erledigt.
+
+@
+\paragraph{\fbox{\sf object index}}:
+\bigskip
+
+Im groben wird ein Objekt-Index in folgenden Schritten erstellt,
+sofern keine Einschränkung durch [[@index.reduced]] gegeben ist:
+\begin{enumerate}
+\item suche mögliche Objektnamen durch Untersuchung von Zuweisungen
+\item ergänze die gefundenen Namen um manuell angeforderte Namen
+\item untersuche alle Code-Chunk, ob in ihnen Objekte der Liste der Objektnamen verwendet werden
+\item bilde aus dem Untersuchungsergebnis den Objekt-Index.
+\end{enumerate}
+
+Den Index der Objektnamen bilden wir nur, wenn ein Index-Wunsch besteht.
+<<bestimme ggf.\ Zeile für Objekt-Index>>=
+pos.obj.idx<-grep("^@index.of.objects",input)
+
+@
+Zur Ermittlung der Objekt-Namen werden alle Code-Zeilen mit Zuweisungen und 
+in diesen alle Zeichen vor einem Zuweisungspfeil extrahiert. 
+Die gefundenen Strings werden dann
+um die Zeichen bereinigt, die nicht zu einem Namen gehören oder
+auf kompliziertere Konstruktionen hinweisen. Auf diese Weise 
+sollten die meisten selbst zugewiesenen Objekte gefunden werden.
+Dann werden noch alle Objekte ergänzt, die per [[@index]] manuell festgelegt worden sind.
+Falls kein Objekt-Index erwünscht wird, also ein Eintrag mit
+[[@index.of.objects]] nicht gefunden wird, bleibt [[obj.index]] leer.
+Wird zusätzlich [[@index.reduced]] gefunden, werden nur manuell
+eingetragene Objektnamen in den Index aufgenommen. 
+<<bestimme ggf.\ Menge der eigenen R-Objekte und sammle Object Index Infos>>=
+obj.set<-obj.index<-NULL
+
+ind<-0<length(pos.obj.idx) && 0==length(grep("^@index.reduced",input))
+if(ind) {
+  # Kandidatensuche
+  a<-unlist(strsplit(input[code.index],";"))
+  a<-sub("<-.*","",a[grep("<-",a)]) # Zuweisungen suchen
+  a<-gsub(" ","",a[!is.na(a)])      # Leerzeichen entfernen
+  # Indizes und Unternamen entfernen:
+  a<-sub("\\[.*","",a); a<-sub("\\$.*","",a) 
+  a<-a[grep("^[a-zA-Z.]",a)]        # Beginn mit Nicht-Ziffer
+  a<-a[grep("^[a-zA-Z.0-9_]*$",a)]  # erlaubte Zeichen
+  a<-a[nchar(a)>1]                  # nur echte Strings merken
+  obj.set<-sort(unique(a))          # Zusammenfassung
+}
+# explizite angegebene Namen
+ind<-0<length(pos.obj.idx) && 0<length( a<-grep("^@index[^o]",input,value=TRUE) )
+if(ind){
+  a<-sub("^@index *","",a); a<-gsub(","," ",a); 
+  a<-unlist(strsplit(gsub(" +"," ",a)," "))
+  obj.set<-sort(unique(c(a,obj.set))) # set of object names
+}
+if(length(obj.set)>0){
+  <<ermittle über alle Code-Chunks die verwendeten Objekte>>
+}
+
+@
+Nachdem die Kandidatenliste der Objekte feststeht, muss noch die Verwendung
+der Objekte in den einzelnen Chunks geprüft werden. Dieser Schritt kostet relativ viel
+Zeit. In einer Schleife über alle Code-Chunks wird jeweils der Code
+extrahiert und in diesen nach Vorkommnissen aller Objekt-Kandidaten gesucht.
+Als Ergebnis wird eine zweizeilige Matrix gebildet, in deren zweiten Zeile
+die Chunk-Nummern stehen und in der ersten Zeile die Indizes der gefundenen Objekte
+bzgl.\ der Kandidatenliste.
+Dann können durch Aufsplitten des Code-Chunk-Nummern-Vektors gemäß der
+Objekt-Indizes die Informationen zu den einzelnen Objekte als Listenelemente
+zusammengefasst werden. Mit diesen Informationen erhält man schnell die
+grobe Objekt-Index-Liste [[object.index]], die nur noch formatiert werden muss.
+@
+<<ermittle über alle Code-Chunks die verwendeten Objekte>>=
+if(0<(anz<-length(code.start.index))){
+  obj.used.in<-matrix(0,2,0) 
+  for(no in 1:anz){
+    # extract code chunk no
+    c.start<-code.start.index[no]+1
+    c.end<-text.start.index[which(c.start<text.start.index)[1]]-1
+    if(is.na(c.end)) c.end<-length(input)  
+    if(c.end<c.start) next
+    a<-paste("",input[c.start:c.end],"") # code von code chunk no
+    # check occurance of all candidats
+    h<-sapply(obj.set,function(x) 
+       0<length(grep(paste("[^a-zA-Z.0-9]",x,"[^a-zA-Z.0-9]",sep=""),a)))
+    if(any(h)) obj.used.in<-cbind(obj.used.in,rbind(which(h),no))
+  }
+  # obj.used[2,] shows chunk numbers, obj.used[1,] that candidates
+  a<-split(obj.used.in[2,],obj.used.in[1,])
+  if(length(a)==1&&length(a[[1]])==1) names(a[[1]])<-colnames(obj.used.in)[1]
+  # list element i stores the numbers of chunks where object i has been found
+  a<-lapply(a,function(x){ 
+         x<-paste(names(x)[1],"\\quad$\\in$",paste(x,collapse=", ")) 
+              })
+  obj.index<-paste(unlist(a),collapse="\\\\\n"); names(obj.index)<-NULL
+} 
+
+@
+Auf [[obj.index]] steht die Rohfassung des Objekt-Indizes, der 
+in $\langle$\emph{ergänze used-in-Infos, Chunk-Index und ggf.\ Object-Index}$\rangle$
+weiterverarbeitet bzw.\ auf [[input]] abgelegt wird. Etwas Formatierung führt zur einbaufähigen 
+Liste.
+<<formatiere Objekt-Index>>=
+obj.index<-obj.index[obj.index!=""]
+if(0<length(obj.index)){ 
+  obj.index<-gsub("_","\\\\_",obj.index)
+  obj.index<-paste(obj.index,collapse="\\\\") # newline ?
+  obj.index<-paste(
+        "{\\paragraph{Object Index}\\footnotesize\\rule{0mm}{0mm}\\\\[1.5ex]",
+        obj.index,"\\\\\\rule{0mm}{0mm}\\par}")
+}
+
+@
+Jetzt können wir noch ein paar Restarbeiten erledigen.
+<<ergänze used-in-Infos, Chunk-Index und ggf.\ Object-Index>>=
+<<lege "used in" Infos auf input ab>>
+<<bereite Chunk Index vor>>
+<<erledige Restarbeiten für Chunk-Index>>
+<<formatiere Objekt-Index>>
+if(0<length(pos.obj.idx)   &&length(obj.index)  >0) input[pos.obj.idx]<-obj.index
+if(0<length(pos.chunk.list)&&length(chunk.index)>0) input[pos.chunk.list]<-chunk.index
+
+@
+\subsubsection{Integration der Ergänzungen in die Output-Erzeugung}
+<<erstelle Output [[weaveR]]>>=
+<<erledige Text-Chunk-Starts [[weaveR]]>>
+<<ergänze Randnummern und Ersterscheinen in Header-Zeilen [[weaveR]]>>
+<<schreibe Code-Verwendungszeilen [[weaveR]]>>
+<<schreibe Code-Zeilen [[weaveR]]>>
+<<setze Code in Text-, Header- und Verwendungszeilen [[weaveR]]>>
+<<ergänze used-in-Infos, Chunk-Index und ggf.\ Object-Index>>
+<<schreibe Label an Code-Chunk-Headers>>
+
+@
+Abschließend seien noch ein paar Bemerkungen zur Reihenfolge der Umsetzung gemacht.
+Dazu führen wir die relevanten Chunk-Namen in der Ordnung auf, wie sie späer
+in der Funktion auftauchen.
+\begin{enumerate}
+\item
+bestimme ggf.\ Zeile für Objekt-Index und für Liste der Chunks:
+Nach allgemeinen Untersuchungen des Inputs und der Extraktion von Header-
+und Code-Zeilen wird ermittelt, ob ein Objekt-Index und eine Chunk-Liste 
+erstellt werden soll. Die Ergebnisse (Zeilen der gewünschten Einfügungsorte)
+werden auf den Variablen [[pos.obj.idx]] und [[pos.chunk.list]] vermerkt.
+\item
+bestimme used-in Informationen:
+Es werden die [[used-in]]-Infos gesammelt und in [[used.in.message]]
+und [[lines.used.in.message]] abgelegt. 
+\item
+bestimme ggf.\ Menge der eigenen R-Objekte:
+Dann wird die Menge der R-Objekte ermittelt und der Objekt-Index vorbereitet.
+\item
+erstelle Output: 
+Zum Schluss wird der Output erstellt. Dabei werden weitere Teilarbeiten erledigt:
+\begin{enumerate}
+\item
+ergänze Randnummern
+\item 
+schreibe Code-Verwendungszeilen
+\item 
+ergänze used-in-Infos: lege used in Infos auf input ab,
+bereite Chunk Index vor, erledige Restarbeiten für Chunk-Index,
+formatiere Objekt-Index
+\item 
+schreibe Label an Code-Chunk-Headers
+\end{enumerate}
+\end{enumerate}
+Es ist festzustellen, dass bestimme Dinge für einzelne Jobs wiederholt
+umgesetzt werden. Jedoch hat dieses während der Entwicklung den Vorteil,
+dass die einzelnen Aufgabenbereiche getrennt geprüft und verbessert 
+werden konnten und ggf.\ einzelne Elemente ausgeklammert werden können.
+
+@
+\subsubsection{Hinweis für eigene Verweise}
+Über \verb+Rchunkno+ lassen sich Verweise erstellen.
+Hilfreich könnte dazu zwei Makros sein, um die Vorgehensweise
+von \verb+\label+ und \verb+\ref+ abzubilden. Dieses könnte so
 aussehen:
+
+{\footnotesize
 \begin{verbatim}
  @
- \newcommand{\chunklabel}[1]{  \newcounter{#1}\setcounter{#1}{\value{Rchunkno}} }
+ \newcommand{\chunklabel}[1]{ \newcounter{#1}\setcounter{#1}{\value{Rchunkno}} }
  \newcommand{\chunkref}[1]{\arabic{#1}}
 
  @<<norm>>=
@@ -837,84 +1926,59 @@ aussehen:
  Zur Erzeugung von NV-Zufallszahlen siehe: \chunkref{chunkB} und
  Chunk Nummer \chunkref{chunkA} zeigt die Erstellung einer Graphik.
 \end{verbatim}
-@
-Code-Chunk-Verwendungszeilen.
-Zuerst werden die Leerzeichen vor den Verwendungszeilen
-auf [[leerzeichen.vor.use]] erg�nzt um ein zus�tzliches
-Leerzeichen abgelegt und ohne diese auf [[use.lines]]
-abgelegt. Jede Verwendungszeile wird in einem 
-Schleifendurchgang der for-Schleife untersucht:
-Dabei werden die Chunk-Namen solange aufgebrochen,
-bis alle in einzelnen Elementen von [[uli]] stehen.
-Die Stellen von [[uli]] mit Chunk-Namen werden auf 
-[[cand]] gemerkt. Dann k�nnen die Namen gesucht
-und um die Nummer erg�nzt werden.
-Die mit Nummern und TeX-Klammern versehenen
-[[uli]]-Eintr�ge werden zusammengepackt und auf
-[[use.lines]] zur�ckgespielt.
-Zuvor m�ssen die Nicht-Chunk-Namen jedoch noch
-wie Code behandelt werden!
-<<schreibe Code-Verwendungszeilen [[weaveR]]>>=
-use.lines<-input[use.index]; is.use.lines.within.code<-is.code.line[use.index]
-leerzeichen.vor.use<-paste("\\verb|",
-                                           sub("[^ ](.*)$"," ",use.lines),
-                                           "|",sep="") ## plus 1 Leerzeichen 
-use.lines<-substring(use.lines,nchar(leerzeichen.vor.use)-7) ## 8
-for(i in seq(use.lines)){
-  uli<-use.lines[i]
-  repeat{
-    if(0==length(cand<-grep("@<<(.*)>>",uli))) break
-    uli.h<-gsub("(.*)@<<(.*)>>(.*)","\\1bReAkuSeChUnK\\2bReAk\\3",uli)
-    uli<-unlist(strsplit(uli.h,"bReAk"))
-  }
-  cand<-grep("uSeChUnK",uli); uli<-sub("uSeChUnK","",uli)
-  ref.no<-match(uli[cand],code.chunk.names)
-  uli[cand]<-paste("$\\langle${\\it ",uli[cand],"} ",ref.no,"$\\rangle$",sep="")
-#  formating code within use references, in code chunk a little different
-  if(length(uli)!=length(cand)){
-    if(is.use.lines.within.code[i]){
-      if(!UTF){ 
-        uli[-cand]<-paste("\\verb",char267,uli[-cand],char267,sep="") #050612
-      }else{
-        uli[-cand]<-paste("\\verb\140",uli[-cand],"\140",sep="") #060516
-      }
-    }
-  }
-  use.lines[i]<-paste(uli,collapse="")
 }
-input[use.index]<-ifelse(is.use.lines.within.code,
-              paste("\\rule{0mm}{0mm}\\newline",leerzeichen.vor.use,use.lines,"%",sep=""),
-              paste(leerzeichen.vor.use,use.lines,sep=""))
+
 
 @
-<<old: schreibe Code-Verwendungszeilen [[weaveR]]>>=
-leerzeichen.vor.use<-paste("\\verb|",sub("<.*$","",input[use.index]),"|",sep="")
-ref.no<-match(gsub("\\ ","",use.lines), gsub("\\ ","",code.chunk.names))
-use.lines<- paste(leerzeichen.vor.use,"$\\langle${\\it ",
-                            use.lines,"}$\\ ",ref.no,"\\rangle$\\newline")
-input[use.index]<-use.lines
+\newpage
+
+Zur Aufbereitung der Text-Chunks-Starts.
+
+Es müssen nur die Klammeraffen entfernt werden. Einfacher ist es,
+den entsprechenden Zeilen etwas Leeres zuzuweisen.
+Vor [[textchunkcommands]] wurde noch eine Paragraphenerzeugung
+vorangestellt, damit bei Schriftwechseln der Zeilenabstand stimmt.
+<<erledige Text-Chunk-Starts [[weaveR]]>>=
+## input[text.start.index]<-""
+input[text.start.index]<-paste(
+                      "\\ifodd\\value{IsInCodeChunk}",
+                      "\\setcounter{IsInCodeChunk}{0}",
+                      "\\vspace{-\\parskip}\\par\\hspace*{-\\parindent}",
+                      "\\textchunkcommands\\fi",
+                      sep="")
 
 @
 Das Zeichen \verb+\267+ rief teilweise Probleme hervor, so dass
-statt dessen demn�chst ein anderes Verwendung finden muss.
+statt dessen demnächst ein anderes Verwendung finden muss.
 Ein Weg besteht darin, aus dem Zeichenvorrat ein ungebrauchtes Zeichen
-auszuw�hlen, dessen [[catcode]] zu ver�ndern und dann dieses zu verwenden.
+auszuwählen, dessen [[catcode]] zu verändern und dann dieses zu verwenden.
 Nachteilig ist bei diesem Zeichen, dass verschiedene Editoren dieses nicht
-darstellen k�nnen. Darum ist es besser ein ungew�hnliches, aber darstellbares
-Zeichen zu verwenden. Zum Bespiel k�nnte man [[\343]] verwenden, so dass
-die Zeile unten lauten w�rde:
+darstellen können. Darum ist es besser ein ungewöhnliches, aber darstellbares
+Zeichen zu verwenden. Zum Bespiel könnte man [[\343]] verwenden, so dass
+die Zeile unten lauten würde:
 [[input[code.index]<-paste("\\verb\343",code.lines,"\343\\newline")]]
 Um ganz sicher zu gehen, dass dieses Zeichen akzeptiert wird,
-k�nnte man den [[catcode]] so ver�ndern:
+könnte man den [[catcode]] so verändern:
 [[\catcode`\343=12"]] -- also in R:
-[[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einf�gen.
+[[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
+Diese Zeichen sind jedoch nicht im unterem Ascii enthalten. Deshalb
+wurde im 110518 versucht als Esc-Zeichen statt Nr 140 das "?" zu verwenden. 
+Dieses wurde auch oben schon eingebaut, siehe Code-Verwendungen-Schreiben:
+\emph{poliere [[use.lines]], die aufgesplittet auf [[uli]] stehen [[weaveR]]}.
 <<schreibe Code-Zeilen [[weaveR]]>>=
-if(!UTF){
-  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb",char267," ",code.lines," ",char267,"%",sep="")
-}else{
-  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb\140",code.lines,
-     "\140%") #060516 070706
-}
+#110518:
+code.lines<-gsub("\\?","?\\\\verb!?!\\\\verb?",code.lines) #110518
+input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb?",
+                           " ",code.lines," ","?%",sep="")    
+@
+<<old escaping>>=
+#if(!UTF){
+#  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb",char267,
+#                           " ",code.lines," ",char267,"%",sep="")
+#}else{
+#  input[code.index]<-paste("\\rule{0mm}{0mm}\\newline\\verb\140",code.lines,
+#     "\140%") #060516 070706
+#}
 
 @
 <<setze Code in Text-, Header- und Verwendungszeilen [[weaveR]]>>=
@@ -927,7 +1991,7 @@ typ<-"USE"
 
 @
 Code im Text wird auf zwei Weisen umgesetzt:\\
-a) Zerlegung von Zeilen in W�rter. W�rter der Form [[x==(1:10)+1]]
+a) Zerlegung von Zeilen in Wörter. Wörter der Form [[x==(1:10)+1]]
 werden untersucht und komische Zeichen werden ersetzt.
 b) In Zeilen, in denen immer noch doppelte Klammern gefunden werden,
 werden als ganzes behandelt; dabei wird versucht von vorn beginnend
@@ -936,7 +2000,7 @@ zu einander passende Klammern zu finden.
 <<suche in Zeilen des Typs nach Code im Text [[code.im.text.index]] [[weaveR]]>>
 if(0<length(code.im.text.index)){
   lines.to.check<-input[code.im.text.index]
-  <<ersetze zusammenh�ngende Wortst�cke [[weaveR]]>>
+  <<ersetze zusammenhängende Wortstücke [[weaveR]]>>
   <<checke und ersetze Code im Text mit Leerzeichen [[weaveR]]>>
   input[code.im.text.index]<-lines.to.check
 }
@@ -949,11 +2013,11 @@ code.im.text.index<-index[grep("\\[\\[(.*)\\]\\]",input[index])]
 @
 Die Zeilen werden mit [[strsplit]] aufgebrochen und
 die Teile mit doppelten eckigen Klammern werden
-behandelt. Die Behandlung erfolgt, wie mit n�chsten
-Text-Chunk beschrieben. Anschlie�end
-wird die Zeile mit tt-gesetzten Code-St�cken
+behandelt. Die Behandlung erfolgt, wie mit nächsten
+Text-Chunk beschrieben. Anschließend
+wird die Zeile mit tt-gesetzten Code-Stücken
 wieder zusammengebaut.
-<<ersetze zusammenh�ngende Wortst�cke [[weaveR]]>>=
+<<ersetze zusammenhängende Wortstücke [[weaveR]]>>=
 lines.to.check<-strsplit(lines.to.check," ") # Zerlegung in Worte
 lines.to.check<-unlist(lapply(lines.to.check,function(x){
     ind.cand<-grep("^\\[\\[(.*)\\]\\]$",x)
@@ -966,15 +2030,15 @@ lines.to.check<-unlist(lapply(lines.to.check,function(x){
       cand<-gsub("BaCkSlAsH","{\\\\char'134}",cand)
       cand<-gsub("\\~","{\\\\char'176}",cand)
       cand<-gsub("\\^","{\\\\char'136}",cand)
-      cand<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",cand) # 050612
-      cand<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",cand) # 050612
+      cand<-gsub(pat.Sp.open,"\\\\verb|<<|",cand) # 050612
+      cand<-gsub(pat.Sp.close,"\\\\verb|>>|",cand) # 050612
       x[ind.cand]<-paste("{\\tt ",cand,"}",sep="")
     }
     x<-paste(x,collapse=" ")}
 )) # end of unlist(apply(..))
 
 @
-Nicht zusammenh�ngende Anweisungen, eingeschlossen in
+Nicht zusammenhängende Anweisungen, eingeschlossen in
 doppelten eckigen Klammern sind auch erlaubt.
 Diese werden in [[lines.to.check]] gesucht: [[ind.cand]].
 Es werden die gefundenen Klammeraffen entfernt.
@@ -1007,8 +2071,8 @@ if(0<length(ind.cand)) {
         h<-gsub("BaCkSlAsH","{\\\\char'134}",h);
         h<-gsub("\\~","{\\\\char'176}",h) #2.1.0
         h<-gsub(" ","\\\\ ",h) # Leerzeichen nicht vergessen! 060116
-        h<-gsub("DoSpOpenKl-esc","\\\\verb|<<|",h) # 050612
-        h<-gsub("DoSpCloseKl-esc","\\\\verb|>>|",h) # 050612
+        h<-gsub(pat.Sp.open,"\\\\verb|<<|",h) # 050612
+        h<-gsub(pat.Sp.close,"\\\\verb|>>|",h) # 050612
       x[(br.open+1):(br.close-1)]<-gsub("\\^","{\\\\char'136}",h)
       }
       x[br.open]<-"{\\tt "; x[br.close]<-"}"
@@ -1035,7 +2099,6 @@ if(0<length(ind.cand)) {
       lines.to.check[ind.cand]<-extra
 }
 
-
 @
 Ein Test von [[weaveR]].
 <<teste Funktion [[weaveR]]>>=
@@ -1044,6 +2107,8 @@ weaveR("out.rev"); system("cat q|latex out.tex")
 
 @
 \subsection{Help-Page}
+\renewcommand{\codechunkcommands}{\footnotesize}
+@
 <<define-weaveR-help>>=
 \name{weaveR}
 \alias{weaveR}
@@ -1054,58 +2119,102 @@ weaveR("out.rev"); system("cat q|latex out.tex")
   of weaving. As a result a LaTeX file is generated.
 }
 \usage{
-weaveR(in.file,out.file,show.code=TRUE,show.text=TRUE,replace.umlaute=TRUE)
+weaveR(in.file,out.file,show.code=TRUE,show.text=TRUE,
+       replace.umlaute=TRUE,eval_Sexpr=FALSE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
   \item{out.file}{ name of output file; if missing the extension of the
   input file is turned to \code{.tex} }
-  \item{show.code}{ if FALSE the code will not be copied to the output file }
+  \item{show.code}{ if FALSE the code will not be copied to the output file; 
+    if show.code == "echo": a code chunk will be excluded if its the name 
+    additionally contains the string  \code{echo=FALSE}. }
   \item{show.text}{ if FALSE the text will not be copied to the output file }
   \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
    TeX sequences}
+  \item{eval_Sexpr}{ if TRUE \code{\\Sexpr}-expressions and 
+       \verb{\\Splot}-expressions will be evaluated and replaced by the result(s) }
 }
 \details{
-  General remarks: A \code{noweb} file consists of a mixture of text
-  and code chunks. An \code{@} character (in column 1 of a line)
-  indicates the beginning of a text chunk. \code{@<<name of code chunk>>=}
+  General remarks: A \verb{noweb} file consists of a mixture of text
+  and code chunks. An \verb{@} character (in column 1 of a line)
+  indicates the beginning of a text chunk. \verb{@<<name of code chunk>>=}
   (starting at column 1 of a line) is a header line of a code chunk with
-  a name defined by the text between \code{@<<} and \code{>>=}.
+  a name defined by the text between \verb{@<<} and \verb{>>=}.
   A code chunk is finished by the beginning of hte next text chunk.
   Within the code chunk you are allowed to use other code chunks by referencing
-  them by name ( for example by: \code{@<<name of code chunk>>} ).
+  them by name ( for example by: \verb{@<<name of code chunk>>} ).
   In this way you can separate a big job in smaller ones.
 
   Technical remarks:
   To format small pieces of code in text chunks you have to put them in
-  \code{[[...]]}-brackets: \code{text text [[code]] text text}.
+  \verb{[[...]]}-brackets: \verb{text text [[code]] text text}.
   One occurence of such a code in a text line is assumed to work always.
   If an error emerges caused by formatting code in a text chunk
   simplify the line by splitting it.
   Sometimes you want to use
-  \code{[[}- or even \code{@<<}-characters in your text. Then it
-  may be necessary to escape them by an \code{@}-sign and
-  you have to type in: \code{@@<<}, \code{@[[} and so on.
+  \verb{[[}- or even \verb{@<<}-characters in your text. Then it
+  may be necessary to escape them by an \verb{@}-sign and
+  you have to type in: \verb{@@<<}, \verb{@[[} and so on.
 
   \code{weaveR} expands the input by adding some latex macros
   to typeset code by a typewriter font.
-  Furthermore chunk numbers are appended to code chunk headers.
+  Furthermore chunk numbers are appended to code chunk headers
+  together with some information showing where are code is used.
+  If you want to suppress these hints you can include a line
+  beginning with the string \code{no.used.in.infos}.
+
+  Hint for references:
   The number of the last code chunk is stored in LaTeX-counter \code{Rchunkno}.
   After defining
-  \code{\newcommand\{\chunklabel\}[1]\{\newcounter\{#1\}\setcounter\{#1\}\{\value\{Rchunkno\} \} \}}
-  and \code{\newcommand\{\chunkref\}[1]\{\arabic\{#1\} \} } you can label a code chunk
-  by \code{\chunklabel\{xyzname\} } and reference it by \code{\chunkref\{xyzname\} }.
+  \verb{\\newcommand\{\\chunklabel\}[1]\{\\newcounter\{#1\}}
+  \verb{  \\setcounter\{#1\}\{\\value\{Rchunkno\} \} \}}
+  and \verb{\\newcommand\{\\chunkref\}[1]\{\\arabic\{#1\} \} } you can label a code chunk
+  by \verb{\\chunklabel\{xyzname\} } and reference it by \verb{\\chunkref\{xyzname\} }.
+
+  Chunk Index: 
+  The user will get a list of all the code chunks if a line is found containing
+  \verb{@list.of.chunks}. However, there must be a minimum number of 
+  two list entries. Otherwise no index is appended to the text.
+
+  Object Index: 
+  An index of the objects 
+  will be generated if a line is found with the string \verb{@index.of.objects}.
+  Object names consisting of one character are excluded from the search. 
+  However, you can define object names that should appear in the index by hand.
+  This requires a line (or lines) in the document beginning with the string \verb{@index}
+  followed by the names of the objects that should appear in the index. 
+  This features is helpful if some objects are missing on the
+  list or if a name of an object to be listed is of length 1 only.
+  Bear in mind that the computation of the object index is time consuming.
+  If you do not want an index computed automatically you can include a line
+  with the string \verb{@index.reduced} at the beginning of the line. Then the
+  object index will contain the object names of the \verb{@index} statements only.
+
+  In case \verb{\\Sexpr} statements should be evaluated the text is scanned and 
+  all \verb{\\Sexpr} statements are extracted and replaced by the values of the expressions.
+  Furthermore, all \verb{\\Splot} statements are also searched. For each match
+  the current plot of the current graphics device is copied into a postscript file
+  and an \verb{\\includegraphics} LaTeX command is printed into the tex file.  
+  Within the brackets of \verb{\\Splot} the file name of the postscript file
+  has to be specified. Separated by "," the height of the plot may be set. E.g.
+  \verb{\\Splot\{pic1.ps,latexheight="5cm"\}} means that the name of 
+  the plot should be \verb{pic1.ps} and the height of it should be 5 cm. 
+  In the same way arguments other arguments to be delivered to the postscript 
+  function may be added.
 }
 \value{
   a latex file is generated
 }
-\references{ \url{http://www.eecs.harvard.edu/~nr/noweb/intro.html} }
+\references{ by using noweb is an alternative approach, see: 
+            \url{http://www.eecs.harvard.edu/~nr/noweb/intro.html} }
 \author{Hans Peter Wolf}
 \seealso{  \code{\link{tangleR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work in an interactive R session
+## This example cannot be run by examples() but should be work 
+## in an interactive R session
   weaveR("testfile.rev","testfile.tex")
   weaveR("testfile.rev")
 }
@@ -1121,6 +2230,116 @@ weaveR<-function(in.file,out.file){
 \keyword{programming}
 
 @
+\renewcommand{\codechunkcommands}{\small}
+
+@
+<<teste Tangle-Funktion [[weaveR]]>>=
+library(relax)
+if("tangleR" %in% ls()) rm(tangleR)
+system("notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R")
+source("tangle-by-noweb.R")
+tangleR("webR","tangleR-by-tangleR.R",expand.roots="define-tangleR",
+        expand.root.start=FALSE)
+source("tangleR-by-tangleR.R")
+if("weaveR" %in% ls()) rm(weaveR)
+system("notangle -Rdefine-weaveR         webR.rev > weave-by-noweb.R")
+source("weave-by-noweb.R")
+weaveR("webR","webR-by-noweb-weaveR.tex")
+#system("latex webR-by-noweb-weaveR.tex")
+if("weaveR" %in% ls()) rm(weaveR)
+tangleR("webR","weaveR-by-tangleR.R",expand.roots="define-tangleR",
+        expand.root.start=FALSE)
+source("weaveR-by-tangleR.R")
+weaveR("webR","webR-by-weaveR.tex")
+system("ls -rtl | tail -3")
+system("diff webR-by-noweb-weaveR.tex webR-by-weaveR.tex | wc")
+system("latex webR-by-weaveR.tex; xdvi webR-by-weaveR.dvi&")
+
+@
+Testprotokoll
+{\footnotesize
+\begin{verbatim}
+> library(relax)
+> if("tangleR" %in% ls()) rm(tangleR)
+> system("notangle -Rdefine-tangleR         webR.rev > tangle-by-noweb.R")
+> source("tangle-by-noweb.R")
+function tangleR defined
+> tangleR("webR","tangleR-by-tangleR.R",expand.roots="define-tangleR",
++         expand.root.start=FALSE)
+tangle process finished
+> source("tangleR-by-tangleR.R")
+function tangleR defined
+> if("weaveR" %in% ls()) rm(weaveR)
+> system("notangle -Rdefine-weaveR         webR.rev > weave-by-noweb.R")
+> source("weave-by-noweb.R")
+> weaveR("webR","webR-by-noweb-weaveR.tex")
+weave process finished
+> #system("latex webR-by-noweb-weaveR.tex")
+> if("weaveR" %in% ls()) rm(weaveR)
+> tangleR("webR","weaveR-by-tangleR.R",expand.roots="define-tangleR",
++         expand.root.start=FALSE)
+tangle process finished
+> source("weaveR-by-tangleR.R")
+function tangleR defined
+> weaveR("webR","webR-by-weaveR.tex")
+weave process finished
+> system("ls -rtl | tail -3")
+-rw-r--r-- 1 pwolf wiwi 263121 16. Jun 11:48 webR-by-noweb-weaveR.tex
+-rw-r--r-- 1 pwolf wiwi   9298 16. Jun 11:48 weaveR-by-tangleR.R
+-rw-r--r-- 1 pwolf wiwi 263121 16. Jun 11:48 webR-by-weaveR.tex
+> system("diff webR-by-noweb-weaveR.tex webR-by-weaveR.tex | wc")
+      0       0       0
+> system("latex webR-by-weaveR.tex; xdvi webR-by-weaveR.dvi&")
+This is pdfTeXk, Version 3.1415926-1.40.9 (Web2C 7.5.7)
+ %&-line parsing enabled.
+entering extended mode
+(./webR-by-weaveR.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, german-x-2008-06-18, ngerman-x-2008-06-18, ancientgreek, ibycus, ar
+abic, basque, bulgarian, catalan, pinyin, coptic, croatian, czech, danish, dutc
+h, esperanto, estonian, farsi, finnish, french, galician, german, ngerman, mono
+greek, greek, hungarian, icelandic, indonesian, interlingua, irish, italian, la
+tin, mongolian, mongolian2a, bokmal, nynorsk, polish, portuguese, romanian, rus
+sian, sanskrit, serbian, slovak, slovenian, spanish, swedish, turkish, ukenglis
+h, ukrainian, uppersorbian, welsh, loaded.
+(/usr/share/texmf/tex/latex/base/article.cls
+Document Class: article 2005/09/16 v1.4f Standard LaTeX document class
+(/usr/share/texmf/tex/latex/base/size10.clo))
+(/usr/share/texmf/tex/latex/ntgclass/a4.sty)
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+(/usr/share/texmf/tex/latex/graphics/keyval.sty)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+(/usr/share/texmf/tex/latex/graphics/trig.sty)
+(/usr/lib/texmf/tex/latex/config/graphics.cfg)
+(/usr/share/texmf/tex/latex/graphics/dvips.def)))
+(/usr/share/texmf/tex/latex/psnfss/mathpazo.sty)
+(/usr/share/texmf/tex/latex/psnfss/courier.sty)
+(/usr/share/texmf/tex/latex/base/alltt.sty)
+(/usr/share/texmf/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texmf/tex/latex/amsfonts/amsfonts.sty))
+(/usr/share/texmf/tex/latex/psnfss/helvet.sty)
+(/home/wiwi/pwolf/TEX/texinput/noweb.sty
+(/usr/share/texmf/tex/latex/psnfss/ot1ppl.fd)
+(/usr/share/texmf/tex/latex/psnfss/ot1pcr.fd)
+(/usr/share/texmf/tex/latex/psnfss/omlzplm.fd)
+(/usr/share/texmf/tex/latex/psnfss/omszplm.fd)
+(/usr/share/texmf/tex/latex/psnfss/omxzplm.fd)
+(/usr/share/texmf/tex/latex/psnfss/ot1zplm.fd)
+(/usr/share/texmf/tex/latex/amsfonts/umsa.fd)
+(/usr/share/texmf/tex/latex/amsfonts/umsb.fd))
+(/home/wiwi/pwolf/TEX/texinput/uml-ok.tex) (./webR-by-weaveR.aux)
+(/usr/share/texmf/tex/latex/psnfss/omsppl.fd) [1] [2] [3] [4] [5] [6] [7]
+[8] [9] [10] [11] [12] (/usr/share/texmf/tex/latex/psnfss/omspcr.fd) [13]
+[14] [15] [16] [17] [18] [19] (/usr/share/texmf/tex/latex/psnfss/ot1phv.fd)
+[20] [21] [22] [23] [24] [25] [26] [27] [28] [29] [30] [31] [32] [33] [34]
+[35] [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49]
+[50] [51] [52] [53] [54] [55] (./webR-by-weaveR.aux) )
+Output written on webR-by-weaveR.dvi (55 pages, 247356 bytes).
+Transcript written on webR-by-weaveR.log.
+\end{verbatim}
+} % end of footnotesize
+
 @
 \section{TEIL III --- WEAVEtoHTML}
 
@@ -1130,7 +2349,7 @@ Aufbauend auf der [[weaveR]]-Funktion wird in diesem Teil eine
 einfache Funktionen zur Erzeugung einfacher [[html]]-Dateien
 beschrieben. Die Nebenbedingungen der Realisation 
 entsprechen denen von [[weaveR]]. Auch die grobe Struktur
-und besonders der Anfang der L�sung wurde im wesentlichen
+und besonders der Anfang der Lösung wurde im wesentlichen
 kopiert. Die Funktion besitzt folgenden Aufbau:
 <<define-weaveRhtml>>=
 weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
@@ -1143,29 +2362,41 @@ weaveRhtml<-function(in.file,out.file,replace.umlaute=TRUE){
   <<stelle Typ der Zeilen fest [[weaveRhtml]]>>
   <<erstelle Output [[weaveRhtml]]>>
   <<ersetze Umlaute [[weaveRhtml]]>>
-  <<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>
-  <<formatiere �berschriften [[weaveRhtml]]>>
+  <<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>
+  <<formatiere Überschriften [[weaveRhtml]]>>
   <<definiere einfachen head [[weaveRhtml]]>>
   <<setze Schriften um [[weaveRhtml]]>>
   <<entferne unbrauchbare Makros [[weaveRhtml]]>>
   <<baue ggf.\ Rweb-Felder ein>>
-  <<integriere Newline hinter Zeilenumbr�chen>>
+  <<integriere Newline hinter Zeilenumbrüchen>>
   <<schreibe Ergebnis in Datei [[weaveRhtml]]>>
 }
+
+
 
 @
 <<DEBUG-Flag gesetzt>>=
 exists("DEBUG")
 @
-Zun�chst fixieren wir die Suchmuster f�r wichtige Dinge.
-Au�erdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
+Zunächst fixieren wir die Suchmuster für wichtige Dinge.
+Außerdem stellen wir fest, ob R auf UTF-8-Basis arbeitet.
 <<initialisiere [[weaveRhtml]]>>=
-require(tcltk)
+# require(tcltk) # 140306
 pat.use.chunk<-paste("<","<(.*)>",">",sep="")
+pat.use.chunk.line <- paste("(.*)",pat.use.chunk,"(.*)",sep="")
 pat.chunk.header<-paste("^<","<(.*)>",">=",sep="")
+
 pat.verbatim.begin<-"\\\\begin\\{verbatim\\}"
 pat.verbatim.end<-"\\\\end\\{verbatim\\}"
 pat.leerzeile<-"^(\\ )*$"
+
+pat.KlAffeGG <- paste("@",">",">",sep="")
+pat.KlAffeKK <- paste("@","<","<",sep="")
+pat.Sp.open <- paste("DoSp","OpenKl-ESC",sep="")
+pat.Sp.close <- paste("DoSp","CloseKl-ESC",sep="")
+pat.Eck.open <- paste("DoEck","OpenKl-ESC",sep="")
+pat.Eck.close <- paste("DoEck","CloseKl-ESC",sep="")
+
 .Tcl("set xyz [encoding system]"); UTF<-tclvalue("xyz")
 UTF<-0<length(grep("utf",UTF))
 if(<<DEBUG-Flag gesetzt>>){ 
@@ -1199,13 +2430,13 @@ length.input<-length(input)
 
 @
 <<substituiere mit @ versehene Zeichengruppen [[weaveRhtml]]>>=
-input<-gsub("@@>>","DoSpCloseKl-ESC",gsub("@@<<","DoSpOpenKl-ESC",input))
+input<-gsub(pat.KlAffeGG,"DoSpCloseKl-ESC",gsub(pat.KlAffeKK,"DoSpOpenKl-ESC",input))
 input<-gsub("@\\]\\]","DoEckCloseKl-ESC",gsub("@\\[\\[","DoEckOpenKl-ESC",input))
 
 @
 Zuerst werden TeX-Kommentar-Zeichen vor Latex-Formel-Bildern entfernt, 
 dann werden html-Kommentar-Zeichen vor der LaTeX-Formel vom 
-unn�tigen \%-Zeichen befreit und zum Schluss werden alle LaTeX-Kommentare
+unnötigen \%-Zeichen befreit und zum Schluss werden alle LaTeX-Kommentare
 entfernt.
 <<entferne Kommentarzeichen [[weaveRhtml]]>>=
 input<-sub('^% (<p><img src="t)',"\\1",input)
@@ -1215,15 +2446,15 @@ if(0<length(h)) input<-input[-h]
 
 @
 Umlaute sind ein Dauerbrenner.
-Hinweis: im richtigen Code steht unten �brigens: \emph{������} sowie
-in der ersten Zeile ein \emph{�}.
+Hinweis: im richtigen Code steht unten übrigens: \emph{äöüÄÖÜ} sowie
+in der ersten Zeile ein \emph{ß}.
 [[.Tcl("set XYZ [encoding system]"); tclvalue("XYZ")]], z.B.: iso8859-15, utf-8
 [[localeToCharset()]] liefert: "ISO8859-1" bzw.: [[ [1] "UTF-8" "ISO8859-1"]]
 <<ersetze Umlaute [[weaveRhtml]]>>=
 if(replace.umlaute){
  if(!UTF){
   # im Tcl/Tk-Textfenster eingegeben -> iso-8859-1 (man iso-8859-1 / Latin1 / unicode
-    pc<-eval(parse(text='"\\283"'))  # UTF-8-pre-char
+    pc<-eval(parse(text='"\\303"'))  # UTF-8-pre-char
     uml.utf.8 <-eval(parse(text='"\\244\\266\\274\\204\\226\\234\\237"'))
     uml.latin1<-eval(parse(text='"\\344\\366\\374\\304\\326\\334\\337"'))
     input<-chartr(uml.utf.8,uml.latin1,gsub(pc,"",input)) # utfToLatin1
@@ -1233,10 +2464,10 @@ if(replace.umlaute){
     # replace Umlaute &aeuml;->&auml;  
     input<-chartr(substring(uml.latin1,1,6),"aouAOU",input)  
  }else{
-    input<-gsub("\283\237","&szlig;",input)
-    input<-gsub("(\283\244|\283\266|\283\274|\283\204|\283\226|\283\234)",
+    input<-gsub("\303\237","&szlig;",input)
+    input<-gsub("(\303\244|\303\266|\303\274|\303\204|\303\226|\303\234)",
                               "&\\1uml;",input)
-    input<-chartr("\283\244\283\266\283\274\283\204\283\226\283\234", 
+    input<-chartr("\303\244\303\266\303\274\303\204\303\226\303\234", 
                               "aouAOU", input)
  }
 }
@@ -1266,27 +2497,27 @@ if(<<DEBUG-Flag gesetzt>>) cat("german Umlaute replaced\n")
 @
 <<alternative zu [[!UTF]]>>=
   # input<-iconv(input,"utf-8","")
-  # input<-gsub("�","&szlig;",input)
-  # input<-gsub("(�|�|�|�|�|�)","&\\1uml;",input)
-  # input<-chartr("������","aouAOU",input)
+  # input<-gsub("ß","&szlig;",input)
+  # input<-gsub("(ä|ö|ü|Ä|Ö|Ü)","&\\1uml;",input)
+  # input<-chartr("äöüÄÖÜ","aouAOU",input)
 
 @
-Vor dem Wegschreiben m�ssen die besonderen Zeichengruppen
-zur�ck�bersetzt werden.
-<<korrigiere urspr�nglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>=
-#input<-gsub("DoSpCloseKl-esc",">>",gsub("DoSpOpenKl-esc","<<",input))
-input<-gsub("DoSpCloseKl-ESC","&gt;&gt;",gsub("DoSpOpenKl-ESC","&lt;&lt;",input))
-input<-gsub("DoEckCloseKl-ESC","]]",gsub("DoEckOpenKl-ESC","[[",input))
+Vor dem Wegschreiben müssen die besonderen Zeichengruppen
+zurückübersetzt werden.
+<<korrigiere ursprünglich mit @ versehene Zeichengruppen [[weaveRhtml]]>>=
+#input<-gsub("DoSpClose Kl-esc",">>",gsub("DoSpOpen Kl-esc","<<",input))
+input<-gsub(pat.Sp.close,"&gt;&gt;",gsub(pat.Sp.open,"&lt;&lt;",input))
+input<-gsub(pat.Eck.close,"]]",gsub(pat.Eck.open,"[[",input))
 
 @
 Die Funktion [[get.argument]] holt die Argumente aller Vorkommnisse eines \LaTeX-Kommandos,
-dieses wird verwendet f�r Graphik-Eintr�ge mittels [[includegraphics]].
-[[get.head.argument]] ermittelt f�r den Dokumentenkopf wichtige Elemente, dieses
+dieses wird verwendet für Graphik-Einträge mittels [[includegraphics]].
+[[get.head.argument]] ermittelt für den Dokumentenkopf wichtige Elemente, dieses
 wird zur Ermittlung von Autor, Titel und Datum verwendet.
 [[transform.command]] ersetzt im Text [[txt]] \LaTeX-Kommandos mit einem Argument, zur Zeit nicht
 benutzt.
 [[transform.command.line]] transformiert \LaTeX-Kommandos mit einem Argument, die in einer Zeile 
-zu finden sind, dieses wird gebraucht f�r kurzzeitige Schriftenwechsel.
+zu finden sind, dieses wird gebraucht für kurzzeitige Schriftenwechsel.
 [[transform.structure.command]] entstanden aus [[transform.command]].
 <<initialisiere [[weaveRhtml]]>>=
 get.argument<-function(command,txt,default="",kla="{",kle="}",
@@ -1393,7 +2624,7 @@ get.argument<-function(command,txt,default="",kla="{",kle="}",dist=TRUE){
 
 
 @
-<<formatiere �berschriften [[weaveRhtml]]>>=
+<<formatiere Überschriften [[weaveRhtml]]>>=
 # find sections, subsections, subsubsections, paragraphs
 atag<-"<h2>"; etag<-"</h2>"; command<-"section"
 <<formatiere Strukturkommandos [[weaveRhtml]]>>
@@ -1446,25 +2677,30 @@ if(length(sec.typ>2)){
 Dieser Chunk beschreibt die Umsetzung von Gliederungsbefehlen wie 
 section, subsection, ...
 <<formatiere Strukturkommandos [[weaveRhtml]]>>=
-command.n<-nchar(command)+2; command.links<-NULL
+command.n<-nchar(command)+2; command.links<-NULL  
 kla<-"{"; kle<-"}"
 ## print("STRUKTUR")
 if(0<length(com.lines<-grep(paste("^\\\\",command,sep=""),input))){
   sec<-NULL
-  for(i in seq(com.lines)){
+  for(i in seq(along=com.lines)){
     txt<-input[com.lines[i]+0:2]
     txt<-paste(txt,collapse="\n"); n<-nchar(txt)   
-    x<-substring(txt,command.n:n,command.n:n)
-    en<-which(cumsum((x==kla)-(x==kle))==0)[1]
+    x<-sub("^ *","",substring(txt,command.n))
+    if((n.x<-nchar(x))<3){x<-paste(x,"no title?"); n.x<-nchar(x)}
+    x<-substring(x,1:n.x,1:n.x)
+    if(x[1]!=kla) {x[2] <-paste(x[1],x[2],sep=""); x[1]<-"{"} #}
+    en<-  which(cumsum((x==kla)-(x==kle))==0)[1] ## 090212??
+    if(is.na(en)) {en<-length(x); x[en]<-paste(x[en],etag)} else x[en]<-etag
     x[1]<-paste("<a name=\"",command,i,"\">",atag,sep="")
-    x[en]<-etag;  txt<-paste(x,collapse="")
-    sec<-c(sec,paste(x[2:(en-1)],collapse=""))
+    txt<-paste(x,collapse=""); sec<-c(sec,paste(x[(1+1):(en-1)],collapse=""))
     input[com.lines[i]+0:2]<-unlist(strsplit(txt,"\n"))
   }
-  command.links<-paste("<a href=\"#",command,seq(com.lines),
+  command.links<-paste("<a href=\"#",command,seq(along=com.lines),
                                       "\">",sec,"</a>\n",sep="") 
 }
-
+#   if(is.na(an)) {an<-1; x[an]<-paste(x[an],etag)} else x[an]<-h
+#   en<-which(cumsum((x=="{")-(x=="}"))==0)[1]
+    
 @
 <<definiere einfachen head [[weaveRhtml]]>>=
 ## if(  DEBUG-Flag gesetzt  ) print("head")
@@ -1480,7 +2716,8 @@ if(0<length(head)){
   if(is.null(datum)) datum<-date()
   ## print(datum)
 } else {
-  head<-""; titel<-paste("File:",in.file); autor<-"processed by weaveRhtml"; datum<-date()
+  head<-""; titel<-paste("File:",in.file); autor<-"processed by weaveRhtml"
+  datum<-date()
 }
 if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
   input<-input[-(1:h[1])]
@@ -1500,19 +2737,31 @@ if(0<length(h<-grep("\\\\begin\\{document\\}",input)))
 
 
 @
-
-@
 Achtung: Falls diese Dinge im Code vorkommen, wird es einen Fehler geben.
+Insbesondere können in regulären Ausdrücken schon mal gehäuft Rückstriche auftauchen.
+Für diese wird eine geschaut, ob sie aus einem Text-Chunk kommen (111006)
 <<entferne unbrauchbare Makros [[weaveRhtml]]>>=
 input<-gsub("\\\\newpage","",input)
 input<-gsub("\\\\tableofcontents","",input)
 input<-gsub("\\\\raggedright","",input)
-input<-gsub("\\\\\\\\","<br>",input)
+#  input<-gsub("\\\\\\\\","<br>",input) # brute force
+cand.line <- grep("\\\\",input)
+if(0<length(cand.line)){ 
+  cand <- input[cand.line]
+  no.text <- c(grep("\\(.*\".*\\.*\"",cand),grep("\\(.*'.*\\.*'",cand)) # ))
+  idx <- seq(along=cand); idx <- idx[ !(idx %in% no.text)]
+  if(0<length(idx)) cand[idx] <- gsub("\\\\\\\\","<br>",cand[idx])
+  input[cand.line] <- cand
+}
 h<-grep("\\\\maketitle|\\\\author|\\\\date|\\\\title|\\\\end\\{document\\}",input)
 if(0<length(h)) input<-input[-h]
+@
+% #no.text <- c(grep("\\(.*\".*\\.*\"",cand),grep("\\(.*'.*\\.*'",cand)) # ))
+% #idx <- seq(along=cand); idx <- idx[ !(idx %in% no.text)]
+% #if(0<length(idx)) cand[idx] <- gsub("\\\\\\\\","<br>",cand[idx])
 
 @
-Die Rweb-Funktionalit�t ist entstanden in Anlehnung an Seiten 
+Die Rweb-Funktionalität ist entstanden in Anlehnung an Seiten 
 von Charlie Geyer [[http://www.stat.umn.edu/~charlie/]], wie:
 [[http://www.stat.umn.edu/geyer/3011/examp/reg.html]]
 <<baue ggf.\ Rweb-Felder ein>>=
@@ -1524,7 +2773,8 @@ von Charlie Geyer [[http://www.stat.umn.edu/~charlie/]], wie:
     ## if( DEBUG-Flag gesetzt ) print(ind.Rweb.codes)
     Rwebbegin<-paste(c(  # Rweb start 
       '<hr SIZE=3><form onSubmit =" return checkData(this)"',
-      '  action="http://rweb.stat.umn.edu/cgi-bin/Rweb/Rweb.cgi" ',
+      ## '  action="http://rweb.stat.umn.edu/cgi-bin/Rweb/Rweb.cgi" ', ## out of order
+      '  action="http://pbil.univ-lyon1.fr/cgi-bin/Rweb/Rweb.cgi" ',
       '  enctype="multipart/form-data" method="post" target="_blank"><p>',
       '<label for="filedata" size=20>data frame (load LOCAL file): </label>',
       '<input type="file" name="FileData" id="filedata" size=30 >',
@@ -1541,7 +2791,7 @@ von Charlie Geyer [[http://www.stat.umn.edu/~charlie/]], wie:
       '<input type="reset" value="reset">',
       '</form><hr SIZE=3>',
       ' '),collapse=" ")
-    for(i in seq(ind.Rweb.codes)){
+    for(i in seq(along=ind.Rweb.codes)){
       h<-sub("<code>","",txt[ind.Rweb.codes[[i]]])
       h<-sub("<br>","",h)
       h<-sub("</code>","",h)
@@ -1596,12 +2846,13 @@ if(0<length(h<-grep("\\\\textbf",input))){
 }
 
 @
-Nur f�r die Lesbarkeit der Html-Dateien werden noch ein paar Zeilenumbr�che
-eingef�gt.
-<<integriere Newline hinter Zeilenumbr�chen>>=
+Nur für die Lesbarkeit der Html-Dateien werden noch ein paar Zeilenumbrüche
+eingefügt.
+<<integriere Newline hinter Zeilenumbrüchen>>=
 input<-gsub("<br>","<br>\n",input)
+
 @
-Zum Schluss m�ssen wir die modifizierte Variable [[input]] wegschreiben.
+Zum Schluss müssen wir die modifizierte Variable [[input]] wegschreiben.
 <<schreibe Ergebnis in Datei [[weaveRhtml]]>>=
 if(missing(out.file)||in.file==out.file){
   out.file<-sub("\\.([A-Za-z])*$","",in.file)
@@ -1614,7 +2865,7 @@ cat("weaveRhtml process finished\n")
 
 @
 Zu jeder Zeile wird ihr Typ festgestellt und auf dem Vektor [[line.typ]]
-eine Kennung vermerkt. Au�erdem merken wir zu jedem Typ auf einer
+eine Kennung vermerkt. Außerdem merken wir zu jedem Typ auf einer
 Variablen alle Zeilennummern des Typs. Wir unterscheiden:
 
 \begin{tabular}{lll}
@@ -1628,13 +2879,13 @@ normale Textzeilen & [[TEXT]] &\\
 Verbatim-Zeilen & [[VERBATIM]] & [[verb.index]]
 \end{tabular}
 
-Leerzeilen, Text- und Code-Chunk-Anf�nge sind leicht zu finden.
+Leerzeilen, Text- und Code-Chunk-Anfänge sind leicht zu finden.
 Code-Verwendungen sind alle diejenigen Zeilen, die [[<<]]
 und [[>>]] enthalten, jedoch keine Headerzeilen sind.
 Am schwierigsten sind normale Code-Zeilen zu identifizieren.
-Sie werden aus den Code-Chunk-Anf�ngen und den Text-Chunkanf�ngen
+Sie werden aus den Code-Chunk-Anfängen und den Text-Chunkanfängen
 ermittelt, wobei die [[USE]]-Zeilen wieder ausgeschlossen werden.
-Alle �brigen Zeilen werden als Textzeilen eingestuft.
+Alle übrigen Zeilen werden als Textzeilen eingestuft.
 <<stelle Typ der Zeilen fest [[weaveRhtml]]>>=
 <<checke Leer-, Textzeilen [[weaveRhtml]]>>
 <<behandle verbatim-Zeilen [[weaveRhtml]]>>
@@ -1684,7 +2935,7 @@ code.index<-code.index[is.na(match(code.index,use.index))]
 
 @
 Auf [[is.code.line]] legen wir ab, ob eine Zeile zu einem
-Code-Chunk geh�rt.
+Code-Chunk gehört.
 <<belege Typ-Vektor [[weaveRhtml]]>>=
 line.typ<-rep("TEXT" ,length.input)
 line.typ[empty.index]<-"EMPTY"
@@ -1715,8 +2966,8 @@ is.code.line[code.start.index]<-FALSE
 
 
 @
-Es m�ssen nur die Klammeraffen entfernt werden. 
-Zur Kennzeichnung der Abs�tze erzeugen wir einen 
+Es müssen nur die Klammeraffen entfernt werden. 
+Zur Kennzeichnung der Absätze erzeugen wir einen 
 neuen Paragraphen durch [[<p>]].
 <<erledige Text-Chunk-Starts [[weaveRhtml]]>>=
 input[text.start.index]<-"<p>"    # vorher: @
@@ -1724,10 +2975,10 @@ lz<-grep("^[ ]*$",input)
 if(0<length(lz)) input[lz]<-"<br>"
 
 @
-Die H�he 12cm entspricht auch einem 18 Zoll Terminal 
-[[height=420]]. Ist eine Bildh�he von xcm erw�nscht
-m�ssen wir rechnen: [[x*420/12=x*35]]. 
-Die Gr��enanpassung ist jedoch noch in Vorbereitung
+Die Höhe 12cm entspricht auch einem 18 Zoll Terminal 
+[[height=420]]. Ist eine Bildhöhe von xcm erwünscht
+müssen wir rechnen: [[x*420/12=x*35]]. 
+Die Größenanpassung ist jedoch noch in Vorbereitung
 und zur Zeit auskommentiert.
 <<ersetze Befehl zur Bildeinbindung>>=
 plz.ind<-grep("\\\\includegraphics",input)
@@ -1743,7 +2994,7 @@ if(0<length(plz.ind)){
   #hh<-floor(as.numeric(hh)*35*l.unit)
   #hh<-ifelse(is.na(hh),"",paste(" height=",hh,sep=""))
   #h<-paste("<img SRC=\"",sub(".ps$",".jpg",h),"\"",hh,">",sep="")
-  h<-paste("<img SRC=\"",sub(".ps$",".jpg",h),"\">",sep="")
+  h<-paste("<img SRC=\"",sub("\\.[e]{,1}ps$","",h),".jpg","\">",sep="") #090227
   input[plz.ind]<-h
 }
 
@@ -1756,11 +3007,11 @@ code.lines<-input[code.index]
 
 @
 <<schreibe Header-Zeilen [[weaveRhtml]]>>=
-no<-1:length(code.start.index)
+no<-seq(along=code.start.index)
 def.ref.no<-match(gsub("\\ ","",code.start.lines), gsub("\\ ","",code.start.lines))
 code.start.lines<-paste(
       "<a name=\"codechunk",no,"\"></a>",
-      "<a href=\"#codechunk",1+(no%%max(no)),"\">",
+      "<a href=\"#codechunk",if(length(no)>0)1+(no%%max(no)),"\">",
       "<br>Chunk:",no," <i>&lt;",code.start.lines,def.ref.no,
       "&gt;",ifelse(no!=def.ref.no,"+",""),"=</i></a>",sep="") 
 input[code.start.index]<-code.start.lines
@@ -1772,11 +3023,11 @@ leerzeichen.vor.use<-sub("[^ ](.*)$","",use.lines)
 use.lines<-substring(use.lines,nchar(leerzeichen.vor.use))
 h<-gsub("\\ ","&nbsp;",leerzeichen.vor.use)
 leerzeichen.vor.use<-ifelse(is.use.lines.within.code,h,leerzeichen.vor.use)
-for(i in seq(use.lines)){
+such<-pat.use.chunk.line 
+for(i in seq(along=use.lines)){
   uli<-use.lines[i]
-  such<-paste("(.*)<","<(.*)>",">(.*)",sep="")
   repeat{
-    if(0==length(cand<-grep("@<<(.*)@>>",uli))) break
+    if(0==length(cand<-grep(pat.use.chunk,uli))) break
     uli.h<-gsub(such,"\\1BrEaKuSeCHUNK\\2BrEaK\\3",uli)
     uli<-unlist(strsplit(uli.h,"BrEaK"))
   }
@@ -1809,19 +3060,20 @@ such<-paste("(.*)<","<(.*)>",">(.*)",sep="")
 uli.h<-gsub(such,"\\1bReAkuSeChUnK\\2bReAk\\3",uli)
 rm(uli,uli.h)
 @
-Das Zeichen \verb+\267+ rief teilweise Probleme hervor, so dass
-statt dessen demn�chst ein anderes Verwendung finden muss.
-Ein Weg besteht darin, aus dem Zeichenvorrat ein ungebrauchtes Zeichen
-auszuw�hlen, dessen [[catcode]] zu ver�ndern und dann dieses zu verwenden.
-Nachteilig ist bei diesem Zeichen, dass verschiedene Editoren dieses nicht
-darstellen k�nnen. Darum ist es besser ein ungew�hnliches, aber darstellbares
-Zeichen zu verwenden. Zum Bespiel k�nnte man [[\343]] verwenden, so dass
-die Zeile unten lauten w�rde:
-[[input[code.index]<-paste("\\verb\343",code.lines,"\343\\newline")]]
-Um ganz sicher zu gehen, dass dieses Zeichen akzeptiert wird,
-k�nnte man den [[catcode]] so ver�ndern:
-[[\catcode`\343=12"]] -- also in R:
-[[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einf�gen.
+Für Html nicht relevant, darum sind Bemerkungen zum Verb-Zeichen ausgeklammert.
+%Das Zeichen \verb+\267+ rief teilweise Probleme hervor, so dass
+%statt dessen demnächst ein anderes Verwendung finden muss.
+%Ein Weg besteht darin, aus dem Zeichenvorrat ein ungebrauchtes Zeichen
+%auszuwählen, dessen [[catcode]] zu verändern und dann dieses zu verwenden.
+%Nachteilig ist bei diesem Zeichen, dass verschiedene Editoren dieses nicht
+%darstellen können. Darum ist es besser ein ungewöhnliches, aber darstellbares
+%Zeichen zu verwenden. Zum Bespiel könnte man [[\343]] verwenden, so dass
+%die Zeile unten lauten würde:
+%[[input[code.index]<-paste("\\verb\343",code.lines,"\343\\newline")]]
+%Um ganz sicher zu gehen, dass dieses Zeichen akzeptiert wird,
+%könnte man den [[catcode]] so verändern:
+%[[\catcode`\343=12"]] -- also in R:
+%[[\\\catcode`\\\343=12"]] im oberen Bereich des Dokumentes einfügen.
 <<schreibe Code-Zeilen [[weaveRhtml]]>>=
 leerzeichen.vor.c<-gsub("\t","      ",code.lines)
 leerzeichen.vor.c<-sub("[^ ](.*)$","",leerzeichen.vor.c)
@@ -1846,7 +3098,7 @@ typ<-"USE"
 
 @
 Code im Text wird auf zwei Weisen umgesetzt:\\
-a) Zerlegung von Zeilen in W�rter. W�rter der Form [[x==(1:10)+1]]
+a) Zerlegung von Zeilen in Wörter. Wörter der Form [[x==(1:10)+1]]
 werden untersucht und komische Zeichen werden ersetzt.
 b) In Zeilen, in denen immer noch doppelte Klammern gefunden werden,
 werden als ganzes behandelt; dabei wird versucht von vorn beginnend
@@ -1855,7 +3107,7 @@ zu einander passende Klammern zu finden.
 <<suche in Zeilen des Typs nach Code im Text [[code.im.text.index]] [[weaveRhtml]]>>
 if(0<length(code.im.text.index)){
   lines.to.check<-input[code.im.text.index]
-  <<ersetze zusammenh�ngende Wortst�cke [[weaveRhtml]]>>
+  <<ersetze zusammenhängende Wortstücke [[weaveRhtml]]>>
   <<checke und ersetze Code im Text mit Leerzeichen [[weaveRhtml]]>>
   input[code.im.text.index]<-lines.to.check
 }
@@ -1868,11 +3120,11 @@ code.im.text.index<-index[grep("\\[\\[(.*)\\]\\]",input[index])]
 @
 Die Zeilen werden mit [[strsplit]] aufgebrochen und
 die Teile mit doppelten eckigen Klammern werden
-behandelt. Die Behandlung erfolgt, wie mit n�chsten
-Text-Chunk beschrieben. Anschlie�end
-wird die Zeile mit tt-gesetzten Code-St�cken
+behandelt. Die Behandlung erfolgt, wie mit nächsten
+Text-Chunk beschrieben. Anschließend
+wird die Zeile mit tt-gesetzten Code-Stücken
 wieder zusammengebaut.
-<<ersetze zusammenh�ngende Wortst�cke [[weaveRhtml]]>>=
+<<ersetze zusammenhängende Wortstücke [[weaveRhtml]]>>=
 lines.to.check<-strsplit(lines.to.check," ") # Zerlegung in Worte
 lines.to.check<-unlist(lapply(lines.to.check,function(x){
     ind.cand<-grep("^\\[\\[(.*)\\]\\]$",x)
@@ -1908,7 +3160,7 @@ lines.to.check<-unlist(lapply(lines.to.check,function(x){
 )) # end of unlist(apply(..))
 
 @
-Nicht zusammenh�ngende Anweisungen, eingeschlossen in
+Nicht zusammenhängende Anweisungen, eingeschlossen in
 doppelten eckigen Klammern sind auch erlaubt.
 Diese werden in [[lines.to.check]] gesucht: [[ind.cand]].
 Es werden die gefundenen Klammeraffen entfernt.
@@ -1954,7 +3206,8 @@ Konstruktion eines geeigneten Shellscript.
 <<lege bin-Datei [[weaveRhtml]] an>>=
 tangleR("weaveRhtml",expand.roots="")    
 file.copy("weaveRhtml.R","/home/wiwi/pwolf/bin/revweaveRhtml.R",TRUE)
-h<-'echo "source(\\"/home/wiwi/pwolf/bin/revweaveRhtml.R\\"); weaveRhtml(\'"$1"\')" | R --vanilla'
+h<-paste('echo "source(\\"/home/wiwi/pwolf/bin/revweaveRhtml.R\\");',
+         ' weaveRhtml(\'"$1"\')" | R --vanilla')
 cat(h,"\n",file="/home/wiwi/pwolf/bin/revweaveRhtml")
 system("chmod +x /home/wiwi/pwolf/bin/revweaveRhtml")
 
@@ -1972,6 +3225,8 @@ weaveRhtml("/home/wiwi/pwolf/tmp/doof")
 
 @
 \subsection{Help-Page}
+\renewcommand{\codechunkcommands}{\footnotesize}
+@
 <<define-weaveRhtml-help>>=
 \name{weaveRhtml}
 \alias{weaveRhtml}
@@ -1987,7 +3242,8 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{in.file}{ name of input file }
-  \item{out.file}{ name of output file; if this argument is missing the extension of the
+  \item{out.file}{ name of output file; 
+   if this argument is missing the extension of the
    input file is turned to \code{.html} }
   \item{replace.umlaute}{ if TRUE german umlaute will be replaced by 
    html sequences}
@@ -2030,21 +3286,31 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 
   Further details:
   Some LaTeX macros are transformed to improve the html document.
-  1. \code{weaveRhtml} looks for the LaTeX macros \code{\author}, 
-  \code{\title} and \code{\date} at the beginning of the input text.
-  If these macros are found their arguments are used to construct a simple
-  html-head. 
-  2. \code{\section\{...\}, \subsection\{...\}, \paragraph\{...\}} macros will be extracted
-  to include some section titles, subsection titles, paragraph titles in bold face fonts.
-  Additionally a simple table of contents is generated.
-  3. Text lines between \code{\begin\{center\}} and \code{\end\{center\}}
-  are centered.
-  4. Text lines between \code{\begin\{quote\}} and \code{\end\{quote\}}
-  are shifted a little bit to the right.
-  5. Text lines between \code{\begin\{itemize\}} and \code{\end\{itemize\}}
-  define a listing. The items of such a list have to begin with \code{\item}.
-  6. \code{\emh\{xyz\}} is transformed to \code{<i>xyz</i>} -- \code{xyz} will appear italic.
-  7. \code{\texttt\{xyz\}} is transformed to \code{<code>xyz</code>} -- this is formated like code.
+
+  1. \code{weaveRhtml} looks for the LaTeX macros \verb{\\author},     
+    \verb{\\title} and \verb{\\date} at the beginning of the input text.
+     If these macros are found their arguments are used to construct a simple
+     html-head. 
+
+  2. \verb{\\section\{...\}, \\subsection\{...\}, \\paragraph\{...\}} macros 
+     will be extracted to include some section titles, subsection titles, 
+     paragraph titles in bold face fonts. Additionally a simple table 
+     of contents is generated.
+
+  3. Text lines between \verb{\\begin\{center\}} and \verb{\\end\{center\}}
+     are centered.
+
+  4. Text lines between \verb{\\begin\{quote\}} and \verb{\\end\{quote\}}
+     are shifted a little bit to the right.
+
+  5. Text lines between \verb{\\begin\{itemize\}} and \verb{\\end\{itemize\}}
+     define a listing. The items of such a list have to begin with \verb{\\item}.
+
+  6. \verb{\\emh\{xyz\}} is transformed to \verb{<i>xyz</i>} 
+     -- \verb{xyz} will appear italic.
+
+  7. \verb{\\texttt\{xyz\}} is transformed to \verb{<code>xyz</code>} 
+     -- this is formated like code.
 }
 \value{
   a html file is generated
@@ -2054,7 +3320,8 @@ weaveRhtml(in.file,out.file,replace.umlaute=TRUE)
 \seealso{  \code{\link{weaveR}}, \code{\link{tangleR}} }
 \examples{
 \dontrun{
-## This example cannot be run by examples() but should be work in an interactive R session
+## This example cannot be run by examples() but should be work 
+## in an interactive R session
   weaveRhtml("testfile.rev","testfile.tex")
   weaveR("testfile.rev")
 }
@@ -2069,8 +3336,17 @@ weaveRhtml<-function(in.file,out.file){
 \keyword{documentation}
 \keyword{programming}
 
+@
+\renewcommand{\codechunkcommands}{\small}
+\section{Indizes}
+% object index -- remove next line to disable object index
+@index.of.objects
+% list of code chunks -- remove next line to disable list of chunks
+@list.of.chunks
 
 @
 \end {document}
 
 
+@
+\end{document}
